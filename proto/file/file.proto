@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package proto.file;
+
+option go_package = "github.com/npavlov/go-password-manager/proto/file";
+
+import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
+
+service FileService {
+  rpc UploadFile (stream UploadFileRequest) returns (UploadFileResponse);
+  rpc GetFiles (GetFilesRequest) returns (stream GetFilesResponse);
+  rpc DownloadFile (DownloadFileRequest) returns (stream DownloadFileResponse);
+}
+
+message UploadFileRequest {
+  string filename = 2 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  bytes data = 3 [(buf.validate.field).required = true];
+}
+
+message UploadFileResponse {
+  string file_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+message DownloadFileRequest {
+  string file_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+message DownloadFileResponse {
+  bytes data = 1;
+  google.protobuf.Timestamp last_update = 2;
+}
+
+message GetFilesRequest {
+}
+
+message GetFilesResponse {
+  repeated FileMeta notes = 1;
+}
+
+message FileMeta {
+  string file_id = 1 [(buf.validate.field).string.uuid = true];
+  google.protobuf.Timestamp last_update = 2;
+}
