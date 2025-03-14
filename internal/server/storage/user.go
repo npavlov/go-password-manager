@@ -21,9 +21,21 @@ func (ds *DBStorage) RegisterUser(ctx context.Context, createUser db.CreateUserP
 }
 
 // GetUser retrieves user record
-func (ds *DBStorage) GetUser(ctx context.Context, id string) (*db.User, error) {
+func (ds *DBStorage) GetUser(ctx context.Context, username string) (*db.User, error) {
+	user, err := ds.Queries.GetUserByUsername(ctx, username)
+	if err != nil {
+		ds.log.Error().Err(err).Msg("failed to create user")
+
+		return nil, errors.Wrap(err, "failed to create user")
+	}
+
+	return &user, nil
+}
+
+// GetUserById retrieves user record
+func (ds *DBStorage) GetUserById(ctx context.Context, userId string) (*db.User, error) {
 	var uuid pgtype.UUID
-	if err := uuid.Scan(id); err != nil {
+	if err := uuid.Scan(userId); err != nil {
 		ds.log.Error().Err(err).Msg("failed to scan uuid")
 
 		return nil, errors.Wrap(err, "failed to parse uuid")

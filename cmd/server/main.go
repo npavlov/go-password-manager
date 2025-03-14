@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"net"
 	"sync"
 	"time"
 
@@ -13,16 +11,15 @@ import (
 	"github.com/npavlov/go-password-manager/internal/server/buildinfo"
 	"github.com/npavlov/go-password-manager/internal/server/config"
 	"github.com/npavlov/go-password-manager/internal/server/dbmanager"
-	"github.com/npavlov/go-password-manager/internal/server/grpc/auth"
 	"github.com/npavlov/go-password-manager/internal/server/redis"
+	"github.com/npavlov/go-password-manager/internal/server/service"
+	"github.com/npavlov/go-password-manager/internal/server/service/auth"
 	"github.com/npavlov/go-password-manager/internal/server/storage"
 	"github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 )
 
@@ -36,7 +33,7 @@ func main() {
 
 	log.Info().Str("buildVersion", buildinfo.Version).
 		Str("buildCommit", buildinfo.Commit).
-		Str("buildDate", buildinfo.Date).Msg("Starting agent")
+		Str("buildDate", buildinfo.Date).Msg("Starting server")
 
 	cfg := loadConfig(&log)
 	var wg sync.WaitGroup
@@ -44,10 +41,11 @@ func main() {
 	ctx, cancel := utils.WithSignalCancel(context.Background(), &log)
 	defer cancel()
 
-	wg.Add(1)
-	starServer(ctx, cfg, &log, &wg)
+	dbManager := setupDatabase(ctx, cfg, &log)
+	defer dbManager.Close()
 
-	fmt.Println("Hello World")
+	wg.Add(1)
+	starServer(ctx, cfg, &log, &wg, dbManager)
 
 	utils.WaitForShutdown(&wg)
 }
@@ -67,49 +65,17 @@ func loadConfig(log *zerolog.Logger) *config.Config {
 	return cfg
 }
 
-func starServer(ctx context.Context, cfg *config.Config, log *zerolog.Logger, wg *sync.WaitGroup) {
+func starServer(ctx context.Context, cfg *config.Config, log *zerolog.Logger, wg *sync.WaitGroup, dbM *dbmanager.DBManager) {
 
-	dbManager := setupDatabase(ctx, cfg, log)
-	defer dbManager.Close()
+	dbStorage, memStorage := setupStorage(ctx, cfg, dbM, log)
 
-	dbStorage, memStorage := setupStorage(ctx, cfg, dbManager, log)
+	grpcManager := service.NewGRPCManager(cfg, log)
+	grpcServer := grpcManager.GetServer()
 
-	// Create gRPC server
-	creds, err := credentials.NewServerTLSFromFile(cfg.Certificate, cfg.PrivateKey)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to generate credentials")
-	}
-
-	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
-		LoggingServerInterceptor(log), // Logs all requests/responses
-	), grpc.Creds(creds))
 	authService := auth.NewAuthService(log, dbStorage, cfg, memStorage)
 	authService.RegisterService(grpcServer)
 
-	reflection.Register(grpcServer)
-
-	// Start listening
-	listener, err := net.Listen("tcp", cfg.Address)
-	if err != nil {
-		log.Fatal().Err(err).Msg("failed to listen on port")
-	}
-
-	log.Info().Msgf("gRPC server listening on %s", cfg.Address)
-
-	if err := grpcServer.Serve(listener); err != nil {
-		log.Fatal().Err(err).Msg("failed to serve gRPC server")
-	}
-
-	//grpcServer := grpc.NewGRPCServer(cfg, log)
-	//grpcCon := *grpcServer.GetServer()
-	//
-	//log.Info().Interface("grpcCon", grpcCon).Msg("Connecting to database")
-	//
-	//authService := auth.NewAuthService(log, dbStorage, cfg, &grpcCon)
-	//
-	//authService.RegisterService()
-	//
-	//grpcServer.Start(ctx, wg)
+	grpcManager.Start(ctx, wg)
 }
 
 func setupDatabase(ctx context.Context, cfg *config.Config, log *zerolog.Logger) *dbmanager.DBManager {

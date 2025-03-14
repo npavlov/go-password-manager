@@ -23,6 +23,10 @@ services:
     build:
       context: ..
       dockerfile: ./deployment/dockerfile.debug
+      args:
+        VERSION: "1.0.0"
+        DATE: "${BUILD_DATE:-$(date -u +%Y-%m-%d)}"
+        COMMIT: "${GIT_COMMIT:-$(git rev-parse HEAD)}"
     networks:
       - app-network
     ports:

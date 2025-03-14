@@ -13,8 +13,18 @@ COPY . .
 # Install Delve
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
 
-# Build the server binary with Delve debug info
-RUN go build -gcflags "all=-N -l" -o server ./cmd/server
+# Define build arguments
+ARG VERSION
+ARG DATE
+ARG COMMIT
+ARG BUILDINFO_PKG_SERVER=github.com/npavlov/go-password-manager/internal/server/buildinfo
+
+# Build the server binary with debug flags
+RUN go build -gcflags="all=-N -l" \
+        -ldflags="-X '${BUILDINFO_PKG_SERVER}.Version=${VERSION}' \
+                  -X '${BUILDINFO_PKG_SERVER}.Date=${DATE}' \
+                  -X '${BUILDINFO_PKG_SERVER}.Commit=${COMMIT}'" \
+        -o server ./cmd/server
 
 # Stage 2: Create a lightweight container with the built binary
 FROM alpine:3.18
