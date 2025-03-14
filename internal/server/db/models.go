@@ -19,7 +19,9 @@ type Password struct {
 }
 
 type User struct {
-	ID       pgtype.UUID `db:"id"`
-	Username string      `db:"username"`
-	Password string      `db:"password"`
+	ID            pgtype.UUID `db:"id"`
+	Username      string      `db:"username"`
+	Email         string      `db:"email"`
+	Password      string      `db:"password"`
+	EncryptionKey string      `db:"encryption_key"`
 }

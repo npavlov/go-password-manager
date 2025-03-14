@@ -14,6 +14,7 @@ type Config struct {
 	JwtSecret   string `env:"JWT_SECRET"             envDefault:""`
 	Certificate string `env:"CERTIFICATE"          envDefault:""`
 	PrivateKey  string `env:"PRIVATE_KEY"          envDefault:""`
+	MasterKey   string `env:"MASTER_KEY"          envDefault:""`
 	Redis       string `env:"REDIS"                  envDefault:"localhost:6379"`
 }
 
@@ -33,6 +34,7 @@ func NewConfigBuilder(log *zerolog.Logger) *Builder {
 			Certificate: "",
 			PrivateKey:  "",
 			Redis:       "",
+			MasterKey:   "",
 		},
 		logger: log,
 	}
@@ -53,8 +55,9 @@ func (b *Builder) FromFlags() *Builder {
 	flag.StringVar(&b.cfg.Database, "d", b.cfg.Database, "database DSN")
 	flag.StringVar(&b.cfg.JwtSecret, "jwt", b.cfg.JwtSecret, "JWT Secret")
 	flag.StringVar(&b.cfg.Certificate, "cert", b.cfg.Certificate, "Certificate")
-	flag.StringVar(&b.cfg.PrivateKey, "privatekey", b.cfg.PrivateKey, "Private Key")
+	flag.StringVar(&b.cfg.PrivateKey, "privatekey", b.cfg.PrivateKey, "Private Key for http connection")
 	flag.StringVar(&b.cfg.Redis, "redis", b.cfg.Redis, "Redis connection string")
+	flag.StringVar(&b.cfg.MasterKey, "masterkey", b.cfg.MasterKey, "Master Key for encrypting data")
 	flag.Parse()
 
 	return b

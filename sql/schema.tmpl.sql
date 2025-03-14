@@ -5,7 +5,9 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE users (
                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                        username VARCHAR(255) UNIQUE NOT NULL,
-                       password TEXT NOT NULL
+                       email VARCHAR(255) UNIQUE NOT NULL,
+                       password TEXT NOT NULL,
+                       encryption_key TEXT NOT NULL
 );
 
 -- Create orders table
@@ -14,12 +16,13 @@ CREATE TABLE passwords (
                         user_id UUID REFERENCES users(id) ON DELETE CASCADE,
                         name VARCHAR(255) NOT NULL,
                         login VARCHAR(255) NOT NULL,
-                        password VARCHAR(255) NOT NULL,
+                        password TEXT NOT NULL,
                         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                         CONSTRAINT unique_user_password_name UNIQUE (user_id, name)
 );
 
+DROP FUNCTION IF EXISTS update_updated_at_column();
 -- Add trigger function to update the updated_at column
 CREATE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$

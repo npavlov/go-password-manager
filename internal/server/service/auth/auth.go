@@ -57,9 +57,22 @@ func (au *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.R
 		return nil, errors.Wrap(err, "error hashing password")
 	}
 
+	// Generate a unique encryption key for this user
+	userKey, err := utils.GenerateRandomKey()
+	if err != nil {
+		return nil, err
+	}
+	// Encrypt the user key using the master key
+	encryptedKey, err := utils.Encrypt(userKey, au.cfg.MasterKey)
+	if err != nil {
+		return nil, err
+	}
+
 	user, err := au.storage.RegisterUser(ctx, db.CreateUserParams{
-		Username: req.Username,
-		Password: string(hashedPassword),
+		Username:      req.Username,
+		Password:      string(hashedPassword),
+		EncryptionKey: encryptedKey,
+		Email:         req.Email,
 	})
 
 	if err != nil {
@@ -86,7 +99,7 @@ func (au *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.R
 		return nil, errors.Wrap(err, "error setting token")
 	}
 
-	return &pb.RegisterResponse{Token: token}, nil
+	return &pb.RegisterResponse{Token: token, UserKey: userKey}, nil
 }
 
 // Login user and return JWT token

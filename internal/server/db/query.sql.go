@@ -46,20 +46,33 @@ func (q *Queries) CreatePasswordEntry(ctx context.Context, arg CreatePasswordEnt
 }
 
 const CreateUser = `-- name: CreateUser :one
-INSERT INTO users (username, password)
-VALUES ($1, $2)
-    RETURNING id, username, password
+INSERT INTO users (username, password, encryption_key, email)
+VALUES ($1, $2, $3, $4)
+    RETURNING id, username, email, password, encryption_key
 `
 
 type CreateUserParams struct {
-	Username string `db:"username"`
-	Password string `db:"password"`
+	Username      string `db:"username"`
+	Password      string `db:"password"`
+	EncryptionKey string `db:"encryption_key"`
+	Email         string `db:"email"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRow(ctx, CreateUser, arg.Username, arg.Password)
+	row := q.db.QueryRow(ctx, CreateUser,
+		arg.Username,
+		arg.Password,
+		arg.EncryptionKey,
+		arg.Email,
+	)
 	var i User
-	err := row.Scan(&i.ID, &i.Username, &i.Password)
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.Password,
+		&i.EncryptionKey,
+	)
 	return i, err
 }
 
@@ -127,26 +140,38 @@ func (q *Queries) GetPasswordEntryByID(ctx context.Context, id pgtype.UUID) (Pas
 }
 
 const GetUserByID = `-- name: GetUserByID :one
-SELECT id, username, password FROM users
+SELECT id, username, email, password, encryption_key FROM users
 WHERE id = $1
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (User, error) {
 	row := q.db.QueryRow(ctx, GetUserByID, id)
 	var i User
-	err := row.Scan(&i.ID, &i.Username, &i.Password)
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.Password,
+		&i.EncryptionKey,
+	)
 	return i, err
 }
 
 const GetUserByUsername = `-- name: GetUserByUsername :one
-SELECT id, username, password FROM users
+SELECT id, username, email, password, encryption_key FROM users
 WHERE username = $1
 `
 
 func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
 	row := q.db.QueryRow(ctx, GetUserByUsername, username)
 	var i User
-	err := row.Scan(&i.ID, &i.Username, &i.Password)
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.Password,
+		&i.EncryptionKey,
+	)
 	return i, err
 }
 

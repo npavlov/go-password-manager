@@ -3,8 +3,11 @@
 CREATE TABLE "users" (
   "id" uuid NOT NULL DEFAULT gen_random_uuid(),
   "username" character varying(255) NOT NULL,
+  "email" character varying(255) NOT NULL,
   "password" text NOT NULL,
+  "encryption_key" text NOT NULL,
   PRIMARY KEY ("id"),
+  CONSTRAINT "users_email_key" UNIQUE ("email"),
   CONSTRAINT "users_username_key" UNIQUE ("username")
 );
 -- create "passwords" table
@@ -13,7 +16,7 @@ CREATE TABLE "passwords" (
   "user_id" uuid NULL,
   "name" character varying(255) NOT NULL,
   "login" character varying(255) NOT NULL,
-  "password" character varying(255) NOT NULL,
+  "password" text NOT NULL,
   "created_at" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updated_at" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY ("id"),
