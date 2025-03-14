@@ -2,52 +2,48 @@ package grpc
 
 import (
 	"context"
-	"log"
 	"net"
 	"sync"
 
-	"github.com/bufbuild/protovalidate-go"
 	"github.com/npavlov/go-password-manager/internal/server/config"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/reflection"
 )
 
-type Server struct {
-	logger    *zerolog.Logger // Logger for logging errors and info.
-	cfg       *config.Config
-	gServer   *grpc.Server
-	validator protovalidate.Validator
+type GServer struct {
+	logger  *zerolog.Logger // Logger for logging errors and info.
+	cfg     *config.Config
+	gServer *grpc.Server
 }
 
-func NewGRPCServer(cfg *config.Config, logger *zerolog.Logger) *Server {
-	validator, err := protovalidate.New()
-	if err != nil {
-		logger.Fatal().Err(err).Msg("failed to create validator")
-	}
-
+func NewGRPCServer(cfg *config.Config, logger *zerolog.Logger) *GServer {
 	//TODO: move to config
 	creds, err := credentials.NewServerTLSFromFile("certs/cert.pem", "certs/key.pem")
 	if err != nil {
-		log.Fatalf("Failed to load TLS keys: %v", err)
+		logger.Fatal().Err(err).Msg("Failed to generate credentials")
 	}
+
+	gServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
+		LoggingServerInterceptor(logger), // Logs all requests/responses
+	), grpc.Creds(creds))
+
+	logger.Info().Interface("gServer", gServer).Msg("Created gRPC server")
 
 	//nolint:exhaustruct
-	return &Server{
-		logger: logger,
-		cfg:    cfg,
-		gServer: grpc.NewServer(grpc.ChainUnaryInterceptor(
-			LoggingServerInterceptor(logger), // Logs all requests/responses
-		), grpc.Creds(creds)),
-		validator: validator,
+	return &GServer{
+		logger:  logger,
+		cfg:     cfg,
+		gServer: gServer,
 	}
 }
 
-func (s *Server) GetServer() *grpc.Server {
-	return s.gServer
+func (gs *GServer) GetServer() *grpc.Server {
+	return gs.gServer
 }
 
-func (gs *Server) Start(ctx context.Context, wg *sync.WaitGroup) {
+func (gs *GServer) Start(ctx context.Context, wg *sync.WaitGroup) {
 	// Start gRPC-server in goroutine
 	go func() {
 		gs.logger.Info().Str("address", gs.cfg.Address).Msg("starting gRPC server")
@@ -56,6 +52,9 @@ func (gs *Server) Start(ctx context.Context, wg *sync.WaitGroup) {
 		if err != nil {
 			gs.logger.Fatal().Err(err).Str("address", gs.cfg.Address).Msg("failed to listen")
 		}
+
+		// Enable reflection
+		reflection.Register(gs.gServer)
 
 		if err := gs.gServer.Serve(tcpListen); err != nil {
 			gs.logger.Fatal().Err(err).Msg("failed to start gRPC server")

@@ -16,22 +16,21 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type AuthService struct {
+type Service struct {
 	pb.UnimplementedAuthServiceServer
-	validator  protovalidate.Validator
-	logger     *zerolog.Logger
-	storage    *storage.DBStorage
-	cfg        *config.Config
-	grpcServer *grpc.Server
+	validator protovalidate.Validator
+	logger    *zerolog.Logger
+	storage   *storage.DBStorage
+	cfg       *config.Config
 }
 
-func NewAuthService(log *zerolog.Logger, storage *storage.DBStorage, cfg *config.Config, grpcServer *grpc.Server) *AuthService {
+func NewAuthService(log *zerolog.Logger, storage *storage.DBStorage, cfg *config.Config) *Service {
 	validator, err := protovalidate.New()
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create validator")
 	}
 
-	return &AuthService{
+	return &Service{
 		logger:    log,
 		validator: validator,
 		storage:   storage,
@@ -39,12 +38,12 @@ func NewAuthService(log *zerolog.Logger, storage *storage.DBStorage, cfg *config
 	}
 }
 
-func (au *AuthService) RegisterService() {
-	pb.RegisterAuthServiceServer(au.grpcServer, au)
+func (au *Service) RegisterService(grpcServer *grpc.Server) {
+	pb.RegisterAuthServiceServer(grpcServer, au)
 }
 
 // Register a new user
-func (au *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+func (au *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
 	if err := au.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -79,7 +78,7 @@ func (au *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*
 }
 
 // Login user and return JWT token
-func (au *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
+func (au *Service) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
 	if err := au.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}

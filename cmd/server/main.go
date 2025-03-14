@@ -3,19 +3,26 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
 	"sync"
+	"time"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
 	"github.com/npavlov/go-password-manager/internal/pkg/logger"
 	"github.com/npavlov/go-password-manager/internal/server/buildinfo"
 	"github.com/npavlov/go-password-manager/internal/server/config"
 	"github.com/npavlov/go-password-manager/internal/server/dbmanager"
-	"github.com/npavlov/go-password-manager/internal/server/grpc"
 	"github.com/npavlov/go-password-manager/internal/server/grpc/auth"
 	"github.com/npavlov/go-password-manager/internal/server/storage"
 	"github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -60,16 +67,48 @@ func loadConfig(log *zerolog.Logger) *config.Config {
 }
 
 func starServer(ctx context.Context, cfg *config.Config, log *zerolog.Logger, wg *sync.WaitGroup) {
-	grpcServer := grpc.NewGRPCServer(cfg, log)
 
 	dbManager := setupDatabase(ctx, cfg, log)
 	defer dbManager.Close()
 
 	dbStorage := storage.NewDBStorage(dbManager.DB, log)
 
-	auth.NewAuthService(log, dbStorage, cfg, grpcServer.GetServer())
+	// Create gRPC server
+	creds, err := credentials.NewServerTLSFromFile(cfg.Certificate, cfg.PrivateKey)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to generate credentials")
+	}
 
-	grpcServer.Start(ctx, wg)
+	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
+		LoggingServerInterceptor(log), // Logs all requests/responses
+	), grpc.Creds(creds))
+	authService := auth.NewAuthService(log, dbStorage, cfg)
+	authService.RegisterService(grpcServer)
+
+	reflection.Register(grpcServer)
+
+	// Start listening
+	listener, err := net.Listen("tcp", cfg.Address)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to listen on port")
+	}
+
+	log.Info().Msgf("gRPC server listening on %s", cfg.Address)
+
+	if err := grpcServer.Serve(listener); err != nil {
+		log.Fatal().Err(err).Msg("failed to serve gRPC server")
+	}
+
+	//grpcServer := grpc.NewGRPCServer(cfg, log)
+	//grpcCon := *grpcServer.GetServer()
+	//
+	//log.Info().Interface("grpcCon", grpcCon).Msg("Connecting to database")
+	//
+	//authService := auth.NewAuthService(log, dbStorage, cfg, &grpcCon)
+	//
+	//authService.RegisterService()
+	//
+	//grpcServer.Start(ctx, wg)
 }
 
 func setupDatabase(ctx context.Context, cfg *config.Config, log *zerolog.Logger) *dbmanager.DBManager {
@@ -79,4 +118,56 @@ func setupDatabase(ctx context.Context, cfg *config.Config, log *zerolog.Logger)
 	}
 
 	return dbManager
+}
+
+// LoggingServerInterceptor logs incoming requests and responses.
+func LoggingServerInterceptor(logger *zerolog.Logger) grpc.UnaryServerInterceptor {
+	return func(
+		ctx context.Context,
+		req interface{},
+		info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler,
+	) (interface{}, error) {
+		// Start time
+		start := time.Now()
+
+		// Log the request details before handling
+		logger.Info().
+			Str("method", info.FullMethod).
+			Interface("request", req).
+			Msg("gRPC Request received")
+
+		// Call the actual handler
+		resp, err := handler(ctx, req)
+
+		// Calculate the duration
+		duration := time.Since(start)
+
+		// Log the response details
+		logEvent := logger.Info().
+			Str("method", info.FullMethod).
+			Dur("duration", duration)
+
+		// Add status code and error details if there's an error
+		if err != nil {
+			st, ok := status.FromError(err)
+			if ok {
+				logEvent = logEvent.
+					Int("status", int(st.Code())).
+					Str("error", st.Message())
+			} else {
+				logEvent = logEvent.
+					Int("status", int(codes.Unknown)).
+					Str("error", err.Error())
+			}
+		} else {
+			logEvent = logEvent.
+				Int("status", int(codes.OK))
+		}
+
+		// Log the final message
+		logEvent.Msg("gRPC Request completed")
+
+		return resp, err
+	}
 }

@@ -9,9 +9,11 @@ import (
 )
 
 type Config struct {
-	Address   string `env:"ADDRESS"        envDefault:":9090" json:"address"`
-	Database  string `env:"DATABASE_DSN"          envDefault:""         json:"database_dsn"`
-	JwtSecret string `env:"JWT_SECRET"             envDefault:""`
+	Address     string `env:"ADDRESS"        envDefault:":9090"`
+	Database    string `env:"DATABASE_DSN"          envDefault:""`
+	JwtSecret   string `env:"JWT_SECRET"             envDefault:""`
+	Certificate string `env:"CERTIFICATE"          envDefault:""`
+	PrivateKey  string `env:"PRIVATE_KEY"          envDefault:""`
 }
 
 // Builder defines the builder for the Config struct.
@@ -24,9 +26,11 @@ type Builder struct {
 func NewConfigBuilder(log *zerolog.Logger) *Builder {
 	return &Builder{
 		cfg: &Config{
-			Address:   "",
-			Database:  "",
-			JwtSecret: "",
+			Address:     "",
+			Database:    "",
+			JwtSecret:   "",
+			Certificate: "",
+			PrivateKey:  "",
 		},
 		logger: log,
 	}
@@ -46,6 +50,8 @@ func (b *Builder) FromFlags() *Builder {
 	flag.StringVar(&b.cfg.Address, "a", b.cfg.Address, "address and port to run server")
 	flag.StringVar(&b.cfg.Database, "d", b.cfg.Database, "database DSN")
 	flag.StringVar(&b.cfg.JwtSecret, "jwt", b.cfg.JwtSecret, "JWT Secret")
+	flag.StringVar(&b.cfg.JwtSecret, "cert", b.cfg.JwtSecret, "Certificate")
+	flag.StringVar(&b.cfg.JwtSecret, "privatekey", b.cfg.JwtSecret, "Private Key")
 	flag.Parse()
 
 	return b
