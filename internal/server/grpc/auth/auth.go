@@ -7,6 +7,7 @@ import (
 	"github.com/npavlov/go-password-manager/internal/server/config"
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/server/grpc/utils"
+	"github.com/npavlov/go-password-manager/internal/server/redis"
 	"github.com/npavlov/go-password-manager/internal/server/storage"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
@@ -18,23 +19,25 @@ import (
 
 type Service struct {
 	pb.UnimplementedAuthServiceServer
-	validator protovalidate.Validator
-	logger    *zerolog.Logger
-	storage   *storage.DBStorage
-	cfg       *config.Config
+	validator  protovalidate.Validator
+	logger     *zerolog.Logger
+	storage    *storage.DBStorage
+	cfg        *config.Config
+	memStorage redis.MemStorage
 }
 
-func NewAuthService(log *zerolog.Logger, storage *storage.DBStorage, cfg *config.Config) *Service {
+func NewAuthService(log *zerolog.Logger, storage *storage.DBStorage, cfg *config.Config, memStorage redis.MemStorage) *Service {
 	validator, err := protovalidate.New()
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create validator")
 	}
 
 	return &Service{
-		logger:    log,
-		validator: validator,
-		storage:   storage,
-		cfg:       cfg,
+		logger:     log,
+		validator:  validator,
+		storage:    storage,
+		cfg:        cfg,
+		memStorage: memStorage,
 	}
 }
 
@@ -67,11 +70,20 @@ func (au *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.R
 
 	au.logger.Info().Interface("user", user).Msg("user created")
 
-	token, err := utils.GenerateJWT(user.ID.String(), au.cfg.JwtSecret)
+	userId := user.ID.String()
+
+	token, err := utils.GenerateJWT(userId, au.cfg.JwtSecret)
 	if err != nil {
 		au.logger.Error().Err(err).Msg("failed to generate token")
 
 		return nil, errors.Wrap(err, "error generating token")
+	}
+
+	err = au.memStorage.Set(ctx, token, userId, utils.TokenExpiration)
+	if err != nil {
+		au.logger.Error().Err(err).Msg("failed to set token")
+
+		return nil, errors.Wrap(err, "error setting token")
 	}
 
 	return &pb.RegisterResponse{Token: token}, nil
@@ -98,11 +110,20 @@ func (au *Service) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginRe
 		return nil, errors.Wrap(err, "invalid password")
 	}
 
-	token, err := utils.GenerateJWT(user.ID.String(), au.cfg.JwtSecret)
+	userId := user.ID.String()
+
+	token, err := utils.GenerateJWT(userId, au.cfg.JwtSecret)
 	if err != nil {
 		au.logger.Error().Err(err).Msg("failed to generate token")
 
 		return nil, errors.Wrap(err, "error generating token")
+	}
+
+	err = au.memStorage.Set(ctx, token, userId, utils.TokenExpiration)
+	if err != nil {
+		au.logger.Error().Err(err).Msg("failed to set token")
+
+		return nil, errors.Wrap(err, "error setting token")
 	}
 
 	return &pb.LoginResponse{Token: token}, nil

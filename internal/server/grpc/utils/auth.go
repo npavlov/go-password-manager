@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	tokenExpiration = time.Minute * 60
+	TokenExpiration = time.Minute * 60
 )
 
 func GenerateJWT(userID string, jwtSecret string) (string, error) {

@@ -14,6 +14,7 @@ import (
 	"github.com/npavlov/go-password-manager/internal/server/config"
 	"github.com/npavlov/go-password-manager/internal/server/dbmanager"
 	"github.com/npavlov/go-password-manager/internal/server/grpc/auth"
+	"github.com/npavlov/go-password-manager/internal/server/redis"
 	"github.com/npavlov/go-password-manager/internal/server/storage"
 	"github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/pkg/errors"
@@ -71,7 +72,7 @@ func starServer(ctx context.Context, cfg *config.Config, log *zerolog.Logger, wg
 	dbManager := setupDatabase(ctx, cfg, log)
 	defer dbManager.Close()
 
-	dbStorage := storage.NewDBStorage(dbManager.DB, log)
+	dbStorage, memStorage := setupStorage(ctx, cfg, dbManager, log)
 
 	// Create gRPC server
 	creds, err := credentials.NewServerTLSFromFile(cfg.Certificate, cfg.PrivateKey)
@@ -82,7 +83,7 @@ func starServer(ctx context.Context, cfg *config.Config, log *zerolog.Logger, wg
 	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
 		LoggingServerInterceptor(log), // Logs all requests/responses
 	), grpc.Creds(creds))
-	authService := auth.NewAuthService(log, dbStorage, cfg)
+	authService := auth.NewAuthService(log, dbStorage, cfg, memStorage)
 	authService.RegisterService(grpcServer)
 
 	reflection.Register(grpcServer)
@@ -118,6 +119,22 @@ func setupDatabase(ctx context.Context, cfg *config.Config, log *zerolog.Logger)
 	}
 
 	return dbManager
+}
+
+func setupStorage(
+	ctx context.Context,
+	cfg *config.Config,
+	dbManager *dbmanager.DBManager,
+	log *zerolog.Logger,
+) (*storage.DBStorage, *redis.RStorage) {
+	st := storage.NewDBStorage(dbManager.DB, log)
+	memStorage := redis.NewRStorage(*cfg, log)
+
+	if err := memStorage.Ping(ctx); err != nil {
+		log.Error().Err(err).Msg("Error connecting to redis")
+	}
+
+	return st, memStorage
 }
 
 // LoggingServerInterceptor logs incoming requests and responses.
