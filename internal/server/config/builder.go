@@ -9,8 +9,9 @@ import (
 )
 
 type Config struct {
-	Address  string `env:"ADDRESS"        envDefault:":9090" json:"address"`
-	Database string `env:"DATABASE_DSN"          envDefault:""         json:"database_dsn"`
+	Address   string `env:"ADDRESS"        envDefault:":9090" json:"address"`
+	Database  string `env:"DATABASE_DSN"          envDefault:""         json:"database_dsn"`
+	JwtSecret string `env:"JWT_SECRET"             envDefault:""`
 }
 
 // Builder defines the builder for the Config struct.
@@ -23,8 +24,9 @@ type Builder struct {
 func NewConfigBuilder(log *zerolog.Logger) *Builder {
 	return &Builder{
 		cfg: &Config{
-			Address:  "",
-			Database: "",
+			Address:   "",
+			Database:  "",
+			JwtSecret: "",
 		},
 		logger: log,
 	}
@@ -43,6 +45,7 @@ func (b *Builder) FromEnv() *Builder {
 func (b *Builder) FromFlags() *Builder {
 	flag.StringVar(&b.cfg.Address, "a", b.cfg.Address, "address and port to run server")
 	flag.StringVar(&b.cfg.Database, "d", b.cfg.Database, "database DSN")
+	flag.StringVar(&b.cfg.JwtSecret, "jwt", b.cfg.JwtSecret, "JWT Secret")
 	flag.Parse()
 
 	return b

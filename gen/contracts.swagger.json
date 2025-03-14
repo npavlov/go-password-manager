@@ -1,12 +1,12 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "proto/file/file.proto",
+    "title": "proto/auth/auth.proto",
     "version": "version not set"
   },
   "tags": [
     {
-      "name": "proto.file.FileService"
+      "name": "proto.auth.AuthService"
     }
   ],
   "consumes": [
@@ -17,47 +17,18 @@
   ],
   "paths": {},
   "definitions": {
-    "fileDownloadFileResponse": {
+    "authLoginResponse": {
       "type": "object",
       "properties": {
-        "data": {
-          "type": "string",
-          "format": "byte"
-        },
-        "lastUpdate": {
-          "type": "string",
-          "format": "date-time"
-        }
-      }
-    },
-    "fileFileMeta": {
-      "type": "object",
-      "properties": {
-        "fileId": {
+        "token": {
           "type": "string"
-        },
-        "lastUpdate": {
-          "type": "string",
-          "format": "date-time"
         }
       }
     },
-    "fileGetFilesResponse": {
+    "authRegisterResponse": {
       "type": "object",
       "properties": {
-        "notes": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/fileFileMeta"
-          }
-        }
-      }
-    },
-    "fileUploadFileResponse": {
-      "type": "object",
-      "properties": {
-        "fileId": {
+        "token": {
           "type": "string"
         }
       }

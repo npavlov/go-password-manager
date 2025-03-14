@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/bufbuild/protovalidate-go"
-	pb "github.com/npavlov/go-password-manager/gen/proto/auth"
 	"github.com/npavlov/go-password-manager/internal/server/config"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
@@ -15,7 +14,6 @@ import (
 )
 
 type Server struct {
-	pb.UnimplementedMetricServiceServer
 	logger    *zerolog.Logger // Logger for logging errors and info.
 	cfg       *config.Config
 	gServer   *grpc.Server
@@ -45,6 +43,10 @@ func NewGRPCServer(cfg *config.Config, logger *zerolog.Logger) *Server {
 	}
 }
 
+func (s *Server) GetServer() *grpc.Server {
+	return s.gServer
+}
+
 func (gs *Server) Start(ctx context.Context, wg *sync.WaitGroup) {
 	// Start gRPC-server in goroutine
 	go func() {
@@ -55,7 +57,6 @@ func (gs *Server) Start(ctx context.Context, wg *sync.WaitGroup) {
 			gs.logger.Fatal().Err(err).Str("address", gs.cfg.Address).Msg("failed to listen")
 		}
 
-		pb.re(gs.gServer, gs)
 		if err := gs.gServer.Serve(tcpListen); err != nil {
 			gs.logger.Fatal().Err(err).Msg("failed to start gRPC server")
 		}

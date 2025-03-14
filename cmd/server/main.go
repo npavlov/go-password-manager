@@ -9,9 +9,18 @@ import (
 	"github.com/npavlov/go-password-manager/internal/pkg/logger"
 	"github.com/npavlov/go-password-manager/internal/server/buildinfo"
 	"github.com/npavlov/go-password-manager/internal/server/config"
+	"github.com/npavlov/go-password-manager/internal/server/dbmanager"
 	"github.com/npavlov/go-password-manager/internal/server/grpc"
+	"github.com/npavlov/go-password-manager/internal/server/grpc/auth"
+	"github.com/npavlov/go-password-manager/internal/server/storage"
 	"github.com/npavlov/go-password-manager/internal/utils"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+)
+
+var (
+	ErrDatabaseNotConnected = errors.New("database is not connected")
+	ErrJWTisNotPorvided     = errors.New("JWT token is not provided")
 )
 
 func main() {
@@ -40,17 +49,34 @@ func loadConfig(log *zerolog.Logger) *config.Config {
 		log.Error().Err(err).Msg("Error loading server.env file")
 	}
 
-	cfg := config.NewConfigBuilder(log).
-		FromEnv().
-		FromFlags().
-		Build()
-
+	cfg := config.NewConfigBuilder(log).FromEnv().FromFlags().Build()
 	log.Info().Interface("config", cfg).Msg("Configuration loaded")
+
+	if cfg.JwtSecret == "" {
+		panic(ErrJWTisNotPorvided)
+	}
 
 	return cfg
 }
 
 func starServer(ctx context.Context, cfg *config.Config, log *zerolog.Logger, wg *sync.WaitGroup) {
 	grpcServer := grpc.NewGRPCServer(cfg, log)
+
+	dbManager := setupDatabase(ctx, cfg, log)
+	defer dbManager.Close()
+
+	dbStorage := storage.NewDBStorage(dbManager.DB, log)
+
+	auth.NewAuthService(log, dbStorage, cfg, grpcServer.GetServer())
+
 	grpcServer.Start(ctx, wg)
+}
+
+func setupDatabase(ctx context.Context, cfg *config.Config, log *zerolog.Logger) *dbmanager.DBManager {
+	dbManager := dbmanager.NewDBManager(cfg.Database, log).Connect(ctx).ApplyMigrations()
+	if dbManager.DB == nil {
+		log.Fatal().Err(ErrDatabaseNotConnected).Msg("Database is not connected")
+	}
+
+	return dbManager
 }
