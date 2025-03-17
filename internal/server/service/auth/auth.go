@@ -41,13 +41,13 @@ func NewAuthService(log *zerolog.Logger, storage *storage.DBStorage, cfg *config
 	}
 }
 
-func (au *Service) RegisterService(grpcServer *grpc.Server) {
-	pb.RegisterAuthServiceServer(grpcServer, au)
+func (as *Service) RegisterService(grpcServer *grpc.Server) {
+	pb.RegisterAuthServiceServer(grpcServer, as)
 }
 
 // Register a new user
-func (au *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
-	if err := au.validator.Validate(req); err != nil {
+func (as *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+	if err := as.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
@@ -63,12 +63,12 @@ func (au *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.R
 		return nil, err
 	}
 	// Encrypt the user key using the master key
-	encryptedKey, err := utils.Encrypt(userKey, au.cfg.MasterKey)
+	encryptedKey, err := utils.Encrypt(userKey, as.cfg.MasterKey)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := au.storage.RegisterUser(ctx, db.CreateUserParams{
+	user, err := as.storage.RegisterUser(ctx, db.CreateUserParams{
 		Username:      req.Username,
 		Password:      string(hashedPassword),
 		EncryptionKey: encryptedKey,
@@ -76,25 +76,25 @@ func (au *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.R
 	})
 
 	if err != nil {
-		au.logger.Error().Err(err).Msg("failed to register user")
+		as.logger.Error().Err(err).Msg("failed to register user")
 
 		return nil, errors.Wrap(err, "error creating user")
 	}
 
-	au.logger.Info().Interface("user", user).Msg("user created")
+	as.logger.Info().Interface("user", user).Msg("user created")
 
 	userId := user.ID.String()
 
-	token, err := utils.GenerateJWT(userId, au.cfg.JwtSecret)
+	token, err := utils.GenerateJWT(userId, as.cfg.JwtSecret)
 	if err != nil {
-		au.logger.Error().Err(err).Msg("failed to generate token")
+		as.logger.Error().Err(err).Msg("failed to generate token")
 
 		return nil, errors.Wrap(err, "error generating token")
 	}
 
-	err = au.memStorage.Set(ctx, token, userId, utils.TokenExpiration)
+	err = as.memStorage.Set(ctx, token, userId, utils.TokenExpiration)
 	if err != nil {
-		au.logger.Error().Err(err).Msg("failed to set token")
+		as.logger.Error().Err(err).Msg("failed to set token")
 
 		return nil, errors.Wrap(err, "error setting token")
 	}
@@ -103,14 +103,14 @@ func (au *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.R
 }
 
 // Login user and return JWT token
-func (au *Service) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
-	if err := au.validator.Validate(req); err != nil {
+func (as *Service) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
+	if err := as.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	user, err := au.storage.GetUser(ctx, req.Username)
+	user, err := as.storage.GetUser(ctx, req.Username)
 	if err != nil {
-		au.logger.Error().Err(err).Msg("failed to get user")
+		as.logger.Error().Err(err).Msg("failed to get user")
 
 		return nil, errors.Wrap(err, "error getting user")
 	}
@@ -118,23 +118,23 @@ func (au *Service) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginRe
 	// Compare passwords
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
 	if err != nil {
-		au.logger.Error().Err(err).Msg("invalid password")
+		as.logger.Error().Err(err).Msg("invalid password")
 
 		return nil, errors.Wrap(err, "invalid password")
 	}
 
 	userId := user.ID.String()
 
-	token, err := utils.GenerateJWT(userId, au.cfg.JwtSecret)
+	token, err := utils.GenerateJWT(userId, as.cfg.JwtSecret)
 	if err != nil {
-		au.logger.Error().Err(err).Msg("failed to generate token")
+		as.logger.Error().Err(err).Msg("failed to generate token")
 
 		return nil, errors.Wrap(err, "error generating token")
 	}
 
-	err = au.memStorage.Set(ctx, token, userId, utils.TokenExpiration)
+	err = as.memStorage.Set(ctx, token, userId, utils.TokenExpiration)
 	if err != nil {
-		au.logger.Error().Err(err).Msg("failed to set token")
+		as.logger.Error().Err(err).Msg("failed to set token")
 
 		return nil, errors.Wrap(err, "error setting token")
 	}

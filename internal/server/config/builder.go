@@ -9,13 +9,14 @@ import (
 )
 
 type Config struct {
-	Address     string `env:"ADDRESS"        envDefault:":9090"`
-	Database    string `env:"DATABASE_DSN"          envDefault:""`
-	JwtSecret   string `env:"JWT_SECRET"             envDefault:""`
-	Certificate string `env:"CERTIFICATE"          envDefault:""`
-	PrivateKey  string `env:"PRIVATE_KEY"          envDefault:""`
-	MasterKey   string `env:"MASTER_KEY"          envDefault:""`
-	Redis       string `env:"REDIS"                  envDefault:"localhost:6379"`
+	Address          string `env:"ADDRESS"        envDefault:":9090"`
+	Database         string `env:"DATABASE_DSN"          envDefault:""`
+	JwtSecret        string `env:"JWT_SECRET"             envDefault:""`
+	Certificate      string `env:"CERTIFICATE"          envDefault:""`
+	PrivateKey       string `env:"PRIVATE_KEY"          envDefault:""`
+	MasterKey        string `env:"MASTER_KEY"          envDefault:""`
+	Redis            string `env:"REDIS"                  envDefault:"localhost:6379"`
+	SecuredMasterKey ISecureString
 }
 
 // Builder defines the builder for the Config struct.
@@ -28,13 +29,14 @@ type Builder struct {
 func NewConfigBuilder(log *zerolog.Logger) *Builder {
 	return &Builder{
 		cfg: &Config{
-			Address:     "",
-			Database:    "",
-			JwtSecret:   "",
-			Certificate: "",
-			PrivateKey:  "",
-			Redis:       "",
-			MasterKey:   "",
+			Address:          "",
+			Database:         "",
+			JwtSecret:        "",
+			Certificate:      "",
+			PrivateKey:       "",
+			Redis:            "",
+			MasterKey:        "",
+			SecuredMasterKey: nil,
 		},
 		logger: log,
 	}
@@ -72,5 +74,8 @@ func (b *Builder) FromObj(cfg *Config) *Builder {
 
 // Build returns the final configuration.
 func (b *Builder) Build() *Config {
+	b.cfg.SecuredMasterKey = NewString(b.cfg.MasterKey)
+	b.cfg.MasterKey = ""
+
 	return b.cfg
 }

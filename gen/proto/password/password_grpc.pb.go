@@ -19,9 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PasswordService_StorePassword_FullMethodName = "/proto.password.PasswordService/StorePassword"
-	PasswordService_GetPassword_FullMethodName   = "/proto.password.PasswordService/GetPassword"
-	PasswordService_GetPasswords_FullMethodName  = "/proto.password.PasswordService/GetPasswords"
+	PasswordService_StorePassword_FullMethodName  = "/proto.password.PasswordService/StorePassword"
+	PasswordService_GetPassword_FullMethodName    = "/proto.password.PasswordService/GetPassword"
+	PasswordService_GetPasswords_FullMethodName   = "/proto.password.PasswordService/GetPasswords"
+	PasswordService_UpdatePassword_FullMethodName = "/proto.password.PasswordService/UpdatePassword"
 )
 
 // PasswordServiceClient is the client API for PasswordService service.
@@ -31,6 +32,7 @@ type PasswordServiceClient interface {
 	StorePassword(ctx context.Context, in *StorePasswordRequest, opts ...grpc.CallOption) (*StorePasswordResponse, error)
 	GetPassword(ctx context.Context, in *GetPasswordRequest, opts ...grpc.CallOption) (*GetPasswordResponse, error)
 	GetPasswords(ctx context.Context, in *GetPasswordsRequest, opts ...grpc.CallOption) (*GetPasswordsResponse, error)
+	UpdatePassword(ctx context.Context, in *UpdatePasswordRequest, opts ...grpc.CallOption) (*UpdatePasswordResponse, error)
 }
 
 type passwordServiceClient struct {
@@ -71,6 +73,16 @@ func (c *passwordServiceClient) GetPasswords(ctx context.Context, in *GetPasswor
 	return out, nil
 }
 
+func (c *passwordServiceClient) UpdatePassword(ctx context.Context, in *UpdatePasswordRequest, opts ...grpc.CallOption) (*UpdatePasswordResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdatePasswordResponse)
+	err := c.cc.Invoke(ctx, PasswordService_UpdatePassword_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PasswordServiceServer is the server API for PasswordService service.
 // All implementations must embed UnimplementedPasswordServiceServer
 // for forward compatibility.
@@ -78,6 +90,7 @@ type PasswordServiceServer interface {
 	StorePassword(context.Context, *StorePasswordRequest) (*StorePasswordResponse, error)
 	GetPassword(context.Context, *GetPasswordRequest) (*GetPasswordResponse, error)
 	GetPasswords(context.Context, *GetPasswordsRequest) (*GetPasswordsResponse, error)
+	UpdatePassword(context.Context, *UpdatePasswordRequest) (*UpdatePasswordResponse, error)
 	mustEmbedUnimplementedPasswordServiceServer()
 }
 
@@ -96,6 +109,9 @@ func (UnimplementedPasswordServiceServer) GetPassword(context.Context, *GetPassw
 }
 func (UnimplementedPasswordServiceServer) GetPasswords(context.Context, *GetPasswordsRequest) (*GetPasswordsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPasswords not implemented")
+}
+func (UnimplementedPasswordServiceServer) UpdatePassword(context.Context, *UpdatePasswordRequest) (*UpdatePasswordResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdatePassword not implemented")
 }
 func (UnimplementedPasswordServiceServer) mustEmbedUnimplementedPasswordServiceServer() {}
 func (UnimplementedPasswordServiceServer) testEmbeddedByValue()                         {}
@@ -172,6 +188,24 @@ func _PasswordService_GetPasswords_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PasswordService_UpdatePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdatePasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PasswordServiceServer).UpdatePassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PasswordService_UpdatePassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PasswordServiceServer).UpdatePassword(ctx, req.(*UpdatePasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PasswordService_ServiceDesc is the grpc.ServiceDesc for PasswordService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -190,6 +224,10 @@ var PasswordService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPasswords",
 			Handler:    _PasswordService_GetPasswords_Handler,
+		},
+		{
+			MethodName: "UpdatePassword",
+			Handler:    _PasswordService_UpdatePassword_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

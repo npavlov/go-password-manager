@@ -6,6 +6,8 @@ import (
 	"sync"
 
 	"github.com/npavlov/go-password-manager/internal/server/config"
+	"github.com/npavlov/go-password-manager/internal/server/redis"
+	"github.com/npavlov/go-password-manager/internal/server/service/interceptors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
@@ -19,7 +21,7 @@ type GManager struct {
 	grpcServer *grpc.Server
 }
 
-func NewGRPCManager(cfg *config.Config, logger *zerolog.Logger) *GManager {
+func NewGRPCManager(cfg *config.Config, logger *zerolog.Logger, memStorage redis.MemStorage) *GManager {
 	// Create gRPC server
 	creds, err := credentials.NewServerTLSFromFile(cfg.Certificate, cfg.PrivateKey)
 	if err != nil {
@@ -27,7 +29,8 @@ func NewGRPCManager(cfg *config.Config, logger *zerolog.Logger) *GManager {
 	}
 
 	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
-		LoggingServerInterceptor(logger), // Logs all requests/responses
+		interceptors.LoggingServerInterceptor(logger), // Logs all requests/responses
+		interceptors.TokenInterceptor(logger, cfg.JwtSecret, memStorage),
 	), grpc.Creds(creds))
 	reflection.Register(grpcServer)
 

@@ -5,8 +5,93 @@
 package db
 
 import (
+	"database/sql/driver"
+	"fmt"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type ItemType string
+
+const (
+	ItemTypePassword ItemType = "password"
+	ItemTypeBinary   ItemType = "binary"
+	ItemTypeCard     ItemType = "card"
+	ItemTypeText     ItemType = "text"
+)
+
+func (e *ItemType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ItemType(s)
+	case string:
+		*e = ItemType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ItemType: %T", src)
+	}
+	return nil
+}
+
+type NullItemType struct {
+	ItemType ItemType
+	Valid    bool // Valid is true if ItemType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullItemType) Scan(value interface{}) error {
+	if value == nil {
+		ns.ItemType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ItemType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullItemType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ItemType), nil
+}
+
+type BinaryEntry struct {
+	ID        pgtype.UUID      `db:"id"`
+	UserID    pgtype.UUID      `db:"user_id"`
+	FileName  string           `db:"file_name"`
+	FileSize  int64            `db:"file_size"`
+	FileType  string           `db:"file_type"`
+	FileUrl   string           `db:"file_url"`
+	CreatedAt pgtype.Timestamp `db:"created_at"`
+	UpdatedAt pgtype.Timestamp `db:"updated_at"`
+}
+
+type Card struct {
+	ID                  pgtype.UUID      `db:"id"`
+	UserID              pgtype.UUID      `db:"user_id"`
+	EncryptedCardNumber string           `db:"encrypted_card_number"`
+	EncryptedExpiryDate string           `db:"encrypted_expiry_date"`
+	EncryptedCvv        string           `db:"encrypted_cvv"`
+	CardholderName      string           `db:"cardholder_name"`
+	CreatedAt           pgtype.Timestamp `db:"created_at"`
+	UpdatedAt           pgtype.Timestamp `db:"updated_at"`
+}
+
+type Item struct {
+	ID         pgtype.UUID      `db:"id"`
+	UserID     pgtype.UUID      `db:"user_id"`
+	Type       ItemType         `db:"type"`
+	IDResource pgtype.UUID      `db:"id_resource"`
+	CreatedAt  pgtype.Timestamp `db:"created_at"`
+}
+
+type Note struct {
+	ID               pgtype.UUID      `db:"id"`
+	UserID           pgtype.UUID      `db:"user_id"`
+	EncryptedContent string           `db:"encrypted_content"`
+	CreatedAt        pgtype.Timestamp `db:"created_at"`
+	UpdatedAt        pgtype.Timestamp `db:"updated_at"`
+}
 
 type Password struct {
 	ID        pgtype.UUID      `db:"id"`

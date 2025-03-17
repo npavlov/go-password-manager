@@ -76,6 +76,33 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
+const DeleteBinaryEntry = `-- name: DeleteBinaryEntry :exec
+DELETE FROM binary_entries WHERE id = $1
+`
+
+func (q *Queries) DeleteBinaryEntry(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, DeleteBinaryEntry, id)
+	return err
+}
+
+const DeleteCard = `-- name: DeleteCard :exec
+DELETE FROM cards WHERE id = $1
+`
+
+func (q *Queries) DeleteCard(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, DeleteCard, id)
+	return err
+}
+
+const DeleteNote = `-- name: DeleteNote :exec
+DELETE FROM notes WHERE id = $1
+`
+
+func (q *Queries) DeleteNote(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, DeleteNote, id)
+	return err
+}
+
 const DeletePasswordEntry = `-- name: DeletePasswordEntry :exec
 DELETE FROM passwords
 WHERE id = $1
@@ -84,6 +111,224 @@ WHERE id = $1
 func (q *Queries) DeletePasswordEntry(ctx context.Context, id pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, DeletePasswordEntry, id)
 	return err
+}
+
+const GetBinaryEntriesByUserID = `-- name: GetBinaryEntriesByUserID :many
+SELECT id, file_name, file_url, file_size, created_at FROM binary_entries WHERE user_id = $1
+`
+
+type GetBinaryEntriesByUserIDRow struct {
+	ID        pgtype.UUID      `db:"id"`
+	FileName  string           `db:"file_name"`
+	FileUrl   string           `db:"file_url"`
+	FileSize  int64            `db:"file_size"`
+	CreatedAt pgtype.Timestamp `db:"created_at"`
+}
+
+func (q *Queries) GetBinaryEntriesByUserID(ctx context.Context, userID pgtype.UUID) ([]GetBinaryEntriesByUserIDRow, error) {
+	rows, err := q.db.Query(ctx, GetBinaryEntriesByUserID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetBinaryEntriesByUserIDRow
+	for rows.Next() {
+		var i GetBinaryEntriesByUserIDRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FileName,
+			&i.FileUrl,
+			&i.FileSize,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const GetBinaryEntryByID = `-- name: GetBinaryEntryByID :one
+SELECT id, user_id, file_name, file_size, file_type, file_url, created_at, updated_at FROM binary_entries WHERE id = $1
+`
+
+func (q *Queries) GetBinaryEntryByID(ctx context.Context, id pgtype.UUID) (BinaryEntry, error) {
+	row := q.db.QueryRow(ctx, GetBinaryEntryByID, id)
+	var i BinaryEntry
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.FileName,
+		&i.FileSize,
+		&i.FileType,
+		&i.FileUrl,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const GetCardByID = `-- name: GetCardByID :one
+SELECT id, user_id, encrypted_card_number, encrypted_expiry_date, encrypted_cvv, cardholder_name, created_at, updated_at FROM cards WHERE id = $1
+`
+
+func (q *Queries) GetCardByID(ctx context.Context, id pgtype.UUID) (Card, error) {
+	row := q.db.QueryRow(ctx, GetCardByID, id)
+	var i Card
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.EncryptedCardNumber,
+		&i.EncryptedExpiryDate,
+		&i.EncryptedCvv,
+		&i.CardholderName,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const GetCardsByUserID = `-- name: GetCardsByUserID :many
+SELECT id, cardholder_name, created_at, updated_at FROM cards WHERE user_id = $1
+`
+
+type GetCardsByUserIDRow struct {
+	ID             pgtype.UUID      `db:"id"`
+	CardholderName string           `db:"cardholder_name"`
+	CreatedAt      pgtype.Timestamp `db:"created_at"`
+	UpdatedAt      pgtype.Timestamp `db:"updated_at"`
+}
+
+func (q *Queries) GetCardsByUserID(ctx context.Context, userID pgtype.UUID) ([]GetCardsByUserIDRow, error) {
+	rows, err := q.db.Query(ctx, GetCardsByUserID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetCardsByUserIDRow
+	for rows.Next() {
+		var i GetCardsByUserIDRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CardholderName,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const GetItemsByUserID = `-- name: GetItemsByUserID :many
+SELECT
+    i.id,
+    i.type,
+    i.id_resource,
+    i.created_at,
+    COALESCE(p.updated_at, n.updated_at, c.updated_at, b.updated_at) AS updated_at
+FROM items i
+         LEFT JOIN passwords p ON i.type = 'password' AND i.id_resource = p.id
+         LEFT JOIN notes n ON i.type = 'text' AND i.id_resource = n.id
+         LEFT JOIN cards c ON i.type = 'card' AND i.id_resource = c.id
+         LEFT JOIN binary_entries b ON i.type = 'binary' AND i.id_resource = b.id
+WHERE i.user_id = $1
+ORDER BY i.created_at DESC
+    LIMIT $2 OFFSET $3
+`
+
+type GetItemsByUserIDParams struct {
+	UserID pgtype.UUID `db:"user_id"`
+	Limit  int32       `db:"limit"`
+	Offset int32       `db:"offset"`
+}
+
+type GetItemsByUserIDRow struct {
+	ID         pgtype.UUID      `db:"id"`
+	Type       ItemType         `db:"type"`
+	IDResource pgtype.UUID      `db:"id_resource"`
+	CreatedAt  pgtype.Timestamp `db:"created_at"`
+	UpdatedAt  pgtype.Timestamp `db:"updated_at"`
+}
+
+func (q *Queries) GetItemsByUserID(ctx context.Context, arg GetItemsByUserIDParams) ([]GetItemsByUserIDRow, error) {
+	rows, err := q.db.Query(ctx, GetItemsByUserID, arg.UserID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetItemsByUserIDRow
+	for rows.Next() {
+		var i GetItemsByUserIDRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Type,
+			&i.IDResource,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const GetNoteByID = `-- name: GetNoteByID :one
+SELECT id, user_id, encrypted_content, created_at, updated_at FROM notes WHERE id = $1
+`
+
+func (q *Queries) GetNoteByID(ctx context.Context, id pgtype.UUID) (Note, error) {
+	row := q.db.QueryRow(ctx, GetNoteByID, id)
+	var i Note
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.EncryptedContent,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const GetNotesByUserID = `-- name: GetNotesByUserID :many
+SELECT id, created_at, updated_at FROM notes WHERE user_id = $1
+`
+
+type GetNotesByUserIDRow struct {
+	ID        pgtype.UUID      `db:"id"`
+	CreatedAt pgtype.Timestamp `db:"created_at"`
+	UpdatedAt pgtype.Timestamp `db:"updated_at"`
+}
+
+func (q *Queries) GetNotesByUserID(ctx context.Context, userID pgtype.UUID) ([]GetNotesByUserIDRow, error) {
+	rows, err := q.db.Query(ctx, GetNotesByUserID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetNotesByUserIDRow
+	for rows.Next() {
+		var i GetNotesByUserIDRow
+		if err := rows.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const GetPasswordEntriesByUserID = `-- name: GetPasswordEntriesByUserID :many
@@ -139,6 +384,17 @@ func (q *Queries) GetPasswordEntryByID(ctx context.Context, id pgtype.UUID) (Pas
 	return i, err
 }
 
+const GetTotalItemCountByUserID = `-- name: GetTotalItemCountByUserID :one
+SELECT COUNT(*) FROM items WHERE user_id = $1
+`
+
+func (q *Queries) GetTotalItemCountByUserID(ctx context.Context, userID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, GetTotalItemCountByUserID, userID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const GetUserByID = `-- name: GetUserByID :one
 SELECT id, username, email, password, encryption_key FROM users
 WHERE id = $1
@@ -173,6 +429,76 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 		&i.EncryptionKey,
 	)
 	return i, err
+}
+
+const StoreBinaryEntry = `-- name: StoreBinaryEntry :one
+INSERT INTO binary_entries (user_id, file_name, file_url, file_size)
+VALUES ($1, $2, $3, $4)
+    RETURNING id
+`
+
+type StoreBinaryEntryParams struct {
+	UserID   pgtype.UUID `db:"user_id"`
+	FileName string      `db:"file_name"`
+	FileUrl  string      `db:"file_url"`
+	FileSize int64       `db:"file_size"`
+}
+
+func (q *Queries) StoreBinaryEntry(ctx context.Context, arg StoreBinaryEntryParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, StoreBinaryEntry,
+		arg.UserID,
+		arg.FileName,
+		arg.FileUrl,
+		arg.FileSize,
+	)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const StoreCard = `-- name: StoreCard :one
+INSERT INTO cards (user_id, encrypted_card_number, encrypted_expiry_date, encrypted_cvv, cardholder_name)
+VALUES ($1, $2, $3, $4, $5)
+    RETURNING id
+`
+
+type StoreCardParams struct {
+	UserID              pgtype.UUID `db:"user_id"`
+	EncryptedCardNumber string      `db:"encrypted_card_number"`
+	EncryptedExpiryDate string      `db:"encrypted_expiry_date"`
+	EncryptedCvv        string      `db:"encrypted_cvv"`
+	CardholderName      string      `db:"cardholder_name"`
+}
+
+func (q *Queries) StoreCard(ctx context.Context, arg StoreCardParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, StoreCard,
+		arg.UserID,
+		arg.EncryptedCardNumber,
+		arg.EncryptedExpiryDate,
+		arg.EncryptedCvv,
+		arg.CardholderName,
+	)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const StoreNote = `-- name: StoreNote :one
+INSERT INTO notes (user_id, encrypted_content)
+VALUES ($1, $2)
+    RETURNING id
+`
+
+type StoreNoteParams struct {
+	UserID           pgtype.UUID `db:"user_id"`
+	EncryptedContent string      `db:"encrypted_content"`
+}
+
+func (q *Queries) StoreNote(ctx context.Context, arg StoreNoteParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, StoreNote, arg.UserID, arg.EncryptedContent)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
 }
 
 const UpdatePasswordEntry = `-- name: UpdatePasswordEntry :one

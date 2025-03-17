@@ -1,4 +1,4 @@
-package service
+package interceptors
 
 import (
 	"context"
