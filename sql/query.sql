@@ -35,24 +35,25 @@ WHERE id = $4
 DELETE FROM passwords
 WHERE id = $1;
 
--- name: StoreNote :one
+-- name: CreateNoteEntry :one
 INSERT INTO notes (user_id, encrypted_content)
 VALUES ($1, $2)
-    RETURNING id;
+    RETURNING *;
 
 -- name: GetNotesByUserID :many
-SELECT id, created_at, updated_at FROM notes WHERE user_id = $1;
+SELECT * FROM notes
+WHERE user_id = $1;
 
 -- name: GetNoteByID :one
 SELECT * FROM notes WHERE id = $1;
 
--- name: DeleteNote :exec
+-- name: DeleteNoteEntry :exec
 DELETE FROM notes WHERE id = $1;
 
 -- name: StoreCard :one
 INSERT INTO cards (user_id, encrypted_card_number, encrypted_expiry_date, encrypted_cvv, cardholder_name)
 VALUES ($1, $2, $3, $4, $5)
-    RETURNING id;
+    RETURNING *;
 
 -- name: GetCardsByUserID :many
 SELECT id, cardholder_name, created_at, updated_at FROM cards WHERE user_id = $1;

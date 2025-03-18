@@ -11,6 +11,30 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const CreateNoteEntry = `-- name: CreateNoteEntry :one
+INSERT INTO notes (user_id, encrypted_content)
+VALUES ($1, $2)
+    RETURNING id, user_id, encrypted_content, created_at, updated_at
+`
+
+type CreateNoteEntryParams struct {
+	UserID           pgtype.UUID `db:"user_id"`
+	EncryptedContent string      `db:"encrypted_content"`
+}
+
+func (q *Queries) CreateNoteEntry(ctx context.Context, arg CreateNoteEntryParams) (Note, error) {
+	row := q.db.QueryRow(ctx, CreateNoteEntry, arg.UserID, arg.EncryptedContent)
+	var i Note
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.EncryptedContent,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const CreatePasswordEntry = `-- name: CreatePasswordEntry :one
 INSERT INTO passwords (user_id, name, login, password)
 VALUES ($1, $2, $3, $4)
@@ -94,12 +118,12 @@ func (q *Queries) DeleteCard(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
-const DeleteNote = `-- name: DeleteNote :exec
+const DeleteNoteEntry = `-- name: DeleteNoteEntry :exec
 DELETE FROM notes WHERE id = $1
 `
 
-func (q *Queries) DeleteNote(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, DeleteNote, id)
+func (q *Queries) DeleteNoteEntry(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, DeleteNoteEntry, id)
 	return err
 }
 
@@ -302,25 +326,26 @@ func (q *Queries) GetNoteByID(ctx context.Context, id pgtype.UUID) (Note, error)
 }
 
 const GetNotesByUserID = `-- name: GetNotesByUserID :many
-SELECT id, created_at, updated_at FROM notes WHERE user_id = $1
+SELECT id, user_id, encrypted_content, created_at, updated_at FROM notes
+WHERE user_id = $1
 `
 
-type GetNotesByUserIDRow struct {
-	ID        pgtype.UUID      `db:"id"`
-	CreatedAt pgtype.Timestamp `db:"created_at"`
-	UpdatedAt pgtype.Timestamp `db:"updated_at"`
-}
-
-func (q *Queries) GetNotesByUserID(ctx context.Context, userID pgtype.UUID) ([]GetNotesByUserIDRow, error) {
+func (q *Queries) GetNotesByUserID(ctx context.Context, userID pgtype.UUID) ([]Note, error) {
 	rows, err := q.db.Query(ctx, GetNotesByUserID, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetNotesByUserIDRow
+	var items []Note
 	for rows.Next() {
-		var i GetNotesByUserIDRow
-		if err := rows.Scan(&i.ID, &i.CreatedAt, &i.UpdatedAt); err != nil {
+		var i Note
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.EncryptedContent,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -459,7 +484,7 @@ func (q *Queries) StoreBinaryEntry(ctx context.Context, arg StoreBinaryEntryPara
 const StoreCard = `-- name: StoreCard :one
 INSERT INTO cards (user_id, encrypted_card_number, encrypted_expiry_date, encrypted_cvv, cardholder_name)
 VALUES ($1, $2, $3, $4, $5)
-    RETURNING id
+    RETURNING id, user_id, encrypted_card_number, encrypted_expiry_date, encrypted_cvv, cardholder_name, created_at, updated_at
 `
 
 type StoreCardParams struct {
@@ -470,7 +495,7 @@ type StoreCardParams struct {
 	CardholderName      string      `db:"cardholder_name"`
 }
 
-func (q *Queries) StoreCard(ctx context.Context, arg StoreCardParams) (pgtype.UUID, error) {
+func (q *Queries) StoreCard(ctx context.Context, arg StoreCardParams) (Card, error) {
 	row := q.db.QueryRow(ctx, StoreCard,
 		arg.UserID,
 		arg.EncryptedCardNumber,
@@ -478,27 +503,18 @@ func (q *Queries) StoreCard(ctx context.Context, arg StoreCardParams) (pgtype.UU
 		arg.EncryptedCvv,
 		arg.CardholderName,
 	)
-	var id pgtype.UUID
-	err := row.Scan(&id)
-	return id, err
-}
-
-const StoreNote = `-- name: StoreNote :one
-INSERT INTO notes (user_id, encrypted_content)
-VALUES ($1, $2)
-    RETURNING id
-`
-
-type StoreNoteParams struct {
-	UserID           pgtype.UUID `db:"user_id"`
-	EncryptedContent string      `db:"encrypted_content"`
-}
-
-func (q *Queries) StoreNote(ctx context.Context, arg StoreNoteParams) (pgtype.UUID, error) {
-	row := q.db.QueryRow(ctx, StoreNote, arg.UserID, arg.EncryptedContent)
-	var id pgtype.UUID
-	err := row.Scan(&id)
-	return id, err
+	var i Card
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.EncryptedCardNumber,
+		&i.EncryptedExpiryDate,
+		&i.EncryptedCvv,
+		&i.CardholderName,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const UpdatePasswordEntry = `-- name: UpdatePasswordEntry :one

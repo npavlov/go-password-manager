@@ -55,6 +55,14 @@ run-server:
 # Run the agent directly from Go source files in cmd/agent directory
 .PHONY: run-client
 run-client:
+	docker compose -f ./deployment/docker-compose.yml up --build
+# Run docker container with delve support
+.PHONY: run-docker-debug
+run-docker-debug:
+	docker compose -f ./deployment/docker-compose-debug.yml up --build
+# Run docker container
+.PHONY: run-docker
+run-docker:
 	$(GO) run -ldflags="${BUILD_FLAGS_CLIENT}" ${CURDIR}/cmd/client/main.go
 # ----------- Lint and Format Commands -----------
 # Run the linter (golangci-lint) on all Go files in the project

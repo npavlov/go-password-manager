@@ -115,7 +115,7 @@ func (as *Service) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginRe
 		return nil, errors.Wrap(err, "error getting user")
 	}
 
-	// Compare passwords
+	// Compare password
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
 	if err != nil {
 		as.logger.Error().Err(err).Msg("invalid password")

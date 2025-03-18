@@ -31,9 +31,9 @@ func (ds *DBStorage) GetPassword(ctx context.Context, passwordId string) (*db.Pa
 
 	password, err := ds.Queries.GetPasswordEntryByID(ctx, uuid)
 	if err != nil {
-		ds.log.Error().Err(err).Msg("failed to create user")
+		ds.log.Error().Err(err).Msg("failed to create password")
 
-		return nil, errors.Wrap(err, "failed to create user")
+		return nil, errors.Wrap(err, "failed to create password")
 	}
 
 	return &password, nil
@@ -50,9 +50,9 @@ func (ds *DBStorage) GetPasswords(ctx context.Context, userId string) ([]db.Pass
 
 	passwords, err := ds.Queries.GetPasswordEntriesByUserID(ctx, uuid)
 	if err != nil {
-		ds.log.Error().Err(err).Msg("failed to create user")
+		ds.log.Error().Err(err).Msg("failed to create password")
 
-		return nil, errors.Wrap(err, "failed to create user")
+		return nil, errors.Wrap(err, "failed to create password")
 	}
 
 	return passwords, nil
@@ -68,9 +68,9 @@ func (ds *DBStorage) DeletePassword(ctx context.Context, passwordId string) erro
 
 	err := ds.Queries.DeletePasswordEntry(ctx, uuid)
 	if err != nil {
-		ds.log.Error().Err(err).Msg("failed to delete user")
+		ds.log.Error().Err(err).Msg("failed to delete password")
 
-		return errors.Wrap(err, "failed to delete user")
+		return errors.Wrap(err, "failed to delete password")
 	}
 
 	return nil

@@ -165,7 +165,7 @@ func (*GetPasswordsRequest) Descriptor() ([]byte, []int) {
 
 type GetPasswordsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Passwords     []*PasswordMeta        `protobuf:"bytes,1,rep,name=passwords,proto3" json:"passwords,omitempty"`
+	Passwords     []*PasswordMeta        `protobuf:"bytes,1,rep,name=password,proto3" json:"password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -660,7 +660,7 @@ var file_proto_password_password_proto_goTypes = []any{
 	(*timestamppb.Timestamp)(nil),  // 10: google.protobuf.Timestamp
 }
 var file_proto_password_password_proto_depIdxs = []int32{
-	4,  // 0: proto.password.GetPasswordsResponse.passwords:type_name -> proto.password.PasswordMeta
+	4,  // 0: proto.password.GetPasswordsResponse.password:type_name -> proto.password.PasswordMeta
 	10, // 1: proto.password.PasswordMeta.last_update:type_name -> google.protobuf.Timestamp
 	9,  // 2: proto.password.GetPasswordResponse.password:type_name -> proto.password.PasswordData
 	10, // 3: proto.password.PasswordData.last_update:type_name -> google.protobuf.Timestamp

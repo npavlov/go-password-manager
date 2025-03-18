@@ -11,9 +11,9 @@ import (
 func (ds *DBStorage) GetItems(ctx context.Context, getItems db.GetItemsByUserIDParams) ([]db.GetItemsByUserIDRow, error) {
 	items, err := ds.Queries.GetItemsByUserID(ctx, getItems)
 	if err != nil {
-		ds.log.Error().Err(err).Msg("failed to create user")
+		ds.log.Error().Err(err).Msg("failed to get items")
 
-		return nil, errors.Wrap(err, "failed to create user")
+		return nil, errors.Wrap(err, "failed to get items")
 	}
 
 	return items, nil
