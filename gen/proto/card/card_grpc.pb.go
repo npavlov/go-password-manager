@@ -19,9 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CardService_StoreCard_FullMethodName = "/proto.card.CardService/StoreCard"
-	CardService_GetCards_FullMethodName  = "/proto.card.CardService/GetCards"
-	CardService_GetCard_FullMethodName   = "/proto.card.CardService/GetCard"
+	CardService_StoreCard_FullMethodName  = "/proto.card.CardService/StoreCard"
+	CardService_GetCards_FullMethodName   = "/proto.card.CardService/GetCards"
+	CardService_GetCard_FullMethodName    = "/proto.card.CardService/GetCard"
+	CardService_UpdateCard_FullMethodName = "/proto.card.CardService/UpdateCard"
+	CardService_DeleteCard_FullMethodName = "/proto.card.CardService/DeleteCard"
 )
 
 // CardServiceClient is the client API for CardService service.
@@ -31,6 +33,8 @@ type CardServiceClient interface {
 	StoreCard(ctx context.Context, in *StoreCardRequest, opts ...grpc.CallOption) (*StoreCardResponse, error)
 	GetCards(ctx context.Context, in *GetCardsRequest, opts ...grpc.CallOption) (*GetCardsResponse, error)
 	GetCard(ctx context.Context, in *GetCardRequest, opts ...grpc.CallOption) (*GetCardResponse, error)
+	UpdateCard(ctx context.Context, in *UpdateCardRequest, opts ...grpc.CallOption) (*UpdateCardResponse, error)
+	DeleteCard(ctx context.Context, in *DeleteCardRequest, opts ...grpc.CallOption) (*DeleteCardResponse, error)
 }
 
 type cardServiceClient struct {
@@ -71,6 +75,26 @@ func (c *cardServiceClient) GetCard(ctx context.Context, in *GetCardRequest, opt
 	return out, nil
 }
 
+func (c *cardServiceClient) UpdateCard(ctx context.Context, in *UpdateCardRequest, opts ...grpc.CallOption) (*UpdateCardResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateCardResponse)
+	err := c.cc.Invoke(ctx, CardService_UpdateCard_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cardServiceClient) DeleteCard(ctx context.Context, in *DeleteCardRequest, opts ...grpc.CallOption) (*DeleteCardResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteCardResponse)
+	err := c.cc.Invoke(ctx, CardService_DeleteCard_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CardServiceServer is the server API for CardService service.
 // All implementations must embed UnimplementedCardServiceServer
 // for forward compatibility.
@@ -78,6 +102,8 @@ type CardServiceServer interface {
 	StoreCard(context.Context, *StoreCardRequest) (*StoreCardResponse, error)
 	GetCards(context.Context, *GetCardsRequest) (*GetCardsResponse, error)
 	GetCard(context.Context, *GetCardRequest) (*GetCardResponse, error)
+	UpdateCard(context.Context, *UpdateCardRequest) (*UpdateCardResponse, error)
+	DeleteCard(context.Context, *DeleteCardRequest) (*DeleteCardResponse, error)
 	mustEmbedUnimplementedCardServiceServer()
 }
 
@@ -96,6 +122,12 @@ func (UnimplementedCardServiceServer) GetCards(context.Context, *GetCardsRequest
 }
 func (UnimplementedCardServiceServer) GetCard(context.Context, *GetCardRequest) (*GetCardResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCard not implemented")
+}
+func (UnimplementedCardServiceServer) UpdateCard(context.Context, *UpdateCardRequest) (*UpdateCardResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateCard not implemented")
+}
+func (UnimplementedCardServiceServer) DeleteCard(context.Context, *DeleteCardRequest) (*DeleteCardResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteCard not implemented")
 }
 func (UnimplementedCardServiceServer) mustEmbedUnimplementedCardServiceServer() {}
 func (UnimplementedCardServiceServer) testEmbeddedByValue()                     {}
@@ -172,6 +204,42 @@ func _CardService_GetCard_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CardService_UpdateCard_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateCardRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CardServiceServer).UpdateCard(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CardService_UpdateCard_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CardServiceServer).UpdateCard(ctx, req.(*UpdateCardRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CardService_DeleteCard_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteCardRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CardServiceServer).DeleteCard(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CardService_DeleteCard_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CardServiceServer).DeleteCard(ctx, req.(*DeleteCardRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CardService_ServiceDesc is the grpc.ServiceDesc for CardService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -190,6 +258,14 @@ var CardService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCard",
 			Handler:    _CardService_GetCard_Handler,
+		},
+		{
+			MethodName: "UpdateCard",
+			Handler:    _CardService_UpdateCard_Handler,
+		},
+		{
+			MethodName: "DeleteCard",
+			Handler:    _CardService_DeleteCard_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

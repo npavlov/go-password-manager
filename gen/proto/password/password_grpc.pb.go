@@ -23,6 +23,7 @@ const (
 	PasswordService_GetPassword_FullMethodName    = "/proto.password.PasswordService/GetPassword"
 	PasswordService_GetPasswords_FullMethodName   = "/proto.password.PasswordService/GetPasswords"
 	PasswordService_UpdatePassword_FullMethodName = "/proto.password.PasswordService/UpdatePassword"
+	PasswordService_DeletePassword_FullMethodName = "/proto.password.PasswordService/DeletePassword"
 )
 
 // PasswordServiceClient is the client API for PasswordService service.
@@ -33,6 +34,7 @@ type PasswordServiceClient interface {
 	GetPassword(ctx context.Context, in *GetPasswordRequest, opts ...grpc.CallOption) (*GetPasswordResponse, error)
 	GetPasswords(ctx context.Context, in *GetPasswordsRequest, opts ...grpc.CallOption) (*GetPasswordsResponse, error)
 	UpdatePassword(ctx context.Context, in *UpdatePasswordRequest, opts ...grpc.CallOption) (*UpdatePasswordResponse, error)
+	DeletePassword(ctx context.Context, in *DeletePasswordRequest, opts ...grpc.CallOption) (*DeletePasswordResponse, error)
 }
 
 type passwordServiceClient struct {
@@ -83,6 +85,16 @@ func (c *passwordServiceClient) UpdatePassword(ctx context.Context, in *UpdatePa
 	return out, nil
 }
 
+func (c *passwordServiceClient) DeletePassword(ctx context.Context, in *DeletePasswordRequest, opts ...grpc.CallOption) (*DeletePasswordResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeletePasswordResponse)
+	err := c.cc.Invoke(ctx, PasswordService_DeletePassword_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PasswordServiceServer is the server API for PasswordService service.
 // All implementations must embed UnimplementedPasswordServiceServer
 // for forward compatibility.
@@ -91,6 +103,7 @@ type PasswordServiceServer interface {
 	GetPassword(context.Context, *GetPasswordRequest) (*GetPasswordResponse, error)
 	GetPasswords(context.Context, *GetPasswordsRequest) (*GetPasswordsResponse, error)
 	UpdatePassword(context.Context, *UpdatePasswordRequest) (*UpdatePasswordResponse, error)
+	DeletePassword(context.Context, *DeletePasswordRequest) (*DeletePasswordResponse, error)
 	mustEmbedUnimplementedPasswordServiceServer()
 }
 
@@ -112,6 +125,9 @@ func (UnimplementedPasswordServiceServer) GetPasswords(context.Context, *GetPass
 }
 func (UnimplementedPasswordServiceServer) UpdatePassword(context.Context, *UpdatePasswordRequest) (*UpdatePasswordResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdatePassword not implemented")
+}
+func (UnimplementedPasswordServiceServer) DeletePassword(context.Context, *DeletePasswordRequest) (*DeletePasswordResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeletePassword not implemented")
 }
 func (UnimplementedPasswordServiceServer) mustEmbedUnimplementedPasswordServiceServer() {}
 func (UnimplementedPasswordServiceServer) testEmbeddedByValue()                         {}
@@ -206,6 +222,24 @@ func _PasswordService_UpdatePassword_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PasswordService_DeletePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeletePasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PasswordServiceServer).DeletePassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PasswordService_DeletePassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PasswordServiceServer).DeletePassword(ctx, req.(*DeletePasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PasswordService_ServiceDesc is the grpc.ServiceDesc for PasswordService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -228,6 +262,10 @@ var PasswordService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdatePassword",
 			Handler:    _PasswordService_UpdatePassword_Handler,
+		},
+		{
+			MethodName: "DeletePassword",
+			Handler:    _PasswordService_DeletePassword_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

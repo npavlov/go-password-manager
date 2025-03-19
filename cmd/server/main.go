@@ -14,6 +14,7 @@ import (
 	"github.com/npavlov/go-password-manager/internal/server/redis"
 	"github.com/npavlov/go-password-manager/internal/server/service"
 	"github.com/npavlov/go-password-manager/internal/server/service/auth"
+	"github.com/npavlov/go-password-manager/internal/server/service/card"
 	"github.com/npavlov/go-password-manager/internal/server/service/item"
 	"github.com/npavlov/go-password-manager/internal/server/service/note"
 	"github.com/npavlov/go-password-manager/internal/server/service/password"
@@ -83,6 +84,9 @@ func starServer(ctx context.Context, cfg *config.Config, log *zerolog.Logger, wg
 
 	noteService := note.NewNoteService(log, dbStorage, cfg)
 	noteService.RegisterService(grpcServer)
+
+	cardService := card.NewCardService(log, dbStorage, cfg)
+	cardService.RegisterService(grpcServer)
 
 	itemService := item.NewItemService(log, dbStorage, cfg)
 	itemService.RegisterService(grpcServer)

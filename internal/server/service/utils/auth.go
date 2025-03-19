@@ -72,3 +72,11 @@ func GetUserKey(ctx context.Context, storage *storage.DBStorage, userUUID pgtype
 
 	return decryptedUserKey, nil
 }
+
+func GetIdFromString(id string) pgtype.UUID {
+	var uuid pgtype.UUID
+
+	_ = uuid.Scan(id)
+
+	return uuid
+}

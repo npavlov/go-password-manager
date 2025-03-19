@@ -40,6 +40,7 @@ CREATE TABLE cards (
                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
                        encrypted_card_number TEXT NOT NULL,  -- Encrypted
+                       hashed_card_number TEXT UNIQUE,
                        encrypted_expiry_date TEXT NOT NULL,  -- Encrypted
                        encrypted_cvv TEXT NOT NULL,          -- Encrypted
                        cardholder_name VARCHAR(255) NOT NULL, -- Cardholder name is stored in plaintext

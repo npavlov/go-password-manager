@@ -33,7 +33,7 @@ WHERE id = $4
 
 -- name: DeletePasswordEntry :exec
 DELETE FROM passwords
-WHERE id = $1;
+WHERE id = $1 and user_id = $2;
 
 -- name: CreateNoteEntry :one
 INSERT INTO notes (user_id, encrypted_content)
@@ -48,21 +48,27 @@ WHERE user_id = $1;
 SELECT * FROM notes WHERE id = $1;
 
 -- name: DeleteNoteEntry :exec
-DELETE FROM notes WHERE id = $1;
+DELETE FROM notes WHERE id = $1 and user_id = $2;
 
 -- name: StoreCard :one
-INSERT INTO cards (user_id, encrypted_card_number, encrypted_expiry_date, encrypted_cvv, cardholder_name)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO cards (user_id, hashed_card_number, encrypted_card_number, encrypted_expiry_date, encrypted_cvv, cardholder_name)
+VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING *;
+
+-- name: UpdateCard :one
+UPDATE cards
+SET encrypted_card_number = $1, encrypted_expiry_date = $2, encrypted_cvv = $3, cardholder_name = $4, hashed_card_number = $5
+WHERE id = $6
     RETURNING *;
 
 -- name: GetCardsByUserID :many
-SELECT id, cardholder_name, created_at, updated_at FROM cards WHERE user_id = $1;
+SELECT * FROM cards WHERE user_id = $1;
 
 -- name: GetCardByID :one
 SELECT * FROM cards WHERE id = $1;
 
 -- name: DeleteCard :exec
-DELETE FROM cards WHERE id = $1;
+DELETE FROM cards WHERE id = $1 and user_id = $2;
 
 -- name: StoreBinaryEntry :one
 INSERT INTO binary_entries (user_id, file_name, file_url, file_size)
@@ -76,7 +82,7 @@ SELECT id, file_name, file_url, file_size, created_at FROM binary_entries WHERE 
 SELECT * FROM binary_entries WHERE id = $1;
 
 -- name: DeleteBinaryEntry :exec
-DELETE FROM binary_entries WHERE id = $1;
+DELETE FROM binary_entries WHERE id = $1 and user_id = $2;
 
 -- name: GetItemsByUserID :many
 SELECT

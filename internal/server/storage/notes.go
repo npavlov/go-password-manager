@@ -5,6 +5,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/npavlov/go-password-manager/internal/server/db"
+	"github.com/npavlov/go-password-manager/internal/server/service/utils"
 	"github.com/pkg/errors"
 )
 
@@ -41,12 +42,7 @@ func (ds *DBStorage) GetNote(ctx context.Context, noteId string) (*db.Note, erro
 
 // GetNotes retrieves note records
 func (ds *DBStorage) GetNotes(ctx context.Context, userId string) ([]db.Note, error) {
-	var uuid pgtype.UUID
-	if err := uuid.Scan(userId); err != nil {
-		ds.log.Error().Err(err).Msg("failed to scan uuid")
-
-		return nil, errors.Wrap(err, "failed to parse uuid")
-	}
+	uuid := utils.GetIdFromString(userId)
 
 	notes, err := ds.Queries.GetNotesByUserID(ctx, uuid)
 	if err != nil {
@@ -58,15 +54,8 @@ func (ds *DBStorage) GetNotes(ctx context.Context, userId string) ([]db.Note, er
 	return notes, nil
 }
 
-func (ds *DBStorage) DeleteNote(ctx context.Context, noteId string) error {
-	var uuid pgtype.UUID
-	if err := uuid.Scan(noteId); err != nil {
-		ds.log.Error().Err(err).Msg("failed to scan uuid")
-
-		return errors.Wrap(err, "failed to parse uuid")
-	}
-
-	err := ds.Queries.DeleteNoteEntry(ctx, uuid)
+func (ds *DBStorage) DeleteNote(ctx context.Context, arg db.DeleteNoteEntryParams) error {
+	err := ds.Queries.DeleteNoteEntry(ctx, arg)
 	if err != nil {
 		ds.log.Error().Err(err).Msg("failed to delete note")
 

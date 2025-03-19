@@ -11,17 +11,16 @@ service CardService {
   rpc StoreCard (StoreCardRequest) returns (StoreCardResponse);
   rpc GetCards (GetCardsRequest) returns (GetCardsResponse);
   rpc GetCard (GetCardRequest) returns (GetCardResponse);
+  rpc UpdateCard (UpdateCardRequest) returns (UpdateCardResponse);
+  rpc DeleteCard (DeleteCardRequest) returns (DeleteCardResponse);
 }
 
 message StoreCardRequest {
-  string card_number = 1 [(buf.validate.field).string = {pattern: "^[0-9]{13,19}$"}]; // Validate card number (13-19 digits)
-  string expiry_date = 2 [(buf.validate.field).string = {pattern: "^(0[1-9]|1[0-2])\\/[0-9]{2}$"}]; // Validate expiry date (MM/YY format)
-  string cvv = 3 [(buf.validate.field).string = {pattern: "^[0-9]{3,4}$"}]; // Validate CVV (3 or 4 digits)
-  string cardholder_name = 4 [(buf.validate.field).string = {min_len: 1, max_len: 100}]; // Validate cardholder name (1-100 characters)
+  CardData card = 1;
 }
 
 message StoreCardResponse {
-  string message = 1;
+  string card_id = 1;
 }
 
 message GetCardsRequest {
@@ -31,19 +30,30 @@ message GetCardsResponse {
   repeated CardData cards = 1;
 }
 
-message CardMeta {
-  string card_number = 1 [(buf.validate.field).string = {pattern: "^[0-9]{13,19}$"}]; // Validate card number (13-19 digits)
-  string expiry_date = 2 [(buf.validate.field).string = {pattern: "^(0[1-9]|1[0-2])\\/[0-9]{2}$"}]; // Validate expiry date (MM/YY format)
-  string cvv = 4 [(buf.validate.field).string = {pattern: "^[0-9]{3,4}$"}]; // Validate CVV (3 or 4 digits)
-  string cardholder_name = 3 [(buf.validate.field).string = {min_len: 1, max_len: 100}]; // Validate cardholder name (1-100 characters)
-}
-
 message GetCardRequest {
-  string card_id = 1 [(buf.validate.field).string.uuid = true]; // Validate card_id is a valid UUID
+  string card_id = 1 [(buf.validate.field).string.uuid = true];
 }
 
 message GetCardResponse {
   CardData card = 1;
+  google.protobuf.Timestamp last_update = 2;
+}
+
+message DeleteCardRequest {
+  string card_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+message DeleteCardResponse {
+  bool ok = 1;
+}
+
+message UpdateCardRequest {
+  string card_id = 1  [(buf.validate.field).string.uuid = true];
+  CardData data = 2;
+}
+
+message UpdateCardResponse {
+  string card_id = 1;
 }
 
 message CardData {
@@ -51,5 +61,4 @@ message CardData {
   string expiry_date = 2 [(buf.validate.field).string = {pattern: "^(0[1-9]|1[0-2])\\/[0-9]{2}$"}]; // Validate expiry date (MM/YY format)
   string cvv = 3 [(buf.validate.field).string = {pattern: "^[0-9]{3,4}$"}]; // Validate CVV (3 or 4 digits)
   string cardholder_name = 4 [(buf.validate.field).string = {min_len: 1, max_len: 100}]; // Validate cardholder name (1-100 characters)
-  google.protobuf.Timestamp last_update = 5;
 }

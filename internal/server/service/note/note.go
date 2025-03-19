@@ -60,7 +60,7 @@ func (ns *Service) StoreNote(ctx context.Context, req *pb.StoreNoteRequest) (*pb
 		return nil, errors.Wrap(err, "error getting user id")
 	}
 
-	encryptedNote, err := utils.Encrypt(req.Content, decryptedUserKey)
+	encryptedNote, err := utils.Encrypt(req.Note.Content, decryptedUserKey)
 	if err != nil {
 		ns.logger.Error().Err(err).Msg("failed to encrypt password")
 
@@ -117,9 +117,9 @@ func (ns *Service) GetNote(ctx context.Context, req *pb.GetNoteRequest) (*pb.Get
 
 	return &pb.GetNoteResponse{
 		Note: &pb.NoteData{
-			Content:    content,
-			LastUpdate: timestamppb.New(note.UpdatedAt.Time),
+			Content: content,
 		},
+		LastUpdate: timestamppb.New(note.UpdatedAt.Time),
 	}, nil
 }
 
@@ -129,4 +129,31 @@ func (ns *Service) GetNotes(ctx context.Context, req *pb.GetNotesRequest) (*pb.G
 	}
 
 	return &pb.GetNotesResponse{}, nil
+}
+
+func (ns *Service) DeleteNote(ctx context.Context, req *pb.DeleteNoteRequest) (*pb.DeleteNoteResponse, error) {
+	if err := ns.validator.Validate(req); err != nil {
+		return nil, errors.Wrap(err, "error validating input")
+	}
+
+	userUUID, err := utils.GetUserId(ctx)
+	if err != nil {
+		ns.logger.Error().Err(err).Msg("error getting user id")
+
+		return nil, errors.Wrap(err, "error getting user id")
+	}
+
+	err = ns.storage.DeletePassword(ctx, db.DeletePasswordEntryParams{
+		ID:     utils.GetIdFromString(req.NoteId),
+		UserID: userUUID,
+	})
+	if err != nil {
+		ns.logger.Error().Err(err).Msg("error deleting note")
+
+		return nil, errors.Wrap(err, "error deleting note")
+	}
+
+	return &pb.DeleteNoteResponse{
+		Ok: true,
+	}, nil
 }

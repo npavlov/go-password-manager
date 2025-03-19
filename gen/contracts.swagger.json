@@ -1,12 +1,12 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "proto/auth/auth.proto",
+    "title": "proto/note/note.proto",
     "version": "version not set"
   },
   "tags": [
     {
-      "name": "proto.auth.AuthService"
+      "name": "proto.note.NoteService"
     }
   ],
   "consumes": [
@@ -17,21 +17,50 @@
   ],
   "paths": {},
   "definitions": {
-    "authLoginResponse": {
+    "noteDeleteNoteResponse": {
       "type": "object",
       "properties": {
-        "token": {
+        "ok": {
+          "type": "boolean"
+        }
+      }
+    },
+    "noteGetNoteResponse": {
+      "type": "object",
+      "properties": {
+        "note": {
+          "$ref": "#/definitions/noteNoteData"
+        },
+        "lastUpdate": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "noteGetNotesResponse": {
+      "type": "object",
+      "properties": {
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/noteNoteData"
+          }
+        }
+      }
+    },
+    "noteNoteData": {
+      "type": "object",
+      "properties": {
+        "content": {
           "type": "string"
         }
       }
     },
-    "authRegisterResponse": {
+    "noteStoreNoteResponse": {
       "type": "object",
       "properties": {
-        "token": {
-          "type": "string"
-        },
-        "userKey": {
+        "noteId": {
           "type": "string"
         }
       }

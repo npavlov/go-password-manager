@@ -101,39 +101,59 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const DeleteBinaryEntry = `-- name: DeleteBinaryEntry :exec
-DELETE FROM binary_entries WHERE id = $1
+DELETE FROM binary_entries WHERE id = $1 and user_id = $2
 `
 
-func (q *Queries) DeleteBinaryEntry(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, DeleteBinaryEntry, id)
+type DeleteBinaryEntryParams struct {
+	ID     pgtype.UUID `db:"id"`
+	UserID pgtype.UUID `db:"user_id"`
+}
+
+func (q *Queries) DeleteBinaryEntry(ctx context.Context, arg DeleteBinaryEntryParams) error {
+	_, err := q.db.Exec(ctx, DeleteBinaryEntry, arg.ID, arg.UserID)
 	return err
 }
 
 const DeleteCard = `-- name: DeleteCard :exec
-DELETE FROM cards WHERE id = $1
+DELETE FROM cards WHERE id = $1 and user_id = $2
 `
 
-func (q *Queries) DeleteCard(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, DeleteCard, id)
+type DeleteCardParams struct {
+	ID     pgtype.UUID `db:"id"`
+	UserID pgtype.UUID `db:"user_id"`
+}
+
+func (q *Queries) DeleteCard(ctx context.Context, arg DeleteCardParams) error {
+	_, err := q.db.Exec(ctx, DeleteCard, arg.ID, arg.UserID)
 	return err
 }
 
 const DeleteNoteEntry = `-- name: DeleteNoteEntry :exec
-DELETE FROM notes WHERE id = $1
+DELETE FROM notes WHERE id = $1 and user_id = $2
 `
 
-func (q *Queries) DeleteNoteEntry(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, DeleteNoteEntry, id)
+type DeleteNoteEntryParams struct {
+	ID     pgtype.UUID `db:"id"`
+	UserID pgtype.UUID `db:"user_id"`
+}
+
+func (q *Queries) DeleteNoteEntry(ctx context.Context, arg DeleteNoteEntryParams) error {
+	_, err := q.db.Exec(ctx, DeleteNoteEntry, arg.ID, arg.UserID)
 	return err
 }
 
 const DeletePasswordEntry = `-- name: DeletePasswordEntry :exec
 DELETE FROM passwords
-WHERE id = $1
+WHERE id = $1 and user_id = $2
 `
 
-func (q *Queries) DeletePasswordEntry(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, DeletePasswordEntry, id)
+type DeletePasswordEntryParams struct {
+	ID     pgtype.UUID `db:"id"`
+	UserID pgtype.UUID `db:"user_id"`
+}
+
+func (q *Queries) DeletePasswordEntry(ctx context.Context, arg DeletePasswordEntryParams) error {
+	_, err := q.db.Exec(ctx, DeletePasswordEntry, arg.ID, arg.UserID)
 	return err
 }
 
@@ -196,7 +216,7 @@ func (q *Queries) GetBinaryEntryByID(ctx context.Context, id pgtype.UUID) (Binar
 }
 
 const GetCardByID = `-- name: GetCardByID :one
-SELECT id, user_id, encrypted_card_number, encrypted_expiry_date, encrypted_cvv, cardholder_name, created_at, updated_at FROM cards WHERE id = $1
+SELECT id, user_id, encrypted_card_number, encrypted_expiry_date, encrypted_cvv, cardholder_name, created_at, updated_at, hashed_card_number FROM cards WHERE id = $1
 `
 
 func (q *Queries) GetCardByID(ctx context.Context, id pgtype.UUID) (Card, error) {
@@ -211,35 +231,34 @@ func (q *Queries) GetCardByID(ctx context.Context, id pgtype.UUID) (Card, error)
 		&i.CardholderName,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.HashedCardNumber,
 	)
 	return i, err
 }
 
 const GetCardsByUserID = `-- name: GetCardsByUserID :many
-SELECT id, cardholder_name, created_at, updated_at FROM cards WHERE user_id = $1
+SELECT id, user_id, encrypted_card_number, encrypted_expiry_date, encrypted_cvv, cardholder_name, created_at, updated_at, hashed_card_number FROM cards WHERE user_id = $1
 `
 
-type GetCardsByUserIDRow struct {
-	ID             pgtype.UUID      `db:"id"`
-	CardholderName string           `db:"cardholder_name"`
-	CreatedAt      pgtype.Timestamp `db:"created_at"`
-	UpdatedAt      pgtype.Timestamp `db:"updated_at"`
-}
-
-func (q *Queries) GetCardsByUserID(ctx context.Context, userID pgtype.UUID) ([]GetCardsByUserIDRow, error) {
+func (q *Queries) GetCardsByUserID(ctx context.Context, userID pgtype.UUID) ([]Card, error) {
 	rows, err := q.db.Query(ctx, GetCardsByUserID, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetCardsByUserIDRow
+	var items []Card
 	for rows.Next() {
-		var i GetCardsByUserIDRow
+		var i Card
 		if err := rows.Scan(
 			&i.ID,
+			&i.UserID,
+			&i.EncryptedCardNumber,
+			&i.EncryptedExpiryDate,
+			&i.EncryptedCvv,
 			&i.CardholderName,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.HashedCardNumber,
 		); err != nil {
 			return nil, err
 		}
@@ -482,13 +501,14 @@ func (q *Queries) StoreBinaryEntry(ctx context.Context, arg StoreBinaryEntryPara
 }
 
 const StoreCard = `-- name: StoreCard :one
-INSERT INTO cards (user_id, encrypted_card_number, encrypted_expiry_date, encrypted_cvv, cardholder_name)
-VALUES ($1, $2, $3, $4, $5)
-    RETURNING id, user_id, encrypted_card_number, encrypted_expiry_date, encrypted_cvv, cardholder_name, created_at, updated_at
+INSERT INTO cards (user_id, hashed_card_number, encrypted_card_number, encrypted_expiry_date, encrypted_cvv, cardholder_name)
+VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING id, user_id, encrypted_card_number, encrypted_expiry_date, encrypted_cvv, cardholder_name, created_at, updated_at, hashed_card_number
 `
 
 type StoreCardParams struct {
 	UserID              pgtype.UUID `db:"user_id"`
+	HashedCardNumber    pgtype.Text `db:"hashed_card_number"`
 	EncryptedCardNumber string      `db:"encrypted_card_number"`
 	EncryptedExpiryDate string      `db:"encrypted_expiry_date"`
 	EncryptedCvv        string      `db:"encrypted_cvv"`
@@ -498,6 +518,7 @@ type StoreCardParams struct {
 func (q *Queries) StoreCard(ctx context.Context, arg StoreCardParams) (Card, error) {
 	row := q.db.QueryRow(ctx, StoreCard,
 		arg.UserID,
+		arg.HashedCardNumber,
 		arg.EncryptedCardNumber,
 		arg.EncryptedExpiryDate,
 		arg.EncryptedCvv,
@@ -513,6 +534,47 @@ func (q *Queries) StoreCard(ctx context.Context, arg StoreCardParams) (Card, err
 		&i.CardholderName,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.HashedCardNumber,
+	)
+	return i, err
+}
+
+const UpdateCard = `-- name: UpdateCard :one
+UPDATE cards
+SET encrypted_card_number = $1, encrypted_expiry_date = $2, encrypted_cvv = $3, cardholder_name = $4, hashed_card_number = $5
+WHERE id = $6
+    RETURNING id, user_id, encrypted_card_number, encrypted_expiry_date, encrypted_cvv, cardholder_name, created_at, updated_at, hashed_card_number
+`
+
+type UpdateCardParams struct {
+	EncryptedCardNumber string      `db:"encrypted_card_number"`
+	EncryptedExpiryDate string      `db:"encrypted_expiry_date"`
+	EncryptedCvv        string      `db:"encrypted_cvv"`
+	CardholderName      string      `db:"cardholder_name"`
+	HashedCardNumber    pgtype.Text `db:"hashed_card_number"`
+	ID                  pgtype.UUID `db:"id"`
+}
+
+func (q *Queries) UpdateCard(ctx context.Context, arg UpdateCardParams) (Card, error) {
+	row := q.db.QueryRow(ctx, UpdateCard,
+		arg.EncryptedCardNumber,
+		arg.EncryptedExpiryDate,
+		arg.EncryptedCvv,
+		arg.CardholderName,
+		arg.HashedCardNumber,
+		arg.ID,
+	)
+	var i Card
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.EncryptedCardNumber,
+		&i.EncryptedExpiryDate,
+		&i.EncryptedCvv,
+		&i.CardholderName,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.HashedCardNumber,
 	)
 	return i, err
 }

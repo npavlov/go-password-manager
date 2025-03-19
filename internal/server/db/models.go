@@ -75,6 +75,7 @@ type Card struct {
 	CardholderName      string           `db:"cardholder_name"`
 	CreatedAt           pgtype.Timestamp `db:"created_at"`
 	UpdatedAt           pgtype.Timestamp `db:"updated_at"`
+	HashedCardNumber    pgtype.Text      `db:"hashed_card_number"`
 }
 
 type Item struct {
