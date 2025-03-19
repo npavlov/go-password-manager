@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"sync"
-	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/npavlov/go-password-manager/internal/pkg/logger"
 	"github.com/npavlov/go-password-manager/internal/server/buildinfo"
 	"github.com/npavlov/go-password-manager/internal/server/config"
@@ -15,6 +16,7 @@ import (
 	"github.com/npavlov/go-password-manager/internal/server/service"
 	"github.com/npavlov/go-password-manager/internal/server/service/auth"
 	"github.com/npavlov/go-password-manager/internal/server/service/card"
+	"github.com/npavlov/go-password-manager/internal/server/service/file"
 	"github.com/npavlov/go-password-manager/internal/server/service/item"
 	"github.com/npavlov/go-password-manager/internal/server/service/note"
 	"github.com/npavlov/go-password-manager/internal/server/service/password"
@@ -22,14 +24,12 @@ import (
 	"github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
 	ErrDatabaseNotConnected = errors.New("database is not connected")
 	ErrJWTisNotPorvided     = errors.New("JWT token is not provided")
+	ErrMinioNotConnected    = errors.New("MinIO is not connected")
 )
 
 func main() {
@@ -88,6 +88,11 @@ func starServer(ctx context.Context, cfg *config.Config, log *zerolog.Logger, wg
 	cardService := card.NewCardService(log, dbStorage, cfg)
 	cardService.RegisterService(grpcServer)
 
+	minioClient := setupMinIO(ctx, cfg, log)
+
+	fileService := file.NewFileService(log, dbStorage, cfg, minioClient)
+	fileService.RegisterService(grpcServer)
+
 	itemService := item.NewItemService(log, dbStorage, cfg)
 	itemService.RegisterService(grpcServer)
 
@@ -119,54 +124,35 @@ func setupStorage(
 	return st, memStorage
 }
 
-// LoggingServerInterceptor logs incoming requests and responses.
-func LoggingServerInterceptor(logger *zerolog.Logger) grpc.UnaryServerInterceptor {
-	return func(
-		ctx context.Context,
-		req interface{},
-		info *grpc.UnaryServerInfo,
-		handler grpc.UnaryHandler,
-	) (interface{}, error) {
-		// Start time
-		start := time.Now()
-
-		// Log the request details before handling
-		logger.Info().
-			Str("method", info.FullMethod).
-			Interface("request", req).
-			Msg("gRPC Request received")
-
-		// Call the actual handler
-		resp, err := handler(ctx, req)
-
-		// Calculate the duration
-		duration := time.Since(start)
-
-		// Log the response details
-		logEvent := logger.Info().
-			Str("method", info.FullMethod).
-			Dur("duration", duration)
-
-		// Add status code and error details if there's an error
-		if err != nil {
-			st, ok := status.FromError(err)
-			if ok {
-				logEvent = logEvent.
-					Int("status", int(st.Code())).
-					Str("error", st.Message())
-			} else {
-				logEvent = logEvent.
-					Int("status", int(codes.Unknown)).
-					Str("error", err.Error())
-			}
-		} else {
-			logEvent = logEvent.
-				Int("status", int(codes.OK))
-		}
-
-		// Log the final message
-		logEvent.Msg("gRPC Request completed")
-
-		return resp, err
+func setupMinIO(ctx context.Context, cfg *config.Config, log *zerolog.Logger) *minio.Client {
+	client, err := minio.New(cfg.Minio, &minio.Options{
+		Creds:  credentials.NewStaticV4(cfg.MinioAccessKey, cfg.MinioSecretKey, ""),
+		Secure: false, // Set to `true` if using HTTPS
+	})
+	if err != nil {
+		log.Fatal().Err(ErrMinioNotConnected).Msg("Failed to connect to MinIO")
 	}
+
+	if client == nil {
+		log.Fatal().Err(ErrMinioNotConnected).Msg("Failed to connect to MinIO")
+	}
+
+	// Check if bucket exists, create if not
+	bucketName := cfg.Bucket
+	exists, err := client.BucketExists(ctx, bucketName)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to check MinIO bucket")
+	}
+	if !exists {
+		if err := client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{}); err != nil {
+			log.Fatal().Err(err).Msg("Failed to create MinIO bucket")
+		}
+		log.Info().Str("bucket", bucketName).Msg("MinIO bucket created")
+	} else {
+		log.Info().Str("bucket", bucketName).Msg("MinIO bucket already exists")
+	}
+
+	log.Info().Msg("Connected to MinIO successfully")
+	
+	return client
 }

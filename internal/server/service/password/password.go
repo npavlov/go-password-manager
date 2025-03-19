@@ -9,6 +9,7 @@ import (
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/server/service/utils"
 	"github.com/npavlov/go-password-manager/internal/server/storage"
+	gu "github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
@@ -162,7 +163,7 @@ func (ps *Service) UpdatePassword(ctx context.Context, req *pb.UpdatePasswordReq
 	}
 
 	password, err := ps.storage.UpdatePassword(ctx, db.UpdatePasswordEntryParams{
-		ID:       utils.GetIdFromString(req.PasswordId),
+		ID:       gu.GetIdFromString(req.PasswordId),
 		Name:     req.Data.Name,
 		Login:    req.Data.Login,
 		Password: encryptedPassword,
@@ -191,7 +192,7 @@ func (ps *Service) DeletePassword(ctx context.Context, req *pb.DeletePasswordReq
 	}
 
 	err = ps.storage.DeletePassword(ctx, db.DeletePasswordEntryParams{
-		ID:     utils.GetIdFromString(req.PasswordId),
+		ID:     gu.GetIdFromString(req.PasswordId),
 		UserID: userUUID,
 	})
 	if err != nil {

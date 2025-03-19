@@ -16,6 +16,10 @@ type Config struct {
 	PrivateKey       string `env:"PRIVATE_KEY"          envDefault:""`
 	MasterKey        string `env:"MASTER_KEY"          envDefault:""`
 	Redis            string `env:"REDIS"                  envDefault:"localhost:6379"`
+	Minio            string `env:"MINIO"                  envDefault:""`
+	MinioAccessKey   string `env:"MINIO_ACCESS_KEY"                  envDefault:""`
+	MinioSecretKey   string `env:"MINIO_SECRET_KEY"                  envDefault:""`
+	Bucket           string `env:"BUCKET"                  envDefault:"encrypted-bucket"`
 	SecuredMasterKey ISecureString
 }
 
@@ -36,6 +40,10 @@ func NewConfigBuilder(log *zerolog.Logger) *Builder {
 			PrivateKey:       "",
 			Redis:            "",
 			MasterKey:        "",
+			Bucket:           "",
+			Minio:            "",
+			MinioAccessKey:   "",
+			MinioSecretKey:   "",
 			SecuredMasterKey: nil,
 		},
 		logger: log,
@@ -60,6 +68,10 @@ func (b *Builder) FromFlags() *Builder {
 	flag.StringVar(&b.cfg.PrivateKey, "privatekey", b.cfg.PrivateKey, "Private Key for http connection")
 	flag.StringVar(&b.cfg.Redis, "redis", b.cfg.Redis, "Redis connection string")
 	flag.StringVar(&b.cfg.MasterKey, "masterkey", b.cfg.MasterKey, "Master Key for encrypting data")
+	flag.StringVar(&b.cfg.Minio, "minio", b.cfg.Minio, "Minio address")
+	flag.StringVar(&b.cfg.MinioAccessKey, "minio_access_key", b.cfg.MinioAccessKey, "Minio access key")
+	flag.StringVar(&b.cfg.MinioSecretKey, "minio_secret_key", b.cfg.MinioSecretKey, "Minio secret key")
+	flag.StringVar(&b.cfg.Bucket, "bucket", b.cfg.Bucket, "Bucket name for Minio")
 	flag.Parse()
 
 	return b

@@ -158,32 +158,26 @@ func (q *Queries) DeletePasswordEntry(ctx context.Context, arg DeletePasswordEnt
 }
 
 const GetBinaryEntriesByUserID = `-- name: GetBinaryEntriesByUserID :many
-SELECT id, file_name, file_url, file_size, created_at FROM binary_entries WHERE user_id = $1
+SELECT id, user_id, file_name, file_size, file_url, created_at, updated_at FROM binary_entries WHERE user_id = $1
 `
 
-type GetBinaryEntriesByUserIDRow struct {
-	ID        pgtype.UUID      `db:"id"`
-	FileName  string           `db:"file_name"`
-	FileUrl   string           `db:"file_url"`
-	FileSize  int64            `db:"file_size"`
-	CreatedAt pgtype.Timestamp `db:"created_at"`
-}
-
-func (q *Queries) GetBinaryEntriesByUserID(ctx context.Context, userID pgtype.UUID) ([]GetBinaryEntriesByUserIDRow, error) {
+func (q *Queries) GetBinaryEntriesByUserID(ctx context.Context, userID pgtype.UUID) ([]BinaryEntry, error) {
 	rows, err := q.db.Query(ctx, GetBinaryEntriesByUserID, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetBinaryEntriesByUserIDRow
+	var items []BinaryEntry
 	for rows.Next() {
-		var i GetBinaryEntriesByUserIDRow
+		var i BinaryEntry
 		if err := rows.Scan(
 			&i.ID,
+			&i.UserID,
 			&i.FileName,
-			&i.FileUrl,
 			&i.FileSize,
+			&i.FileUrl,
 			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -196,7 +190,7 @@ func (q *Queries) GetBinaryEntriesByUserID(ctx context.Context, userID pgtype.UU
 }
 
 const GetBinaryEntryByID = `-- name: GetBinaryEntryByID :one
-SELECT id, user_id, file_name, file_size, file_type, file_url, created_at, updated_at FROM binary_entries WHERE id = $1
+SELECT id, user_id, file_name, file_size, file_url, created_at, updated_at FROM binary_entries WHERE id = $1
 `
 
 func (q *Queries) GetBinaryEntryByID(ctx context.Context, id pgtype.UUID) (BinaryEntry, error) {
@@ -207,7 +201,6 @@ func (q *Queries) GetBinaryEntryByID(ctx context.Context, id pgtype.UUID) (Binar
 		&i.UserID,
 		&i.FileName,
 		&i.FileSize,
-		&i.FileType,
 		&i.FileUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -478,7 +471,7 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 const StoreBinaryEntry = `-- name: StoreBinaryEntry :one
 INSERT INTO binary_entries (user_id, file_name, file_url, file_size)
 VALUES ($1, $2, $3, $4)
-    RETURNING id
+    RETURNING id, user_id, file_name, file_size, file_url, created_at, updated_at
 `
 
 type StoreBinaryEntryParams struct {
@@ -488,16 +481,24 @@ type StoreBinaryEntryParams struct {
 	FileSize int64       `db:"file_size"`
 }
 
-func (q *Queries) StoreBinaryEntry(ctx context.Context, arg StoreBinaryEntryParams) (pgtype.UUID, error) {
+func (q *Queries) StoreBinaryEntry(ctx context.Context, arg StoreBinaryEntryParams) (BinaryEntry, error) {
 	row := q.db.QueryRow(ctx, StoreBinaryEntry,
 		arg.UserID,
 		arg.FileName,
 		arg.FileUrl,
 		arg.FileSize,
 	)
-	var id pgtype.UUID
-	err := row.Scan(&id)
-	return id, err
+	var i BinaryEntry
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.FileName,
+		&i.FileSize,
+		&i.FileUrl,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const StoreCard = `-- name: StoreCard :one

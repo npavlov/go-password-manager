@@ -60,7 +60,6 @@ type BinaryEntry struct {
 	UserID    pgtype.UUID      `db:"user_id"`
 	FileName  string           `db:"file_name"`
 	FileSize  int64            `db:"file_size"`
-	FileType  string           `db:"file_type"`
 	FileUrl   string           `db:"file_url"`
 	CreatedAt pgtype.Timestamp `db:"created_at"`
 	UpdatedAt pgtype.Timestamp `db:"updated_at"`

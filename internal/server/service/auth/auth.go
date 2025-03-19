@@ -63,7 +63,7 @@ func (as *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.R
 		return nil, err
 	}
 	// Encrypt the user key using the master key
-	encryptedKey, err := utils.Encrypt(userKey, as.cfg.MasterKey)
+	encryptedKey, err := utils.Encrypt(userKey, as.cfg.SecuredMasterKey.Get())
 	if err != nil {
 		return nil, err
 	}

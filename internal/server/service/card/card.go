@@ -12,6 +12,7 @@ import (
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/server/service/utils"
 	"github.com/npavlov/go-password-manager/internal/server/storage"
+	gu "github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
@@ -150,7 +151,7 @@ func (ns *Service) UpdateCard(ctx context.Context, req *pb.UpdateCardRequest) (*
 	hashedCardNumber := ns.HashCardNumber(req.Data.CardNumber)
 
 	card, err := ns.storage.UpdateCard(ctx, db.UpdateCardParams{
-		ID:                  utils.GetIdFromString(req.CardId),
+		ID:                  gu.GetIdFromString(req.CardId),
 		EncryptedCardNumber: encryptedCardNumber,
 		HashedCardNumber:    hashedCardNumber,
 		EncryptedCvv:        encryptedCVV,
@@ -260,7 +261,7 @@ func (ns *Service) DeleteCard(ctx context.Context, req *pb.DeleteCardRequest) (*
 	}
 
 	err = ns.storage.DeleteCard(ctx, db.DeleteCardParams{
-		ID:     utils.GetIdFromString(req.CardId),
+		ID:     gu.GetIdFromString(req.CardId),
 		UserID: userUUID,
 	})
 	if err != nil {

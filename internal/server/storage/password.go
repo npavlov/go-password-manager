@@ -5,7 +5,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/npavlov/go-password-manager/internal/server/db"
-	"github.com/npavlov/go-password-manager/internal/server/service/utils"
+	"github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/pkg/errors"
 )
 

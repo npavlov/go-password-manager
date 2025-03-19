@@ -3,9 +3,8 @@ package storage
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/npavlov/go-password-manager/internal/server/db"
-	"github.com/npavlov/go-password-manager/internal/server/service/utils"
+	"github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/pkg/errors"
 )
 
@@ -23,12 +22,7 @@ func (ds *DBStorage) StoreNote(ctx context.Context, createNote db.CreateNoteEntr
 
 // GetNote retrieves note record
 func (ds *DBStorage) GetNote(ctx context.Context, noteId string) (*db.Note, error) {
-	var uuid pgtype.UUID
-	if err := uuid.Scan(noteId); err != nil {
-		ds.log.Error().Err(err).Msg("failed to scan uuid")
-
-		return nil, errors.Wrap(err, "failed to parse uuid")
-	}
+	uuid := utils.GetIdFromString(noteId)
 
 	note, err := ds.Queries.GetNoteByID(ctx, uuid)
 	if err != nil {

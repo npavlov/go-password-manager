@@ -9,18 +9,20 @@ import "buf/validate/validate.proto";
 
 service FileService {
   rpc UploadFile (stream UploadFileRequest) returns (UploadFileResponse);
-  rpc GetFiles (GetFilesRequest) returns (stream GetFilesResponse);
+  rpc GetFile (GetFileRequest) returns (stream GetFileResponse);
+  rpc GetFiles (GetFilesRequest) returns (GetFilesResponse);
   rpc DownloadFile (DownloadFileRequest) returns (stream DownloadFileResponse);
   rpc DeleteFile (DeleteFileRequest) returns (DeleteFileResponse);
 }
 
 message UploadFileRequest {
-  string filename = 2 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
-  bytes data = 3 [(buf.validate.field).required = true];
+  string filename = 1 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  bytes data = 2 [(buf.validate.field).required = true];
 }
 
 message UploadFileResponse {
-  string file_id = 1 [(buf.validate.field).string.uuid = true];
+  string file_id = 1;
+  string message = 2;
 }
 
 message DownloadFileRequest {
@@ -29,6 +31,15 @@ message DownloadFileRequest {
 
 message DownloadFileResponse {
   bytes data = 1;
+  google.protobuf.Timestamp last_update = 2;
+}
+
+message GetFileRequest {
+  string file_id = 1  [(buf.validate.field).string.uuid = true];
+}
+
+message GetFileResponse {
+  FileMeta file = 1;
   google.protobuf.Timestamp last_update = 2;
 }
 
@@ -48,6 +59,7 @@ message DeleteFileResponse {
 }
 
 message FileMeta {
-  string file_id = 1 [(buf.validate.field).string.uuid = true];
-  google.protobuf.Timestamp last_update = 2;
+  string id = 1;
+  string file_name = 2;
+  int64 file_size = 3;
 }

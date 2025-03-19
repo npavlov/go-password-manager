@@ -3,9 +3,8 @@ package storage
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/npavlov/go-password-manager/internal/server/db"
-	"github.com/npavlov/go-password-manager/internal/server/service/utils"
+	"github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/pkg/errors"
 )
 
@@ -23,12 +22,7 @@ func (ds *DBStorage) StoreCard(ctx context.Context, createCard db.StoreCardParam
 
 // GetCard retrieves card record
 func (ds *DBStorage) GetCard(ctx context.Context, cardId string) (*db.Card, error) {
-	var uuid pgtype.UUID
-	if err := uuid.Scan(cardId); err != nil {
-		ds.log.Error().Err(err).Msg("failed to scan uuid")
-
-		return nil, errors.Wrap(err, "failed to parse uuid")
-	}
+	uuid := utils.GetIdFromString(cardId)
 
 	card, err := ds.Queries.GetCardByID(ctx, uuid)
 	if err != nil {

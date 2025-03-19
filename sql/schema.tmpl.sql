@@ -30,7 +30,6 @@ CREATE TABLE binary_entries (
                         user_id UUID REFERENCES users(id) ON DELETE CASCADE,
                         file_name VARCHAR(255) NOT NULL,
                         file_size BIGINT NOT NULL,  -- File size in bytes
-                        file_type VARCHAR(255) NOT NULL,  -- MIME type (e.g., image/png, application/pdf)
                         file_url TEXT NOT NULL,  -- URL to MinIO storage
                         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP

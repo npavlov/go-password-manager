@@ -22,7 +22,6 @@ CREATE TABLE "binary_entries" (
                                   "user_id" uuid NULL,
                                   "file_name" character varying(255) NOT NULL,
                                   "file_size" bigint NOT NULL,
-                                  "file_type" character varying(255) NOT NULL,
                                   "file_url" text NOT NULL,
                                   "created_at" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                   "updated_at" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,

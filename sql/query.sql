@@ -73,10 +73,10 @@ DELETE FROM cards WHERE id = $1 and user_id = $2;
 -- name: StoreBinaryEntry :one
 INSERT INTO binary_entries (user_id, file_name, file_url, file_size)
 VALUES ($1, $2, $3, $4)
-    RETURNING id;
+    RETURNING *;
 
 -- name: GetBinaryEntriesByUserID :many
-SELECT id, file_name, file_url, file_size, created_at FROM binary_entries WHERE user_id = $1;
+SELECT * FROM binary_entries WHERE user_id = $1;
 
 -- name: GetBinaryEntryByID :one
 SELECT * FROM binary_entries WHERE id = $1;

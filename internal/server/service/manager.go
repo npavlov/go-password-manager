@@ -31,7 +31,10 @@ func NewGRPCManager(cfg *config.Config, logger *zerolog.Logger, memStorage redis
 	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
 		interceptors.LoggingServerInterceptor(logger), // Logs all requests/responses
 		interceptors.TokenInterceptor(logger, cfg.JwtSecret, memStorage),
-	), grpc.Creds(creds))
+	),
+		grpc.ChainStreamInterceptor(
+			interceptors.StreamTokenInterceptor(logger, cfg.JwtSecret, memStorage), // NEW Stream Interceptor
+		), grpc.Creds(creds))
 	reflection.Register(grpcServer)
 
 	//nolint:exhaustruct
