@@ -14,7 +14,7 @@ require (
 	github.com/npavlov/go-metrics-service v0.0.0-20250312105837-6dcef97fff51
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose v2.7.0+incompatible
-	github.com/redis/go-redis/v9 v9.7.1
+	github.com/redis/go-redis/v9 v9.7.3
 	github.com/rs/zerolog v1.33.0
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/crypto v0.32.0
