@@ -9,7 +9,6 @@ import (
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/server/service/utils"
 	"github.com/npavlov/go-password-manager/internal/server/storage"
-	gu "github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
@@ -102,7 +101,7 @@ func (ns *Service) GetNote(ctx context.Context, req *pb.GetNoteRequest) (*pb.Get
 		return nil, errors.Wrap(err, "error getting user id")
 	}
 
-	note, err := ns.storage.GetNote(ctx, req.NoteId)
+	note, err := ns.storage.GetNote(ctx, req.NoteId, userUUID)
 	if err != nil {
 		ns.logger.Error().Err(err).Msg("error getting user id")
 
@@ -144,10 +143,7 @@ func (ns *Service) DeleteNote(ctx context.Context, req *pb.DeleteNoteRequest) (*
 		return nil, errors.Wrap(err, "error getting user id")
 	}
 
-	err = ns.storage.DeletePassword(ctx, db.DeletePasswordEntryParams{
-		ID:     gu.GetIdFromString(req.NoteId),
-		UserID: userUUID,
-	})
+	err = ns.storage.DeletePassword(ctx, req.NoteId, userUUID)
 	if err != nil {
 		ns.logger.Error().Err(err).Msg("error deleting note")
 

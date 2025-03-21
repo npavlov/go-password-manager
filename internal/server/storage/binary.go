@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/pkg/errors"
@@ -21,10 +22,13 @@ func (ds *DBStorage) StoreBinary(ctx context.Context, createBinary db.StoreBinar
 }
 
 // GetBinary retrieves binary record
-func (ds *DBStorage) GetBinary(ctx context.Context, binaryId string) (*db.BinaryEntry, error) {
+func (ds *DBStorage) GetBinary(ctx context.Context, binaryId string, userId pgtype.UUID) (*db.BinaryEntry, error) {
 	uuid := utils.GetIdFromString(binaryId)
 
-	binary, err := ds.Queries.GetBinaryEntryByID(ctx, uuid)
+	binary, err := ds.Queries.GetBinaryEntryByID(ctx, db.GetBinaryEntryByIDParams{
+		ID:     uuid,
+		UserID: userId,
+	})
 	if err != nil {
 		ds.log.Error().Err(err).Msg("failed to find binary")
 

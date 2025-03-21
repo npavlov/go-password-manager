@@ -23,7 +23,7 @@ WHERE user_id = $1;
 
 -- name: GetPasswordEntryByID :one
 SELECT * FROM passwords
-WHERE id = $1;
+WHERE id = $1 and user_id = $2;
 
 -- name: UpdatePasswordEntry :one
 UPDATE passwords
@@ -45,7 +45,7 @@ SELECT * FROM notes
 WHERE user_id = $1;
 
 -- name: GetNoteByID :one
-SELECT * FROM notes WHERE id = $1;
+SELECT * FROM notes WHERE id = $1 and user_id = $2;
 
 -- name: DeleteNoteEntry :exec
 DELETE FROM notes WHERE id = $1 and user_id = $2;
@@ -65,7 +65,7 @@ WHERE id = $6
 SELECT * FROM cards WHERE user_id = $1;
 
 -- name: GetCardByID :one
-SELECT * FROM cards WHERE id = $1;
+SELECT * FROM cards WHERE id = $1 and user_id = $2;
 
 -- name: DeleteCard :exec
 DELETE FROM cards WHERE id = $1 and user_id = $2;
@@ -79,7 +79,7 @@ VALUES ($1, $2, $3, $4)
 SELECT * FROM binary_entries WHERE user_id = $1;
 
 -- name: GetBinaryEntryByID :one
-SELECT * FROM binary_entries WHERE id = $1;
+SELECT * FROM binary_entries WHERE id = $1 and user_id = $2;
 
 -- name: DeleteBinaryEntry :exec
 DELETE FROM binary_entries WHERE id = $1 and user_id = $2;

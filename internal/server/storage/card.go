@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/pkg/errors"
@@ -21,10 +22,13 @@ func (ds *DBStorage) StoreCard(ctx context.Context, createCard db.StoreCardParam
 }
 
 // GetCard retrieves card record
-func (ds *DBStorage) GetCard(ctx context.Context, cardId string) (*db.Card, error) {
+func (ds *DBStorage) GetCard(ctx context.Context, cardId string, userId pgtype.UUID) (*db.Card, error) {
 	uuid := utils.GetIdFromString(cardId)
 
-	card, err := ds.Queries.GetCardByID(ctx, uuid)
+	card, err := ds.Queries.GetCardByID(ctx, db.GetCardByIDParams{
+		ID:     uuid,
+		UserID: userId,
+	})
 	if err != nil {
 		ds.log.Error().Err(err).Msg("failed to find card")
 
@@ -48,8 +52,13 @@ func (ds *DBStorage) GetCards(ctx context.Context, userId string) ([]db.Card, er
 	return cards, nil
 }
 
-func (ds *DBStorage) DeleteCard(ctx context.Context, arg db.DeleteCardParams) error {
-	err := ds.Queries.DeleteCard(ctx, arg)
+func (ds *DBStorage) DeleteCard(ctx context.Context, cardId string, userId pgtype.UUID) error {
+	uuid := utils.GetIdFromString(cardId)
+
+	err := ds.Queries.DeleteCard(ctx, db.DeleteCardParams{
+		ID:     uuid,
+		UserID: userId,
+	})
 	if err != nil {
 		ds.log.Error().Err(err).Msg("failed to delete card")
 

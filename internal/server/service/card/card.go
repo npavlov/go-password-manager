@@ -201,7 +201,7 @@ func (ns *Service) GetCard(ctx context.Context, req *pb.GetCardRequest) (*pb.Get
 		return nil, errors.Wrap(err, "error getting user id")
 	}
 
-	Card, err := ns.storage.GetCard(ctx, req.CardId)
+	Card, err := ns.storage.GetCard(ctx, req.CardId, userUUID)
 	if err != nil {
 		ns.logger.Error().Err(err).Msg("error getting user id")
 
@@ -260,10 +260,7 @@ func (ns *Service) DeleteCard(ctx context.Context, req *pb.DeleteCardRequest) (*
 		return nil, errors.Wrap(err, "error getting user id")
 	}
 
-	err = ns.storage.DeleteCard(ctx, db.DeleteCardParams{
-		ID:     gu.GetIdFromString(req.CardId),
-		UserID: userUUID,
-	})
+	err = ns.storage.DeleteCard(ctx, req.CardId, userUUID)
 	if err != nil {
 		ns.logger.Error().Err(err).Msg("error deleting Card")
 

@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/pkg/errors"
@@ -21,10 +22,13 @@ func (ds *DBStorage) StoreNote(ctx context.Context, createNote db.CreateNoteEntr
 }
 
 // GetNote retrieves note record
-func (ds *DBStorage) GetNote(ctx context.Context, noteId string) (*db.Note, error) {
+func (ds *DBStorage) GetNote(ctx context.Context, noteId string, userId pgtype.UUID) (*db.Note, error) {
 	uuid := utils.GetIdFromString(noteId)
 
-	note, err := ds.Queries.GetNoteByID(ctx, uuid)
+	note, err := ds.Queries.GetNoteByID(ctx, db.GetNoteByIDParams{
+		ID:     uuid,
+		UserID: userId,
+	})
 	if err != nil {
 		ds.log.Error().Err(err).Msg("failed to create user")
 
@@ -48,8 +52,13 @@ func (ds *DBStorage) GetNotes(ctx context.Context, userId string) ([]db.Note, er
 	return notes, nil
 }
 
-func (ds *DBStorage) DeleteNote(ctx context.Context, arg db.DeleteNoteEntryParams) error {
-	err := ds.Queries.DeleteNoteEntry(ctx, arg)
+func (ds *DBStorage) DeleteNote(ctx context.Context, noteId string, userId pgtype.UUID) error {
+	uuid := utils.GetIdFromString(noteId)
+
+	err := ds.Queries.DeleteNoteEntry(ctx, db.DeleteNoteEntryParams{
+		ID:     uuid,
+		UserID: userId,
+	})
 	if err != nil {
 		ds.log.Error().Err(err).Msg("failed to delete note")
 

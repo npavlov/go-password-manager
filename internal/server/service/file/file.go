@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Service struct {
@@ -95,6 +96,13 @@ func (fs *Service) UploadFile(stream grpc.ClientStreamingServer[pb.UploadFileReq
 		fs.logger.Info().Msg("Successfully uploaded file to MinIO")
 	}()
 
+	// Encrypt and write data to the pipe
+	encryptor, err := utils.NewEncryptor(pipeWriter, decryptedUserKey)
+	if err != nil {
+		fs.logger.Error().Err(err).Msg("error creating encryptor")
+
+		return errors.Wrap(err, "error creating encryptor")
+	}
 	defer pipeWriter.Close()
 
 	// Stream and encrypt file data
@@ -114,28 +122,12 @@ func (fs *Service) UploadFile(stream grpc.ClientStreamingServer[pb.UploadFileReq
 			continue
 		}
 
-		// Process the chunk in 4096-byte blocks
-		for offset := 0; offset < len(chunk.Data); offset += 4096 {
-			end := offset + 4096
-			if end > len(chunk.Data) {
-				end = len(chunk.Data)
-			}
+		blockSize, err := encryptor.Write(chunk.Data)
+		totalSize += int64(blockSize)
+		if err != nil {
+			fs.logger.Error().Err(err).Msg("failed to write chunk")
 
-			// Encrypt the 4096-byte block
-			encryptedBlock, err := utils.Encrypt(string(chunk.Data[offset:end]), decryptedUserKey)
-			if err != nil {
-				fs.logger.Error().Err(err).Msg("failed to encrypt file block")
-				return errors.Wrap(err, "failed to encrypt file block")
-			}
-
-			// Write the encrypted block to MinIO
-			_, err = pipeWriter.Write([]byte(encryptedBlock))
-			if err != nil {
-				fs.logger.Error().Err(err).Msg("failed to write to MinIO")
-				return errors.Wrap(err, "failed to write to MinIO")
-			}
-
-			totalSize += int64(len(encryptedBlock))
+			return errors.Wrap(err, "failed to write chunk")
 		}
 	}
 
@@ -204,7 +196,7 @@ func (fs *Service) DownloadFile(req *pb.DownloadFileRequest, stream grpc.ServerS
 	}
 
 	// Retrieve file metadata from DB
-	fileEntry, err := fs.storage.GetBinary(ctx, req.FileId)
+	fileEntry, err := fs.storage.GetBinary(ctx, req.FileId, userUUID)
 	if err != nil {
 		fs.logger.Error().Err(err).Msg("failed to fetch file metadata")
 		return status.Error(codes.NotFound, "file not found")
@@ -212,7 +204,8 @@ func (fs *Service) DownloadFile(req *pb.DownloadFileRequest, stream grpc.ServerS
 
 	// Ensure the file belongs to the user
 	if fileEntry.UserID != userUUID {
-		fs.logger.Warn().Msg("unauthorized file access attempt")
+		fs.logger.Error().Msg("you do not have access to this file")
+
 		return status.Error(codes.PermissionDenied, "you do not have access to this file")
 	}
 
@@ -232,35 +225,71 @@ func (fs *Service) DownloadFile(req *pb.DownloadFileRequest, stream grpc.ServerS
 	}
 	defer reader.Close()
 
-	// Read and stream the file in chunks
-	buf := make([]byte, 4096) // 4KB buffer for chunked streaming
+	// Create a decryptor to decrypt the data on the fly
+	decryptor, err := utils.NewDecryptor(reader, decryptedUserKey)
+	if err != nil {
+		fs.logger.Error().Err(err).Msg("error creating decryptor")
+
+		return status.Error(codes.Internal, "error creating decryptor")
+	}
+
+	// Stream decrypted data in blocks
+	buffer := make([]byte, 1024) // Read in 1024-byte chunks
+
 	for {
-		n, err := reader.Read(buf)
-		if err != nil && err != io.EOF {
-			fs.logger.Error().Err(err).Msg("failed to read file chunk")
-			return status.Error(codes.Internal, "failed to read file")
+		n, err := decryptor.Read(buffer) // Read a chunk
+		if n > 0 {
+			// Send only the exact number of bytes read
+			if err := stream.Send(&pb.DownloadFileResponse{
+				Data:       buffer[:n], // Trim the buffer to actual size
+				LastUpdate: timestamppb.New(fileEntry.UpdatedAt.Time),
+			}); err != nil {
+				return errors.Wrap(err, "error sending download response")
+			}
 		}
 
-		if n == 0 {
+		if n < len(buffer) || err == io.EOF {
 			break
 		}
 
-		// Decrypt the chunk
-		decryptedChunk, err := utils.Decrypt(string(buf[:n]), decryptedUserKey)
 		if err != nil {
-			fs.logger.Error().Err(err).Msg("failed to decrypt file chunk")
-			return status.Error(codes.Internal, "failed to decrypt file")
-		}
+			fs.logger.Error().Err(err).Msg("error reading and decrypting file")
 
-		// Send chunk to client
-		err = stream.Send(&pb.DownloadFileResponse{Data: []byte(decryptedChunk)})
-		if err != nil {
-			fs.logger.Error().Err(err).Msg("failed to send file chunk")
-			return status.Error(codes.Canceled, "stream interrupted")
+			return status.Error(codes.Internal, "error reading and decrypting file")
 		}
 	}
 
 	fs.logger.Info().Str("file", fileEntry.FileName).Msg("file successfully streamed")
 
 	return nil
+}
+
+func (fs *Service) GetFile(ctx context.Context, req *pb.GetFileRequest) (*pb.GetFileResponse, error) {
+	if err := fs.validator.Validate(req); err != nil {
+		return nil, errors.Wrap(err, "error validating input")
+	}
+
+	userUUID, err := utils.GetUserId(ctx)
+	if err != nil {
+		fs.logger.Error().Err(err).Msg("error getting user id")
+
+		return nil, errors.Wrap(err, "error getting user id")
+	}
+
+	file, err := fs.storage.GetBinary(ctx, req.FileId, userUUID)
+	if err != nil {
+		fs.logger.Error().Err(err).Msg("error getting user id")
+
+		return nil, errors.Wrap(err, "error getting user id")
+	}
+
+	return &pb.GetFileResponse{
+		File: &pb.FileMeta{
+			Id:       file.ID.String(),
+			FileName: file.FileName,
+			FileSize: file.FileSize,
+			FileUrl:  file.FileUrl,
+		},
+		LastUpdate: timestamppb.New(file.UpdatedAt.Time),
+	}, nil
 }

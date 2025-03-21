@@ -1,12 +1,12 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "proto/auth/auth.proto",
+    "title": "proto/card/card.proto",
     "version": "version not set"
   },
   "tags": [
     {
-      "name": "proto.auth.AuthService"
+      "name": "proto.card.CardService"
     }
   ],
   "consumes": [
@@ -17,21 +17,71 @@
   ],
   "paths": {},
   "definitions": {
-    "authLoginResponse": {
+    "cardCardData": {
       "type": "object",
       "properties": {
-        "token": {
+        "cardNumber": {
+          "type": "string",
+          "title": "Validate card number (13-19 digits)"
+        },
+        "expiryDate": {
+          "type": "string",
+          "title": "Validate expiry date (MM/YY format)"
+        },
+        "cvv": {
+          "type": "string",
+          "title": "Validate CVV (3 or 4 digits)"
+        },
+        "cardholderName": {
+          "type": "string",
+          "title": "Validate cardholder name (1-100 characters)"
+        }
+      }
+    },
+    "cardDeleteCardResponse": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        }
+      }
+    },
+    "cardGetCardResponse": {
+      "type": "object",
+      "properties": {
+        "card": {
+          "$ref": "#/definitions/cardCardData"
+        },
+        "lastUpdate": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "cardGetCardsResponse": {
+      "type": "object",
+      "properties": {
+        "cards": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cardCardData"
+          }
+        }
+      }
+    },
+    "cardStoreCardResponse": {
+      "type": "object",
+      "properties": {
+        "cardId": {
           "type": "string"
         }
       }
     },
-    "authRegisterResponse": {
+    "cardUpdateCardResponse": {
       "type": "object",
       "properties": {
-        "token": {
-          "type": "string"
-        },
-        "userKey": {
+        "cardId": {
           "type": "string"
         }
       }

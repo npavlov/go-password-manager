@@ -104,7 +104,7 @@ func (ps *Service) GetPassword(ctx context.Context, req *pb.GetPasswordRequest) 
 		return nil, errors.Wrap(err, "error getting user id")
 	}
 
-	password, err := ps.storage.GetPassword(ctx, req.PasswordId)
+	password, err := ps.storage.GetPassword(ctx, req.PasswordId, userUUID)
 	if err != nil {
 		ps.logger.Error().Err(err).Msg("error getting user id")
 
@@ -191,10 +191,7 @@ func (ps *Service) DeletePassword(ctx context.Context, req *pb.DeletePasswordReq
 		return nil, errors.Wrap(err, "error getting user id")
 	}
 
-	err = ps.storage.DeletePassword(ctx, db.DeletePasswordEntryParams{
-		ID:     gu.GetIdFromString(req.PasswordId),
-		UserID: userUUID,
-	})
+	err = ps.storage.DeletePassword(ctx, req.PasswordId, userUUID)
 	if err != nil {
 		ps.logger.Error().Err(err).Msg("error deleting password")
 

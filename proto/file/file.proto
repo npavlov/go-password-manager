@@ -9,7 +9,7 @@ import "buf/validate/validate.proto";
 
 service FileService {
   rpc UploadFile (stream UploadFileRequest) returns (UploadFileResponse);
-  rpc GetFile (GetFileRequest) returns (stream GetFileResponse);
+  rpc GetFile (GetFileRequest) returns (GetFileResponse);
   rpc GetFiles (GetFilesRequest) returns (GetFilesResponse);
   rpc DownloadFile (DownloadFileRequest) returns (stream DownloadFileResponse);
   rpc DeleteFile (DeleteFileRequest) returns (DeleteFileResponse);
@@ -62,4 +62,5 @@ message FileMeta {
   string id = 1;
   string file_name = 2;
   int64 file_size = 3;
+  string file_url = 4;
 }

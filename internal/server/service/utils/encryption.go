@@ -45,32 +45,6 @@ func Encrypt(text, base64Key string) (string, error) {
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
-// EncryptBinary using AES-GCM
-func EncryptBinary(data []byte, base64Key string) ([]byte, error) {
-	key, err := base64.StdEncoding.DecodeString(base64Key)
-	if err != nil {
-		return nil, err
-	}
-
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-
-	aesGCM, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, err
-	}
-
-	nonce := make([]byte, aesGCM.NonceSize())
-	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		return nil, err
-	}
-
-	ciphertext := aesGCM.Seal(nonce, nonce, data, nil)
-	return ciphertext, nil
-}
-
 // Decrypt using AES-GCM
 func Decrypt(encryptedText, base64Key string) (string, error) {
 	// Decode the base64-encoded key
@@ -112,41 +86,4 @@ func Decrypt(encryptedText, base64Key string) (string, error) {
 	}
 
 	return string(plaintext), nil
-}
-
-// DecryptBytes using AES-GCM
-func DecryptBytes(encryptedBytes []byte, base64Key string) ([]byte, error) {
-	// Decode the base64-encoded key
-	key, err := base64.StdEncoding.DecodeString(base64Key)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a new AES cipher block using the decoded key
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a new GCM mode instance
-	aesGCM, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, err
-	}
-
-	// Extract the nonce from the ciphertext
-	nonceSize := aesGCM.NonceSize()
-	if len(encryptedBytes) < nonceSize {
-		return nil, fmt.Errorf("invalid ciphertext")
-	}
-
-	nonce, ciphertext := encryptedBytes[:nonceSize], encryptedBytes[nonceSize:]
-
-	// Decrypt the ciphertext
-	decryptedBytes, err := aesGCM.Open(nil, nonce, ciphertext, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return decryptedBytes, nil
 }

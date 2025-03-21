@@ -190,11 +190,16 @@ func (q *Queries) GetBinaryEntriesByUserID(ctx context.Context, userID pgtype.UU
 }
 
 const GetBinaryEntryByID = `-- name: GetBinaryEntryByID :one
-SELECT id, user_id, file_name, file_size, file_url, created_at, updated_at FROM binary_entries WHERE id = $1
+SELECT id, user_id, file_name, file_size, file_url, created_at, updated_at FROM binary_entries WHERE id = $1 and user_id = $2
 `
 
-func (q *Queries) GetBinaryEntryByID(ctx context.Context, id pgtype.UUID) (BinaryEntry, error) {
-	row := q.db.QueryRow(ctx, GetBinaryEntryByID, id)
+type GetBinaryEntryByIDParams struct {
+	ID     pgtype.UUID `db:"id"`
+	UserID pgtype.UUID `db:"user_id"`
+}
+
+func (q *Queries) GetBinaryEntryByID(ctx context.Context, arg GetBinaryEntryByIDParams) (BinaryEntry, error) {
+	row := q.db.QueryRow(ctx, GetBinaryEntryByID, arg.ID, arg.UserID)
 	var i BinaryEntry
 	err := row.Scan(
 		&i.ID,
@@ -209,11 +214,16 @@ func (q *Queries) GetBinaryEntryByID(ctx context.Context, id pgtype.UUID) (Binar
 }
 
 const GetCardByID = `-- name: GetCardByID :one
-SELECT id, user_id, encrypted_card_number, encrypted_expiry_date, encrypted_cvv, cardholder_name, created_at, updated_at, hashed_card_number FROM cards WHERE id = $1
+SELECT id, user_id, encrypted_card_number, encrypted_expiry_date, encrypted_cvv, cardholder_name, created_at, updated_at, hashed_card_number FROM cards WHERE id = $1 and user_id = $2
 `
 
-func (q *Queries) GetCardByID(ctx context.Context, id pgtype.UUID) (Card, error) {
-	row := q.db.QueryRow(ctx, GetCardByID, id)
+type GetCardByIDParams struct {
+	ID     pgtype.UUID `db:"id"`
+	UserID pgtype.UUID `db:"user_id"`
+}
+
+func (q *Queries) GetCardByID(ctx context.Context, arg GetCardByIDParams) (Card, error) {
+	row := q.db.QueryRow(ctx, GetCardByID, arg.ID, arg.UserID)
 	var i Card
 	err := row.Scan(
 		&i.ID,
@@ -321,11 +331,16 @@ func (q *Queries) GetItemsByUserID(ctx context.Context, arg GetItemsByUserIDPara
 }
 
 const GetNoteByID = `-- name: GetNoteByID :one
-SELECT id, user_id, encrypted_content, created_at, updated_at FROM notes WHERE id = $1
+SELECT id, user_id, encrypted_content, created_at, updated_at FROM notes WHERE id = $1 and user_id = $2
 `
 
-func (q *Queries) GetNoteByID(ctx context.Context, id pgtype.UUID) (Note, error) {
-	row := q.db.QueryRow(ctx, GetNoteByID, id)
+type GetNoteByIDParams struct {
+	ID     pgtype.UUID `db:"id"`
+	UserID pgtype.UUID `db:"user_id"`
+}
+
+func (q *Queries) GetNoteByID(ctx context.Context, arg GetNoteByIDParams) (Note, error) {
+	row := q.db.QueryRow(ctx, GetNoteByID, arg.ID, arg.UserID)
 	var i Note
 	err := row.Scan(
 		&i.ID,
@@ -403,11 +418,16 @@ func (q *Queries) GetPasswordEntriesByUserID(ctx context.Context, userID pgtype.
 
 const GetPasswordEntryByID = `-- name: GetPasswordEntryByID :one
 SELECT id, user_id, name, login, password, created_at, updated_at FROM passwords
-WHERE id = $1
+WHERE id = $1 and user_id = $2
 `
 
-func (q *Queries) GetPasswordEntryByID(ctx context.Context, id pgtype.UUID) (Password, error) {
-	row := q.db.QueryRow(ctx, GetPasswordEntryByID, id)
+type GetPasswordEntryByIDParams struct {
+	ID     pgtype.UUID `db:"id"`
+	UserID pgtype.UUID `db:"user_id"`
+}
+
+func (q *Queries) GetPasswordEntryByID(ctx context.Context, arg GetPasswordEntryByIDParams) (Password, error) {
+	row := q.db.QueryRow(ctx, GetPasswordEntryByID, arg.ID, arg.UserID)
 	var i Password
 	err := row.Scan(
 		&i.ID,
