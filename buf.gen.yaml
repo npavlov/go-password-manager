@@ -13,12 +13,12 @@ plugins:
     opt:
       - paths=source_relative
       - generate_unbound_methods=true
-  - local: protoc-gen-openapiv2
-    out: gen
+  - remote: buf.build/grpc-ecosystem/openapiv2:v2.26.3
+    out: api/openapi-spec
     opt:
       - allow_merge=true
-      - merge_file_name=contracts
-      - include_package_in_tags=true
+      - merge_file_name=api
+      - preserve_rpc_order=true
 managed:
   enabled: true
   disable:

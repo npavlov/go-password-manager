@@ -85,6 +85,15 @@ type Item struct {
 	CreatedAt  pgtype.Timestamp `db:"created_at"`
 }
 
+type Metainfo struct {
+	ID        pgtype.UUID      `db:"id"`
+	ItemID    pgtype.UUID      `db:"item_id"`
+	Key       string           `db:"key"`
+	Value     string           `db:"value"`
+	CreatedAt pgtype.Timestamp `db:"created_at"`
+	UpdatedAt pgtype.Timestamp `db:"updated_at"`
+}
+
 type Note struct {
 	ID               pgtype.UUID      `db:"id"`
 	UserID           pgtype.UUID      `db:"user_id"`
@@ -96,11 +105,18 @@ type Note struct {
 type Password struct {
 	ID        pgtype.UUID      `db:"id"`
 	UserID    pgtype.UUID      `db:"user_id"`
-	Name      string           `db:"name"`
 	Login     string           `db:"login"`
 	Password  string           `db:"password"`
 	CreatedAt pgtype.Timestamp `db:"created_at"`
 	UpdatedAt pgtype.Timestamp `db:"updated_at"`
+}
+
+type RefreshToken struct {
+	ID        pgtype.UUID      `db:"id"`
+	UserID    pgtype.UUID      `db:"user_id"`
+	Token     string           `db:"token"`
+	ExpiresAt pgtype.Timestamp `db:"expires_at"`
+	CreatedAt pgtype.Timestamp `db:"created_at"`
 }
 
 type User struct {

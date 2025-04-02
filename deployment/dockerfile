@@ -33,7 +33,7 @@ RUN apk add --no-cache libc6-compat
 
 # Copy the compiled server binary and any required files (e.g., .env files)
 COPY --from=builder /app/server /app/server
-COPY /deployment/.env /app/.env
+COPY server.env /app/server.env
 COPY /migrations /app/migrations
 COPY /certs /app/certs
 

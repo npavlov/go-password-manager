@@ -2,7 +2,6 @@ package utils
 
 import (
 	"context"
-	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -10,14 +9,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	TokenExpiration = time.Minute * 60
-)
-
-func GenerateJWT(userID string, jwtSecret string) (string, error) {
+func GenerateJWT(userID, jwtSecret string, expiration int64) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": userID,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(),
+		"exp":     expiration,
 	})
 	result, err := token.SignedString([]byte(jwtSecret))
 	if err != nil {

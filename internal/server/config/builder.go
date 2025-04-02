@@ -5,6 +5,7 @@ import (
 	"flag"
 
 	"github.com/caarlos0/env/v6"
+	"github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/rs/zerolog"
 )
 
@@ -20,7 +21,7 @@ type Config struct {
 	MinioAccessKey   string `env:"MINIO_ACCESS_KEY"                  envDefault:""`
 	MinioSecretKey   string `env:"MINIO_SECRET_KEY"                  envDefault:""`
 	Bucket           string `env:"BUCKET"                  envDefault:"encrypted-bucket"`
-	SecuredMasterKey ISecureString
+	SecuredMasterKey utils.ISecureString
 }
 
 // Builder defines the builder for the Config struct.
@@ -86,7 +87,7 @@ func (b *Builder) FromObj(cfg *Config) *Builder {
 
 // Build returns the final configuration.
 func (b *Builder) Build() *Config {
-	b.cfg.SecuredMasterKey = NewString(b.cfg.MasterKey)
+	b.cfg.SecuredMasterKey = utils.NewString(b.cfg.MasterKey)
 	b.cfg.MasterKey = ""
 
 	return b.cfg

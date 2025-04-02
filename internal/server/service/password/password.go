@@ -70,7 +70,6 @@ func (ps *Service) StorePassword(ctx context.Context, req *pb.StorePasswordReque
 
 	password, err := ps.storage.StorePassword(ctx, db.CreatePasswordEntryParams{
 		UserID:   userUUID,
-		Name:     req.Password.Name,
 		Login:    req.Password.Login,
 		Password: encryptedPassword,
 	})
@@ -120,7 +119,6 @@ func (ps *Service) GetPassword(ctx context.Context, req *pb.GetPasswordRequest) 
 
 	return &pb.GetPasswordResponse{
 		Password: &pb.PasswordData{
-			Name:     password.Name,
 			Login:    password.Login,
 			Password: decryptedPassword,
 		},
@@ -164,7 +162,6 @@ func (ps *Service) UpdatePassword(ctx context.Context, req *pb.UpdatePasswordReq
 
 	password, err := ps.storage.UpdatePassword(ctx, db.UpdatePasswordEntryParams{
 		ID:       gu.GetIdFromString(req.PasswordId),
-		Name:     req.Data.Name,
 		Login:    req.Data.Login,
 		Password: encryptedPassword,
 	})

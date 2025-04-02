@@ -70,7 +70,7 @@ services:
     networks:
       - app-network
     ports:
-      - "8082:8082"    # Server application port
+      - "9090:9090"    # Server application port
     environment:
       - ADDRESS=server:9090  # Replace with the address your server listens on
       - DATABASE_DSN=postgres://postgres:yourpassword@postgres:5432/yourdb?sslmode=disable
@@ -80,6 +80,13 @@ services:
       - MINIO_ACCESS_KEY=admin
       - MINIO_SECRET_KEY=adminpassword
     command: /app/server
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      minio:
+        condition: service_healthy
 
 volumes:
   minio_data:

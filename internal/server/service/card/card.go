@@ -2,11 +2,8 @@ package card
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 
 	"github.com/bufbuild/protovalidate-go"
-	"github.com/jackc/pgx/v5/pgtype"
 	pb "github.com/npavlov/go-password-manager/gen/proto/card"
 	"github.com/npavlov/go-password-manager/internal/server/config"
 	"github.com/npavlov/go-password-manager/internal/server/db"
@@ -86,7 +83,7 @@ func (ns *Service) StoreCard(ctx context.Context, req *pb.StoreCardRequest) (*pb
 	}
 
 	// Hash card number for uniqueness check
-	hashedCardNumber := ns.HashCardNumber(req.Card.CardNumber)
+	hashedCardNumber := utils.HashCardNumber(req.Card.CardNumber)
 
 	Card, err := ns.storage.StoreCard(ctx, db.StoreCardParams{
 		UserID:              userUUID,
@@ -148,7 +145,7 @@ func (ns *Service) UpdateCard(ctx context.Context, req *pb.UpdateCardRequest) (*
 	}
 
 	// Hash card number for uniqueness check
-	hashedCardNumber := ns.HashCardNumber(req.Data.CardNumber)
+	hashedCardNumber := utils.HashCardNumber(req.Data.CardNumber)
 
 	card, err := ns.storage.UpdateCard(ctx, db.UpdateCardParams{
 		ID:                  gu.GetIdFromString(req.CardId),
@@ -167,19 +164,6 @@ func (ns *Service) UpdateCard(ctx context.Context, req *pb.UpdateCardRequest) (*
 	return &pb.UpdateCardResponse{
 		CardId: card.ID.String(),
 	}, nil
-}
-
-// HashCardNumber hashes the card number to enforce uniqueness
-func (ns *Service) HashCardNumber(cardNumber string) pgtype.Text {
-	hash := sha256.Sum256([]byte(cardNumber))
-
-	text := pgtype.Text{}
-
-	hashString := hex.EncodeToString(hash[:]) // Convert to hex string for storage
-
-	_ = text.Scan(hashString)
-
-	return text
 }
 
 func (ns *Service) GetCard(ctx context.Context, req *pb.GetCardRequest) (*pb.GetCardResponse, error) {

@@ -12,9 +12,8 @@ SELECT * FROM users
 WHERE username = $1;
 
 -- name: CreatePasswordEntry :one
-INSERT INTO passwords (user_id, name, login, password)
-VALUES ($1, $2, $3, $4)
-    ON CONFLICT (user_id, name) DO NOTHING
+INSERT INTO passwords (user_id, login, password)
+VALUES ($1, $2, $3)
 RETURNING *;
 
 -- name: GetPasswordEntriesByUserID :many
@@ -22,13 +21,14 @@ SELECT * FROM passwords
 WHERE user_id = $1;
 
 -- name: GetPasswordEntryByID :one
-SELECT * FROM passwords
-WHERE id = $1 and user_id = $2;
+SELECT passwords.*
+FROM passwords
+WHERE passwords.id = $1 and passwords.user_id = $2;
 
 -- name: UpdatePasswordEntry :one
 UPDATE passwords
-SET name = $1, login = $2, password = $3
-WHERE id = $4
+SET login = $1, password = $2
+WHERE id = $3
     RETURNING *;
 
 -- name: DeletePasswordEntry :exec
@@ -45,7 +45,9 @@ SELECT * FROM notes
 WHERE user_id = $1;
 
 -- name: GetNoteByID :one
-SELECT * FROM notes WHERE id = $1 and user_id = $2;
+SELECT notes.*
+FROM notes
+WHERE notes.id = $1 and notes.user_id = $2;
 
 -- name: DeleteNoteEntry :exec
 DELETE FROM notes WHERE id = $1 and user_id = $2;
@@ -65,7 +67,9 @@ WHERE id = $6
 SELECT * FROM cards WHERE user_id = $1;
 
 -- name: GetCardByID :one
-SELECT * FROM cards WHERE id = $1 and user_id = $2;
+SELECT cards.*
+FROM cards
+WHERE cards.id = $1 and cards.user_id = $2;
 
 -- name: DeleteCard :exec
 DELETE FROM cards WHERE id = $1 and user_id = $2;
@@ -79,7 +83,9 @@ VALUES ($1, $2, $3, $4)
 SELECT * FROM binary_entries WHERE user_id = $1;
 
 -- name: GetBinaryEntryByID :one
-SELECT * FROM binary_entries WHERE id = $1 and user_id = $2;
+SELECT binary_entries.*
+FROM binary_entries
+WHERE binary_entries.id = $1 and binary_entries.user_id = $2;
 
 -- name: DeleteBinaryEntry :exec
 DELETE FROM binary_entries WHERE id = $1 and user_id = $2;
@@ -102,3 +108,37 @@ ORDER BY i.created_at DESC
 
 -- name: GetTotalItemCountByUserID :one
 SELECT COUNT(*) FROM items WHERE user_id = $1;
+
+-- name: AddMetaInfo :one
+INSERT INTO metainfo (item_id, key, value)
+VALUES ($1, $2, $3)
+    ON CONFLICT (item_id, key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP
+                                      RETURNING *;
+
+-- name: GetMetaInfoByItemID :many
+SELECT key, value FROM metainfo WHERE item_id = $1;
+
+-- name: DeleteMetaInfo :exec
+DELETE FROM metainfo
+WHERE item_id = $1 AND key = $2;
+
+-- name: CreateRefreshToken :exec
+INSERT INTO refresh_tokens (user_id, token, expires_at)
+VALUES ($1, $2, $3);
+
+-- name: GetRefreshToken :one
+SELECT id, user_id, token, expires_at
+FROM refresh_tokens
+WHERE token = $1;
+
+-- name: DeleteRefreshToken :exec
+DELETE FROM refresh_tokens
+WHERE token = $1;
+
+-- name: DeleteUserRefreshTokens :exec
+DELETE FROM refresh_tokens
+WHERE user_id = $1;
+
+-- name: ExpireRefreshTokens :exec
+DELETE FROM refresh_tokens
+WHERE expires_at < NOW();

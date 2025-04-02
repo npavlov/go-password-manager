@@ -2,8 +2,10 @@ package auth
 
 import (
 	"context"
+	"time"
 
 	"github.com/bufbuild/protovalidate-go"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/npavlov/go-password-manager/internal/server/config"
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/server/redis"
@@ -15,6 +17,11 @@ import (
 	pb "github.com/npavlov/go-password-manager/gen/proto/auth"
 	"github.com/rs/zerolog"
 	"golang.org/x/crypto/bcrypt"
+)
+
+const (
+	TokenExpiration        = time.Minute * 60
+	RefreshTokenExpiration = time.Hour * 24 * 7 // 7 days
 )
 
 type Service struct {
@@ -83,23 +90,14 @@ func (as *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.R
 
 	as.logger.Info().Interface("user", user).Msg("user created")
 
-	userId := user.ID.String()
-
-	token, err := utils.GenerateJWT(userId, as.cfg.JwtSecret)
+	token, refreshToken, err := as.tokenGeneration(ctx, user.ID)
 	if err != nil {
-		as.logger.Error().Err(err).Msg("failed to generate token")
+		as.logger.Error().Err(err).Msg("error generating token")
 
 		return nil, errors.Wrap(err, "error generating token")
 	}
 
-	err = as.memStorage.Set(ctx, token, userId, utils.TokenExpiration)
-	if err != nil {
-		as.logger.Error().Err(err).Msg("failed to set token")
-
-		return nil, errors.Wrap(err, "error setting token")
-	}
-
-	return &pb.RegisterResponse{Token: token, UserKey: userKey}, nil
+	return &pb.RegisterResponse{Token: token, RefreshToken: refreshToken, UserKey: userKey}, nil
 }
 
 // Login user and return JWT token
@@ -123,21 +121,74 @@ func (as *Service) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginRe
 		return nil, errors.Wrap(err, "invalid password")
 	}
 
-	userId := user.ID.String()
-
-	token, err := utils.GenerateJWT(userId, as.cfg.JwtSecret)
+	token, refreshToken, err := as.tokenGeneration(ctx, user.ID)
 	if err != nil {
-		as.logger.Error().Err(err).Msg("failed to generate token")
+		as.logger.Error().Err(err).Msg("error generating token")
 
 		return nil, errors.Wrap(err, "error generating token")
 	}
 
-	err = as.memStorage.Set(ctx, token, userId, utils.TokenExpiration)
+	return &pb.LoginResponse{Token: token, RefreshToken: refreshToken}, nil
+}
+
+func (as *Service) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
+	if err := as.validator.Validate(req); err != nil {
+		return nil, errors.Wrap(err, "error validating input")
+	}
+
+	// Get refresh token from DB
+	tokenRow, err := as.storage.GetToken(ctx, req.RefreshToken)
+	if err != nil {
+		as.logger.Error().Err(err).Msg("failed to get refresh token")
+		return nil, errors.Wrap(err, "invalid refresh token")
+	}
+
+	// Check if refresh token is expired
+	if tokenRow.ExpiresAt.Time.Before(time.Now()) {
+		as.logger.Error().Msg("refresh token expired")
+
+		return nil, errors.New("refresh token expired")
+	}
+
+	// Generate a new access token
+	newToken, newRefreshToken, err := as.tokenGeneration(ctx, tokenRow.UserID)
+
+	as.logger.Info().Str("user_id", tokenRow.UserID.String()).Msg("refresh token successfully rotated")
+
+	return &pb.RefreshTokenResponse{
+		Token:        newToken,
+		RefreshToken: newRefreshToken,
+	}, nil
+}
+
+func (as *Service) tokenGeneration(ctx context.Context, userID pgtype.UUID) (string, string, error) {
+	userId := userID.String()
+
+	tokenExp := time.Now().Add(TokenExpiration).Unix()
+
+	token, err := utils.GenerateJWT(userId, as.cfg.JwtSecret, tokenExp)
+	if err != nil {
+		return "", "", errors.Wrap(err, "error generating token")
+	}
+
+	err = as.memStorage.Set(ctx, token, userId, TokenExpiration)
 	if err != nil {
 		as.logger.Error().Err(err).Msg("failed to set token")
 
-		return nil, errors.Wrap(err, "error setting token")
+		return "", "", errors.Wrap(err, "error setting token")
 	}
 
-	return &pb.LoginResponse{Token: token}, nil
+	refreshTokenExp := time.Now().Add(RefreshTokenExpiration)
+
+	refreshToken, err := utils.GenerateJWT(userId, as.cfg.JwtSecret, refreshTokenExp.Unix())
+	if err != nil {
+		return "", "", errors.Wrap(err, "error generating refresh token")
+	}
+
+	err = as.storage.StoreToken(ctx, userID, refreshToken, refreshTokenExp)
+	if err != nil {
+		return "", "", errors.Wrap(err, "error storing token")
+	}
+
+	return token, refreshToken, nil
 }

@@ -17,12 +17,10 @@ CREATE TABLE users (
 CREATE TABLE passwords (
                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                         user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-                        name VARCHAR(255) NOT NULL,
                         login VARCHAR(255) NOT NULL,
                         password TEXT NOT NULL,
                         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                        CONSTRAINT unique_user_password_name UNIQUE (user_id, name)
+                        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE binary_entries (
@@ -60,7 +58,7 @@ CREATE TABLE items (
                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
                        type item_type NOT NULL,
-                       id_resource UUID NOT NULL,
+                       id_resource UUID UNIQUE NOT NULL,
                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -164,3 +162,22 @@ CREATE TRIGGER add_binary_to_items
 CREATE TRIGGER add_password_to_items
     AFTER INSERT ON passwords
     FOR EACH ROW EXECUTE FUNCTION add_password_to_items();
+
+
+CREATE TABLE metainfo (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          item_id UUID REFERENCES items(id_resource) ON DELETE CASCADE,  -- Links to any item
+          key VARCHAR(255) NOT NULL,  -- Metadata key (e.g., "website", "bank", "tag")
+          value TEXT NOT NULL,  -- Metadata value (e.g., "paypal.com", "Chase Bank")
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT unique_item_key UNIQUE (item_id, key)  -- Prevent duplicate keys for the same item
+);
+
+CREATE TABLE refresh_tokens (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE, -- Link to the user
+        token TEXT NOT NULL UNIQUE,  -- Securely store the refresh token
+        expires_at TIMESTAMP NOT NULL,  -- Expiration time
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

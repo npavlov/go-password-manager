@@ -18,6 +18,7 @@ import (
 	"github.com/npavlov/go-password-manager/internal/server/service/card"
 	"github.com/npavlov/go-password-manager/internal/server/service/file"
 	"github.com/npavlov/go-password-manager/internal/server/service/item"
+	"github.com/npavlov/go-password-manager/internal/server/service/meta"
 	"github.com/npavlov/go-password-manager/internal/server/service/note"
 	"github.com/npavlov/go-password-manager/internal/server/service/password"
 	"github.com/npavlov/go-password-manager/internal/server/storage"
@@ -96,6 +97,9 @@ func starServer(ctx context.Context, cfg *config.Config, log *zerolog.Logger, wg
 	itemService := item.NewItemService(log, dbStorage, cfg)
 	itemService.RegisterService(grpcServer)
 
+	metaService := meta.NewMetadataService(log, dbStorage, cfg)
+	metaService.RegisterService(grpcServer)
+
 	grpcManager.Start(ctx, wg)
 }
 
@@ -153,6 +157,6 @@ func setupMinIO(ctx context.Context, cfg *config.Config, log *zerolog.Logger) *m
 	}
 
 	log.Info().Msg("Connected to MinIO successfully")
-	
+
 	return client
 }

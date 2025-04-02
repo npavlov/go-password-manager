@@ -11,6 +11,33 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const AddMetaInfo = `-- name: AddMetaInfo :one
+INSERT INTO metainfo (item_id, key, value)
+VALUES ($1, $2, $3)
+    ON CONFLICT (item_id, key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP
+                                      RETURNING id, item_id, key, value, created_at, updated_at
+`
+
+type AddMetaInfoParams struct {
+	ItemID pgtype.UUID `db:"item_id"`
+	Key    string      `db:"key"`
+	Value  string      `db:"value"`
+}
+
+func (q *Queries) AddMetaInfo(ctx context.Context, arg AddMetaInfoParams) (Metainfo, error) {
+	row := q.db.QueryRow(ctx, AddMetaInfo, arg.ItemID, arg.Key, arg.Value)
+	var i Metainfo
+	err := row.Scan(
+		&i.ID,
+		&i.ItemID,
+		&i.Key,
+		&i.Value,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const CreateNoteEntry = `-- name: CreateNoteEntry :one
 INSERT INTO notes (user_id, encrypted_content)
 VALUES ($1, $2)
@@ -36,37 +63,45 @@ func (q *Queries) CreateNoteEntry(ctx context.Context, arg CreateNoteEntryParams
 }
 
 const CreatePasswordEntry = `-- name: CreatePasswordEntry :one
-INSERT INTO passwords (user_id, name, login, password)
-VALUES ($1, $2, $3, $4)
-    ON CONFLICT (user_id, name) DO NOTHING
-RETURNING id, user_id, name, login, password, created_at, updated_at
+INSERT INTO passwords (user_id, login, password)
+VALUES ($1, $2, $3)
+RETURNING id, user_id, login, password, created_at, updated_at
 `
 
 type CreatePasswordEntryParams struct {
 	UserID   pgtype.UUID `db:"user_id"`
-	Name     string      `db:"name"`
 	Login    string      `db:"login"`
 	Password string      `db:"password"`
 }
 
 func (q *Queries) CreatePasswordEntry(ctx context.Context, arg CreatePasswordEntryParams) (Password, error) {
-	row := q.db.QueryRow(ctx, CreatePasswordEntry,
-		arg.UserID,
-		arg.Name,
-		arg.Login,
-		arg.Password,
-	)
+	row := q.db.QueryRow(ctx, CreatePasswordEntry, arg.UserID, arg.Login, arg.Password)
 	var i Password
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
-		&i.Name,
 		&i.Login,
 		&i.Password,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const CreateRefreshToken = `-- name: CreateRefreshToken :exec
+INSERT INTO refresh_tokens (user_id, token, expires_at)
+VALUES ($1, $2, $3)
+`
+
+type CreateRefreshTokenParams struct {
+	UserID    pgtype.UUID      `db:"user_id"`
+	Token     string           `db:"token"`
+	ExpiresAt pgtype.Timestamp `db:"expires_at"`
+}
+
+func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error {
+	_, err := q.db.Exec(ctx, CreateRefreshToken, arg.UserID, arg.Token, arg.ExpiresAt)
+	return err
 }
 
 const CreateUser = `-- name: CreateUser :one
@@ -128,6 +163,21 @@ func (q *Queries) DeleteCard(ctx context.Context, arg DeleteCardParams) error {
 	return err
 }
 
+const DeleteMetaInfo = `-- name: DeleteMetaInfo :exec
+DELETE FROM metainfo
+WHERE item_id = $1 AND key = $2
+`
+
+type DeleteMetaInfoParams struct {
+	ItemID pgtype.UUID `db:"item_id"`
+	Key    string      `db:"key"`
+}
+
+func (q *Queries) DeleteMetaInfo(ctx context.Context, arg DeleteMetaInfoParams) error {
+	_, err := q.db.Exec(ctx, DeleteMetaInfo, arg.ItemID, arg.Key)
+	return err
+}
+
 const DeleteNoteEntry = `-- name: DeleteNoteEntry :exec
 DELETE FROM notes WHERE id = $1 and user_id = $2
 `
@@ -154,6 +204,36 @@ type DeletePasswordEntryParams struct {
 
 func (q *Queries) DeletePasswordEntry(ctx context.Context, arg DeletePasswordEntryParams) error {
 	_, err := q.db.Exec(ctx, DeletePasswordEntry, arg.ID, arg.UserID)
+	return err
+}
+
+const DeleteRefreshToken = `-- name: DeleteRefreshToken :exec
+DELETE FROM refresh_tokens
+WHERE token = $1
+`
+
+func (q *Queries) DeleteRefreshToken(ctx context.Context, token string) error {
+	_, err := q.db.Exec(ctx, DeleteRefreshToken, token)
+	return err
+}
+
+const DeleteUserRefreshTokens = `-- name: DeleteUserRefreshTokens :exec
+DELETE FROM refresh_tokens
+WHERE user_id = $1
+`
+
+func (q *Queries) DeleteUserRefreshTokens(ctx context.Context, userID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, DeleteUserRefreshTokens, userID)
+	return err
+}
+
+const ExpireRefreshTokens = `-- name: ExpireRefreshTokens :exec
+DELETE FROM refresh_tokens
+WHERE expires_at < NOW()
+`
+
+func (q *Queries) ExpireRefreshTokens(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, ExpireRefreshTokens)
 	return err
 }
 
@@ -190,7 +270,9 @@ func (q *Queries) GetBinaryEntriesByUserID(ctx context.Context, userID pgtype.UU
 }
 
 const GetBinaryEntryByID = `-- name: GetBinaryEntryByID :one
-SELECT id, user_id, file_name, file_size, file_url, created_at, updated_at FROM binary_entries WHERE id = $1 and user_id = $2
+SELECT binary_entries.id, binary_entries.user_id, binary_entries.file_name, binary_entries.file_size, binary_entries.file_url, binary_entries.created_at, binary_entries.updated_at
+FROM binary_entries
+WHERE binary_entries.id = $1 and binary_entries.user_id = $2
 `
 
 type GetBinaryEntryByIDParams struct {
@@ -214,7 +296,9 @@ func (q *Queries) GetBinaryEntryByID(ctx context.Context, arg GetBinaryEntryByID
 }
 
 const GetCardByID = `-- name: GetCardByID :one
-SELECT id, user_id, encrypted_card_number, encrypted_expiry_date, encrypted_cvv, cardholder_name, created_at, updated_at, hashed_card_number FROM cards WHERE id = $1 and user_id = $2
+SELECT cards.id, cards.user_id, cards.encrypted_card_number, cards.encrypted_expiry_date, cards.encrypted_cvv, cards.cardholder_name, cards.created_at, cards.updated_at, cards.hashed_card_number
+FROM cards
+WHERE cards.id = $1 and cards.user_id = $2
 `
 
 type GetCardByIDParams struct {
@@ -330,8 +414,39 @@ func (q *Queries) GetItemsByUserID(ctx context.Context, arg GetItemsByUserIDPara
 	return items, nil
 }
 
+const GetMetaInfoByItemID = `-- name: GetMetaInfoByItemID :many
+SELECT key, value FROM metainfo WHERE item_id = $1
+`
+
+type GetMetaInfoByItemIDRow struct {
+	Key   string `db:"key"`
+	Value string `db:"value"`
+}
+
+func (q *Queries) GetMetaInfoByItemID(ctx context.Context, itemID pgtype.UUID) ([]GetMetaInfoByItemIDRow, error) {
+	rows, err := q.db.Query(ctx, GetMetaInfoByItemID, itemID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetMetaInfoByItemIDRow
+	for rows.Next() {
+		var i GetMetaInfoByItemIDRow
+		if err := rows.Scan(&i.Key, &i.Value); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const GetNoteByID = `-- name: GetNoteByID :one
-SELECT id, user_id, encrypted_content, created_at, updated_at FROM notes WHERE id = $1 and user_id = $2
+SELECT notes.id, notes.user_id, notes.encrypted_content, notes.created_at, notes.updated_at
+FROM notes
+WHERE notes.id = $1 and notes.user_id = $2
 `
 
 type GetNoteByIDParams struct {
@@ -384,7 +499,7 @@ func (q *Queries) GetNotesByUserID(ctx context.Context, userID pgtype.UUID) ([]N
 }
 
 const GetPasswordEntriesByUserID = `-- name: GetPasswordEntriesByUserID :many
-SELECT id, user_id, name, login, password, created_at, updated_at FROM passwords
+SELECT id, user_id, login, password, created_at, updated_at FROM passwords
 WHERE user_id = $1
 `
 
@@ -400,7 +515,6 @@ func (q *Queries) GetPasswordEntriesByUserID(ctx context.Context, userID pgtype.
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
-			&i.Name,
 			&i.Login,
 			&i.Password,
 			&i.CreatedAt,
@@ -417,8 +531,9 @@ func (q *Queries) GetPasswordEntriesByUserID(ctx context.Context, userID pgtype.
 }
 
 const GetPasswordEntryByID = `-- name: GetPasswordEntryByID :one
-SELECT id, user_id, name, login, password, created_at, updated_at FROM passwords
-WHERE id = $1 and user_id = $2
+SELECT passwords.id, passwords.user_id, passwords.login, passwords.password, passwords.created_at, passwords.updated_at
+FROM passwords
+WHERE passwords.id = $1 and passwords.user_id = $2
 `
 
 type GetPasswordEntryByIDParams struct {
@@ -432,11 +547,35 @@ func (q *Queries) GetPasswordEntryByID(ctx context.Context, arg GetPasswordEntry
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
-		&i.Name,
 		&i.Login,
 		&i.Password,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const GetRefreshToken = `-- name: GetRefreshToken :one
+SELECT id, user_id, token, expires_at
+FROM refresh_tokens
+WHERE token = $1
+`
+
+type GetRefreshTokenRow struct {
+	ID        pgtype.UUID      `db:"id"`
+	UserID    pgtype.UUID      `db:"user_id"`
+	Token     string           `db:"token"`
+	ExpiresAt pgtype.Timestamp `db:"expires_at"`
+}
+
+func (q *Queries) GetRefreshToken(ctx context.Context, token string) (GetRefreshTokenRow, error) {
+	row := q.db.QueryRow(ctx, GetRefreshToken, token)
+	var i GetRefreshTokenRow
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Token,
+		&i.ExpiresAt,
 	)
 	return i, err
 }
@@ -602,30 +741,23 @@ func (q *Queries) UpdateCard(ctx context.Context, arg UpdateCardParams) (Card, e
 
 const UpdatePasswordEntry = `-- name: UpdatePasswordEntry :one
 UPDATE passwords
-SET name = $1, login = $2, password = $3
-WHERE id = $4
-    RETURNING id, user_id, name, login, password, created_at, updated_at
+SET login = $1, password = $2
+WHERE id = $3
+    RETURNING id, user_id, login, password, created_at, updated_at
 `
 
 type UpdatePasswordEntryParams struct {
-	Name     string      `db:"name"`
 	Login    string      `db:"login"`
 	Password string      `db:"password"`
 	ID       pgtype.UUID `db:"id"`
 }
 
 func (q *Queries) UpdatePasswordEntry(ctx context.Context, arg UpdatePasswordEntryParams) (Password, error) {
-	row := q.db.QueryRow(ctx, UpdatePasswordEntry,
-		arg.Name,
-		arg.Login,
-		arg.Password,
-		arg.ID,
-	)
+	row := q.db.QueryRow(ctx, UpdatePasswordEntry, arg.Login, arg.Password, arg.ID)
 	var i Password
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
-		&i.Name,
 		&i.Login,
 		&i.Password,
 		&i.CreatedAt,
