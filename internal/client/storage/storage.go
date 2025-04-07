@@ -24,6 +24,8 @@ type StManager struct {
 	facade     *facade.Facade
 	Password   map[string]model.PasswordItem `json:"passwords"`
 	Notes      map[string]model.NoteItem     `json:"notes"`
+	Cards      map[string]model.CardItem     `json:"cards"`
+	Binaries   map[string]model.BinaryItem   `json:"binaries"`
 	lastSyncAt time.Time
 	mutex      sync.Mutex
 	stopChan   chan struct{}
@@ -39,6 +41,9 @@ func NewStorageManager(facade *facade.Facade, tokenMgr *auth.TokenManager, logge
 		stopChan: make(chan struct{}),
 		logger:   logger,
 		Password: make(map[string]model.PasswordItem),
+		Notes:    make(map[string]model.NoteItem),
+		Cards:    make(map[string]model.CardItem),
+		Binaries: make(map[string]model.BinaryItem),
 		tokenMgr: tokenMgr,
 	}
 	return sm
@@ -87,14 +92,22 @@ func (sm *StManager) processItem(ctx context.Context, item *pb.ItemData) bool {
 	meta, err := sm.facade.GetMetainfo(ctx, itemId)
 	if err != nil {
 		sm.logger.Error().Err(err).Msg("error getting metainfo")
+
+		return false
 	}
 
 	switch item.Type {
 	case pb.ItemType_ITEM_TYPE_PASSWORD:
-		err := sm.ProcessPassword(ctx, itemId, meta)
-		if err != nil {
-			return false
-		}
+		err = sm.ProcessPassword(ctx, itemId, meta)
+	case pb.ItemType_ITEM_TYPE_NOTE:
+		err = sm.ProcessNote(ctx, itemId, meta)
+	case pb.ItemType_ITEM_TYPE_CARD:
+		err = sm.ProcessCard(ctx, itemId, meta)
+	case pb.ItemType_ITEM_TYPE_BINARY:
+		err = sm.ProcessBinary(ctx, itemId, meta)
+	}
+	if err != nil {
+		return false
 	}
 
 	return true
@@ -113,11 +126,83 @@ func (sm *StManager) ProcessPassword(ctx context.Context, passwordId string, met
 		Login:    password.Login,
 		Password: password.Password,
 		StorageItem: model.StorageItem{
+			Type:      model.ItemTypePassword,
 			ID:        passwordId,
 			UpdatedAt: lastUpdate,
 			Metadata:  meta,
 		},
 	}
+
+	return nil
+}
+
+func (sm *StManager) ProcessNote(ctx context.Context, noteId string, meta map[string]string) error {
+	note, lastUpdate, err := sm.facade.GetNote(ctx, noteId)
+
+	if err != nil {
+		sm.logger.Error().Err(err).Msg("error getting password")
+
+		return errors.Wrap(err, "error getting password")
+	}
+
+	sm.Notes[noteId] = model.NoteItem{
+		Content: note.Content,
+		StorageItem: model.StorageItem{
+			Type:      model.ItemTypeNote,
+			ID:        noteId,
+			UpdatedAt: lastUpdate,
+			Metadata:  meta,
+		},
+	}
+
+	return nil
+}
+
+func (sm *StManager) ProcessCard(ctx context.Context, cardId string, meta map[string]string) error {
+	card, lastUpdate, err := sm.facade.GetCard(ctx, cardId)
+
+	if err != nil {
+		sm.logger.Error().Err(err).Msg("error getting card")
+
+		return errors.Wrap(err, "error getting card")
+	}
+
+	sm.Cards[cardId] = model.CardItem{
+		CardNumber:     card.CardNumber,
+		CVV:            card.Cvv,
+		ExpiryDate:     card.ExpiryDate,
+		CardholderName: card.CardholderName,
+		StorageItem: model.StorageItem{
+			Type:      model.ItemTypeCard,
+			ID:        cardId,
+			UpdatedAt: lastUpdate,
+			Metadata:  meta,
+		},
+	}
+
+	return nil
+}
+
+// ProcessBinary retrieves binary metadata and downloads the file
+func (sm *StManager) ProcessBinary(ctx context.Context, fileID string, meta map[string]string) error {
+	file, err := sm.facade.GetFile(ctx, fileID)
+	if err != nil {
+		sm.logger.Error().Err(err).Str("fileID", fileID).Msg("error getting binary metadata")
+		return errors.Wrap(err, "error getting binary metadata")
+	}
+
+	sm.Binaries[fileID] = model.BinaryItem{
+		Filename: file.FileName,
+		Size:     file.FileSize,
+		StorageItem: model.StorageItem{
+			Type:      model.ItemTypeBinary,
+			ID:        fileID,
+			UpdatedAt: time.Now(),
+			Metadata:  meta,
+		},
+	}
+
+	sm.logger.Info().Str("filename", file.FileName).Msg("binary downloaded and stored in temp folder")
 
 	return nil
 }

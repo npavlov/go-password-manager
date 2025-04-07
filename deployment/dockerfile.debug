@@ -45,4 +45,4 @@ COPY /certs /app/certs
 EXPOSE 9090 40000
 
 # Run the server application with Delve
-CMD ["dlv", "exec", "/app/server", "--headless", "--listen=:40000", "--api-version=2", "--log", "--accept-multiclient"]
+CMD ["dlv", "exec", "/app/server", "--headless", "--listen=:40001", "--api-version=2", "--log", "--accept-multiclient"]

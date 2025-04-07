@@ -100,3 +100,26 @@ func (ai *AuthInterceptor) refreshAccessToken(ctx context.Context) (string, stri
 
 	return resp.Token, resp.RefreshToken, nil
 }
+
+// StreamInterceptor attaches the token to streaming RPCs
+func (a *AuthInterceptor) StreamInterceptor(
+	ctx context.Context,
+	desc *grpc.StreamDesc,
+	cc *grpc.ClientConn,
+	method string,
+	streamer grpc.Streamer,
+	opts ...grpc.CallOption,
+) (grpc.ClientStream, error) {
+	if a.tokenManager == nil {
+		return streamer(ctx, desc, cc, method, opts...)
+	}
+
+	token := a.tokenManager.AccessToken.Get()
+	if token == "" {
+		return nil, status.Error(codes.Unauthenticated, "no access token")
+	}
+
+	newCtx := metadata.AppendToOutgoingContext(ctx, "authorization", token)
+	
+	return streamer(newCtx, desc, cc, method, opts...)
+}

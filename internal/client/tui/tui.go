@@ -48,9 +48,9 @@ func (t *TUI) mainMenu() *tview.List {
 
 	if t.tokenMgr.IsAuthorized() {
 		menu.AddItem("Passwords", "View and manage stored passwords", 'p', func() { t.showPasswordList() })
-		//menu.AddItem("Notes", "View and manage notes", 'n', func() { t.showNoteList() })
-		//menu.AddItem("Cards", "View and manage cards", 'c', func() { t.showCardList() })
-		//menu.AddItem("Binaries", "View and manage binary files", 'b', func() { t.showBinaryList() })
+		menu.AddItem("Notes", "View and manage notes", 'n', func() { t.showNoteList() })
+		menu.AddItem("Cards", "View and manage cards", 'c', func() { t.showCardList() })
+		menu.AddItem("Binaries", "View and manage binary files", 'b', func() { t.showBinaryList() })
 		menu.AddItem("Logout", "Sign out of the application", 'q', func() { t.ResetToLoginScreen() })
 	} else {
 		menu.AddItem("Register", "Create a new account", 'r', func() { t.showRegisterForm() })

@@ -38,9 +38,10 @@ type NoteItem struct {
 // CardItem stores encrypted card details
 type CardItem struct {
 	StorageItem
-	CardNumber string `json:"card_number"` // Encrypted
-	ExpiryDate string `json:"expiry_date"`
-	CVV        string `json:"cvv"` // Encrypted
+	CardNumber     string `json:"card_number"` // Encrypted
+	ExpiryDate     string `json:"expiry_date"`
+	CVV            string `json:"cvv"` // Encrypted
+	CardholderName string `json:"cardholder_name"`
 }
 
 // BinaryItem stores metadata for large binary files

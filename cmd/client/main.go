@@ -90,7 +90,10 @@ func makeConnection(cfg config.Config, interceptor *interceptors.AuthInterceptor
 		return nil, errors.Wrap(err, "could not load TLS keys")
 	}
 	// Dial the gRPC server with the TLS credentials.
-	conn, err := grpc.NewClient(cfg.Address, grpc.WithTransportCredentials(creds), grpc.WithUnaryInterceptor(interceptor.UnaryInterceptor))
+	conn, err := grpc.NewClient(cfg.Address,
+		grpc.WithTransportCredentials(creds),
+		grpc.WithUnaryInterceptor(interceptor.UnaryInterceptor),
+		grpc.WithStreamInterceptor(interceptor.StreamInterceptor))
 	if err != nil {
 		return nil, errors.Wrap(err, "could not dial gRPC server")
 	}

@@ -58,11 +58,18 @@ func (t *TUI) showPasswordDetails(pass model.PasswordItem) {
 		AddItem("✏ Change Password", "Update this password", 'c', func() {
 			t.showChangePasswordForm(pass)
 		}).
+		AddItem("🗑Remove Password", "Remove this password", 'c', func() {
+			t.showRemovePasswordForm(pass)
+		}).
 		AddItem("➕ Add Metadata", "Attach new metadata to this password", 'm', func() {
-			t.showAddMetadataForm(pass)
+			t.showAddMetadataForm(pass.StorageItem, func() {
+				t.showPasswordDetails(pass)
+			})
 		}).
 		AddItem("🗑 Remove Metadata", "Delete metadata entry", 'r', func() {
-			t.showRemoveMetadataForm(pass)
+			t.showRemoveMetadataForm(pass.StorageItem, func() {
+				t.showPasswordDetails(pass)
+			})
 		}).
 		AddItem("⬅ Back", "Return to password list", 'b', func() { t.showPasswordList() })
 
@@ -109,73 +116,6 @@ func (t *TUI) showChangePasswordForm(pass model.PasswordItem) {
 	t.app.SetRoot(form, true)
 }
 
-// showAddMetadataForm allows the user to add metadata to a password
-func (t *TUI) showAddMetadataForm(pass model.PasswordItem) {
-	form := tview.NewForm()
-
-	form.AddInputField("Key", "", 20, nil, nil).
-		AddInputField("Value", "", 50, nil, nil).
-		AddButton("Save", func() {
-			key := form.GetFormItem(0).(*tview.InputField).GetText()
-			value := form.GetFormItem(1).(*tview.InputField).GetText()
-
-			pass.Metadata[key] = value
-
-			ok, err := t.facade.SetMetainfo(context.Background(), pass.ID, pass.Metadata)
-			if !ok || err != nil {
-				t.logger.Error().Err(err).Msg("Failed to add metadata")
-				return
-			}
-
-			err = t.storage.ProcessPassword(context.Background(), pass.ID, pass.Metadata)
-			if err != nil {
-				t.logger.Error().Err(err).Msg("Failed to add password")
-
-				return
-			}
-
-			t.logger.Info().Msg("Metadata added successfully")
-			t.showPasswordDetails(pass) // Refresh details
-		}).
-		AddButton("Cancel", func() { t.showPasswordDetails(pass) })
-
-	form.SetTitle("➕ Add Metadata").SetBorder(true)
-	t.app.SetRoot(form, true)
-}
-
-// showRemoveMetadataForm allows the user to remove metadata from a password
-func (t *TUI) showRemoveMetadataForm(pass model.PasswordItem) {
-	form := tview.NewForm()
-
-	form.AddInputField("Key", "", 20, nil, nil).
-		AddButton("Delete", func() {
-			key := form.GetFormItem(0).(*tview.InputField).GetText()
-
-			ok, err := t.facade.DeleteMetainfo(context.Background(), pass.ID, key)
-			if !ok || err != nil {
-				t.logger.Error().Err(err).Msg("Failed to remove metadata")
-
-				return
-			}
-
-			delete(pass.Metadata, key)
-
-			err = t.storage.ProcessPassword(context.Background(), pass.ID, pass.Metadata)
-			if err != nil {
-				t.logger.Error().Err(err).Msg("Failed to add password")
-
-				return
-			}
-
-			t.logger.Info().Msg("Metadata removed successfully")
-			t.showPasswordDetails(pass) // Refresh details
-		}).
-		AddButton("Cancel", func() { t.showPasswordDetails(pass) })
-
-	form.SetTitle("🗑 Remove Metadata").SetBorder(true)
-	t.app.SetRoot(form, true)
-}
-
 // showAddPasswordForm displays a form to add a new password entry
 func (t *TUI) showAddPasswordForm() {
 	form := tview.NewForm()
@@ -207,4 +147,30 @@ func (t *TUI) showAddPasswordForm() {
 
 	form.SetTitle("➕ Add New Password").SetBorder(true)
 	t.app.SetRoot(form, true)
+}
+
+// showRemovePasswordForm displays a confirmation dialog before removing a password
+func (t *TUI) showRemovePasswordForm(pass model.PasswordItem) {
+	confirmation := tview.NewModal().
+		SetText(fmt.Sprintf("Are you sure you want to delete the password for %s?", pass.Login)).
+		AddButtons([]string{"Yes", "No"}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			if buttonLabel == "Yes" {
+				ok, err := t.facade.DeletePassword(context.Background(), pass.ID)
+				if !ok || err != nil {
+					t.logger.Error().Err(err).Msg("Failed to remove password")
+
+					return
+				}
+
+				delete(t.storage.Password, pass.ID)
+
+				t.logger.Info().Msg("Password removed successfully")
+				t.showPasswordList()
+			} else {
+				t.showPasswordDetails(pass)
+			}
+		})
+
+	t.app.SetRoot(confirmation, true)
 }

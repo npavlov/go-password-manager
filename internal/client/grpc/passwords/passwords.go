@@ -19,8 +19,8 @@ type Client struct {
 	log          *zerolog.Logger
 }
 
-// NewItemsClient  creates a new gRPC connection
-func NewItemsClient(conn *grpc.ClientConn, tokenManager *auth.TokenManager, log *zerolog.Logger) *Client {
+// NewPasswordClient  creates a new gRPC connection
+func NewPasswordClient(conn *grpc.ClientConn, tokenManager *auth.TokenManager, log *zerolog.Logger) *Client {
 	return &Client{
 		conn:         conn,
 		client:       pb.NewPasswordServiceClient(conn),
@@ -62,7 +62,7 @@ func (as *Client) UpdatePassword(ctx context.Context, id, login, password string
 	return nil
 }
 
-func (as *Client) StorePassword(ctx context.Context, login string, password string) (string, error) {
+func (as *Client) StorePassword(ctx context.Context, login, password string) (string, error) {
 	resp, err := as.client.StorePassword(ctx, &pb.StorePasswordRequest{
 		Password: &pb.PasswordData{
 			Login:    login,
@@ -77,4 +77,18 @@ func (as *Client) StorePassword(ctx context.Context, login string, password stri
 	}
 
 	return resp.PasswordId, nil
+}
+
+func (as *Client) DeletePassword(ctx context.Context, id string) (bool, error) {
+	resp, err := as.client.DeletePassword(ctx, &pb.DeletePasswordRequest{
+		PasswordId: id,
+	})
+
+	if err != nil {
+		as.log.Error().Err(err).Msg("error deleting password")
+
+		return false, errors.Wrap(err, "error deleting password")
+	}
+
+	return resp.Ok, nil
 }

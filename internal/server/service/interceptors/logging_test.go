@@ -4,14 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/npavlov/go-password-manager/internal/server/service/interceptors"
+	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	grpcserver "github.com/npavlov/go-metrics-service/internal/server/grpc"
-	testutils "github.com/npavlov/go-metrics-service/internal/test_utils"
 )
 
 // Mock handler.
@@ -25,7 +24,7 @@ func TestLoggingServerInterceptor(t *testing.T) {
 
 	logger := testutils.GetTLogger()
 
-	interceptor := grpcserver.LoggingServerInterceptor(logger)
+	interceptor := interceptors.LoggingServerInterceptor(logger)
 
 	info := &grpc.UnaryServerInfo{FullMethod: "/test.Method"}
 
@@ -41,7 +40,7 @@ func TestLoggingServerInterceptorWithError(t *testing.T) {
 
 	logger := testutils.GetTLogger()
 
-	interceptor := grpcserver.LoggingServerInterceptor(logger)
+	interceptor := interceptors.LoggingServerInterceptor(logger)
 
 	info := &grpc.UnaryServerInfo{FullMethod: "/test.Method"}
 
