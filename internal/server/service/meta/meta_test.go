@@ -119,7 +119,7 @@ func TestRemoveMetaInfo_NotFound(t *testing.T) {
 	svc, _, ctx := setupMetadataService(t)
 
 	req := &pb.RemoveMetaInfoRequest{
-		ItemId: "nonexistent-item",
+		ItemId: uuid.New().String(),
 		Key:    "category",
 	}
 
@@ -153,11 +153,20 @@ func TestGetMetaInfo_Success(t *testing.T) {
 
 func TestGetMetaInfo_Empty(t *testing.T) {
 	t.Parallel()
-	
-	svc, _, ctx := setupMetadataService(t)
+
+	svc, mockStorage, ctx := setupMetadataService(t)
+
+	userId := testutils.GetUserIDFromContext(ctx)
+	userIDPG := pgtype.UUID{
+		Bytes: uuid.MustParse(userId),
+		Valid: true,
+	}
+
+	newItem, err := mockStorage.StoreItem(ctx, userIDPG, db.ItemTypeCard)
+	require.NoError(t, err)
 
 	req := &pb.GetMetaInfoRequest{
-		ItemId: "empty-item",
+		ItemId: newItem.ID.String(),
 	}
 
 	resp, err := svc.GetMetaInfo(ctx, req)
