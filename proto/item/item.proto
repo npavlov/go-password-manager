@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package proto.item;
+
+option go_package = "github.com/npavlov/go-password-manager/proto/item";
+
+import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
+
+// ItemService provides methods to retrieve stored items.
+service ItemService {
+  rpc GetItems (GetItemsRequest) returns (GetItemsResponse);
+}
+
+// Enum for item types
+enum ItemType {
+  ITEM_TYPE_UNSPECIFIED = 0;
+  ITEM_TYPE_PASSWORD = 1;
+  ITEM_TYPE_NOTE = 2;
+  ITEM_TYPE_CARD = 3;
+  ITEM_TYPE_BINARY = 4;
+}
+
+// Request for retrieving items with pagination
+message GetItemsRequest {
+  int32 page = 1 [(buf.validate.field).int32.gte = 1];  // Page number, must be >= 1
+  int32 page_size = 2 [(buf.validate.field).int32 = {gte: 1, lte: 100}];  // Page size (1-100)
+}
+
+// Response containing paginated items
+message GetItemsResponse {
+  repeated ItemData items = 1;  // List of items
+  int32 total_count = 2;        // Total number of items (for pagination)
+}
+
+// Unified structure for different item types
+message ItemData {
+  string id = 1 [(buf.validate.field).string.uuid = true]; // Unique item ID
+  ItemType type = 3;  // Type of the item
+  google.protobuf.Timestamp created_at = 4; // Creation timestamp
+  google.protobuf.Timestamp updated_at = 5; // Last update timestamp
+}

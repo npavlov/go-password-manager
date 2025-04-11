@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package proto.metadata;
+
+option go_package = "github.com/npavlov/go-password-manager/proto/metadata";
+
+import "buf/validate/validate.proto";
+
+// Service for managing metadata
+service MetadataService {
+  rpc AddMetaInfo (AddMetaInfoRequest) returns (AddMetaInfoResponse);
+  rpc RemoveMetaInfo (RemoveMetaInfoRequest) returns (RemoveMetaInfoResponse);
+  rpc GetMetaInfo (GetMetaInfoRequest) returns (GetMetaInfoResponse);
+}
+
+// Request to add or update metadata
+message AddMetaInfoRequest {
+  string item_id = 1 [(buf.validate.field).string.uuid = true];  // The item to add metadata to
+  map<string, string> metadata = 2;  // Key-value metadata pairs
+}
+
+message AddMetaInfoResponse {
+  bool success = 1;
+}
+
+// Request to remove metadata
+message RemoveMetaInfoRequest {
+  string item_id = 1 [(buf.validate.field).string.uuid = true];  // The item to remove metadata from
+  string key = 2 [(buf.validate.field).string.min_len = 1];  // The metadata key to delete
+}
+
+message RemoveMetaInfoResponse {
+  bool success = 1;
+}
+
+// Request to get metadata for an item
+message GetMetaInfoRequest {
+  string item_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+message GetMetaInfoResponse {
+  map<string, string> metadata = 1;
+}

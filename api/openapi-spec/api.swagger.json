@@ -1,0 +1,441 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "proto/auth/auth.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "AuthService"
+    },
+    {
+      "name": "CardService"
+    },
+    {
+      "name": "FileService"
+    },
+    {
+      "name": "ItemService"
+    },
+    {
+      "name": "MetadataService"
+    },
+    {
+      "name": "NoteService"
+    },
+    {
+      "name": "PasswordService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {},
+  "definitions": {
+    "authLoginResponse": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string"
+        },
+        "refreshToken": {
+          "type": "string"
+        }
+      }
+    },
+    "authRefreshTokenResponse": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string"
+        },
+        "refreshToken": {
+          "type": "string"
+        }
+      }
+    },
+    "authRegisterResponse": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string"
+        },
+        "refreshToken": {
+          "type": "string"
+        },
+        "userKey": {
+          "type": "string"
+        }
+      }
+    },
+    "cardCardData": {
+      "type": "object",
+      "properties": {
+        "cardNumber": {
+          "type": "string",
+          "title": "Validate card number (13-19 digits)"
+        },
+        "expiryDate": {
+          "type": "string",
+          "title": "Validate expiry date (MM/YY format)"
+        },
+        "cvv": {
+          "type": "string",
+          "title": "Validate CVV (3 or 4 digits)"
+        },
+        "cardholderName": {
+          "type": "string",
+          "title": "Validate cardholder name (1-100 characters)"
+        }
+      }
+    },
+    "cardDeleteCardResponse": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        }
+      }
+    },
+    "cardGetCardResponse": {
+      "type": "object",
+      "properties": {
+        "card": {
+          "$ref": "#/definitions/cardCardData"
+        },
+        "lastUpdate": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "cardGetCardsResponse": {
+      "type": "object",
+      "properties": {
+        "cards": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cardCardData"
+          }
+        }
+      }
+    },
+    "cardStoreCardResponse": {
+      "type": "object",
+      "properties": {
+        "cardId": {
+          "type": "string"
+        }
+      }
+    },
+    "cardUpdateCardResponse": {
+      "type": "object",
+      "properties": {
+        "cardId": {
+          "type": "string"
+        }
+      }
+    },
+    "fileDeleteFileResponse": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        }
+      }
+    },
+    "fileDownloadFileResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "string",
+          "format": "byte"
+        },
+        "lastUpdate": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "fileFileMeta": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "fileName": {
+          "type": "string"
+        },
+        "fileSize": {
+          "type": "string",
+          "format": "int64"
+        },
+        "fileUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "fileGetFileResponse": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "$ref": "#/definitions/fileFileMeta"
+        },
+        "lastUpdate": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "fileGetFilesResponse": {
+      "type": "object",
+      "properties": {
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/fileFileMeta"
+          }
+        }
+      }
+    },
+    "fileUploadFileResponse": {
+      "type": "object",
+      "properties": {
+        "fileId": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "itemGetItemsResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/itemItemData"
+          },
+          "title": "List of items"
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Total number of items (for pagination)"
+        }
+      },
+      "title": "Response containing paginated items"
+    },
+    "itemItemData": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "Unique item ID"
+        },
+        "type": {
+          "$ref": "#/definitions/itemItemType",
+          "title": "Type of the item"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Last update timestamp"
+        }
+      },
+      "title": "Unified structure for different item types"
+    },
+    "itemItemType": {
+      "type": "string",
+      "enum": [
+        "ITEM_TYPE_UNSPECIFIED",
+        "ITEM_TYPE_PASSWORD",
+        "ITEM_TYPE_NOTE",
+        "ITEM_TYPE_CARD",
+        "ITEM_TYPE_BINARY"
+      ],
+      "default": "ITEM_TYPE_UNSPECIFIED",
+      "title": "Enum for item types"
+    },
+    "metadataAddMetaInfoResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        }
+      }
+    },
+    "metadataGetMetaInfoResponse": {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "metadataRemoveMetaInfoResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        }
+      }
+    },
+    "noteDeleteNoteResponse": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        }
+      }
+    },
+    "noteGetNoteResponse": {
+      "type": "object",
+      "properties": {
+        "note": {
+          "$ref": "#/definitions/noteNoteData"
+        },
+        "lastUpdate": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "noteGetNotesResponse": {
+      "type": "object",
+      "properties": {
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/noteNoteData"
+          }
+        }
+      }
+    },
+    "noteNoteData": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string"
+        }
+      }
+    },
+    "noteStoreNoteResponse": {
+      "type": "object",
+      "properties": {
+        "noteId": {
+          "type": "string"
+        }
+      }
+    },
+    "passwordDeletePasswordResponse": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        }
+      }
+    },
+    "passwordGetPasswordResponse": {
+      "type": "object",
+      "properties": {
+        "password": {
+          "$ref": "#/definitions/passwordPasswordData"
+        },
+        "lastUpdate": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "passwordGetPasswordsResponse": {
+      "type": "object",
+      "properties": {
+        "passwords": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/passwordPasswordData"
+          }
+        }
+      }
+    },
+    "passwordPasswordData": {
+      "type": "object",
+      "properties": {
+        "login": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "passwordStorePasswordResponse": {
+      "type": "object",
+      "properties": {
+        "passwordId": {
+          "type": "string"
+        }
+      }
+    },
+    "passwordUpdatePasswordResponse": {
+      "type": "object",
+      "properties": {
+        "passwordId": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

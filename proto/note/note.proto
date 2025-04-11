@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package proto.note;
+
+option go_package = "github.com/npavlov/go-password-manager/proto/note";
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+service NoteService {
+    rpc StoreNote (StoreNoteRequest) returns (StoreNoteResponse);
+    rpc GetNote (GetNoteRequest) returns (GetNoteResponse);
+    rpc GetNotes (GetNotesRequest) returns (GetNotesResponse);
+    rpc DeleteNote (DeleteNoteRequest) returns (DeleteNoteResponse);
+}
+
+message StoreNoteRequest {
+    NoteData note = 1;
+}
+
+message StoreNoteResponse {
+    string note_id = 1;
+}
+
+message GetNotesRequest {
+}
+
+message GetNotesResponse {
+    repeated NoteData notes = 1;
+}
+
+
+message GetNoteRequest {
+    string note_id = 1  [(buf.validate.field).string.uuid = true];
+}
+
+message GetNoteResponse {
+    NoteData note = 1;
+    google.protobuf.Timestamp last_update = 2;
+}
+
+message DeleteNoteRequest {
+    string note_id = 1  [(buf.validate.field).string.uuid = true];
+}
+
+message DeleteNoteResponse {
+    bool ok = 1;
+}
+
+message NoteData {
+    string content = 1 [(buf.validate.field).string.min_len = 3];
+}
