@@ -4,15 +4,16 @@ import (
 	"context"
 
 	"github.com/bufbuild/protovalidate-go"
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	pb "github.com/npavlov/go-password-manager/gen/proto/note"
 	"github.com/npavlov/go-password-manager/internal/server/config"
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/server/service/utils"
 	"github.com/npavlov/go-password-manager/internal/server/storage"
-	"github.com/pkg/errors"
-	"github.com/rs/zerolog"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Service struct {
@@ -60,7 +61,7 @@ func (ns *Service) StoreNote(ctx context.Context, req *pb.StoreNoteRequest) (*pb
 		return nil, errors.Wrap(err, "error getting user id")
 	}
 
-	encryptedNote, err := utils.Encrypt(req.Note.Content, decryptedUserKey)
+	encryptedNote, err := utils.Encrypt(req.GetNote().GetContent(), decryptedUserKey)
 	if err != nil {
 		ns.logger.Error().Err(err).Msg("failed to encrypt password")
 
@@ -101,7 +102,7 @@ func (ns *Service) GetNote(ctx context.Context, req *pb.GetNoteRequest) (*pb.Get
 		return nil, errors.Wrap(err, "error getting user id")
 	}
 
-	note, err := ns.storage.GetNote(ctx, req.NoteId, userUUID)
+	note, err := ns.storage.GetNote(ctx, req.GetNoteId(), userUUID)
 	if err != nil {
 		ns.logger.Error().Err(err).Msg("error getting user id")
 
@@ -143,7 +144,7 @@ func (ns *Service) DeleteNote(ctx context.Context, req *pb.DeleteNoteRequest) (*
 		return nil, errors.Wrap(err, "error getting user id")
 	}
 
-	err = ns.storage.DeletePassword(ctx, req.NoteId, userUUID)
+	err = ns.storage.DeletePassword(ctx, req.GetNoteId(), userUUID)
 	if err != nil {
 		ns.logger.Error().Err(err).Msg("error deleting note")
 

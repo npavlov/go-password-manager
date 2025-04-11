@@ -4,12 +4,13 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/pkg/errors"
+
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/utils"
-	"github.com/pkg/errors"
 )
 
-// StorePassword creates new password record
+// StorePassword creates new password record.
 func (ds *DBStorage) StorePassword(ctx context.Context, createPassword db.CreatePasswordEntryParams) (*db.Password, error) {
 	password, err := ds.Queries.CreatePasswordEntry(ctx, createPassword)
 	if err != nil {
@@ -21,7 +22,7 @@ func (ds *DBStorage) StorePassword(ctx context.Context, createPassword db.Create
 	return &password, nil
 }
 
-// GetPassword retrieves password record
+// GetPassword retrieves password record.
 func (ds *DBStorage) GetPassword(ctx context.Context, passwordId string, userId pgtype.UUID) (*db.Password, error) {
 	uuid := utils.GetIdFromString(passwordId)
 
@@ -38,7 +39,7 @@ func (ds *DBStorage) GetPassword(ctx context.Context, passwordId string, userId 
 	return &password, nil
 }
 
-// GetPasswords retrieves password record
+// GetPasswords retrieves password record.
 func (ds *DBStorage) GetPasswords(ctx context.Context, userId string) ([]db.Password, error) {
 	uuid := utils.GetIdFromString(userId)
 
@@ -68,7 +69,7 @@ func (ds *DBStorage) DeletePassword(ctx context.Context, passwordId string, user
 	return nil
 }
 
-// UpdatePassword updates password record
+// UpdatePassword updates password record.
 func (ds *DBStorage) UpdatePassword(ctx context.Context, updatePassword db.UpdatePasswordEntryParams) (*db.Password, error) {
 	password, err := ds.Queries.UpdatePasswordEntry(ctx, updatePassword)
 	if err != nil {
@@ -78,5 +79,4 @@ func (ds *DBStorage) UpdatePassword(ctx context.Context, updatePassword db.Updat
 	}
 
 	return &password, nil
-
 }

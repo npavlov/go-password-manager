@@ -4,14 +4,15 @@ import (
 	"context"
 	"io"
 
-	pb "github.com/npavlov/go-password-manager/gen/proto/file"
-	"github.com/npavlov/go-password-manager/internal/client/auth"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
+
+	pb "github.com/npavlov/go-password-manager/gen/proto/file"
+	"github.com/npavlov/go-password-manager/internal/client/auth"
 )
 
-// Client handles file (binary) operations over gRPC
+// Client handles file (binary) operations over gRPC.
 type Client struct {
 	conn         *grpc.ClientConn
 	client       pb.FileServiceClient
@@ -19,7 +20,7 @@ type Client struct {
 	log          *zerolog.Logger
 }
 
-// NewBinaryClient creates a new FileService client
+// NewBinaryClient creates a new FileService client.
 func NewBinaryClient(conn *grpc.ClientConn, tokenManager *auth.TokenManager, log *zerolog.Logger) *Client {
 	return &Client{
 		conn:         conn,
@@ -29,7 +30,7 @@ func NewBinaryClient(conn *grpc.ClientConn, tokenManager *auth.TokenManager, log
 	}
 }
 
-// UploadFile streams file data to the server
+// UploadFile streams file data to the server.
 func (c *Client) UploadFile(ctx context.Context, filename string, reader io.Reader) (string, error) {
 	stream, err := c.client.UploadFile(ctx)
 	if err != nil {
@@ -73,11 +74,12 @@ func (c *Client) UploadFile(ctx context.Context, filename string, reader io.Read
 		return "", errors.Wrap(err, "failed to receive upload response")
 	}
 
-	c.log.Info().Str("file_id", resp.FileId).Msg("file uploaded successfully")
-	return resp.FileId, nil
+	c.log.Info().Str("file_id", resp.GetFileId()).Msg("file uploaded successfully")
+
+	return resp.GetFileId(), nil
 }
 
-// DownloadFile streams file data from the server
+// DownloadFile streams file data from the server.
 func (c *Client) DownloadFile(ctx context.Context, fileID string, writer io.Writer) error {
 	stream, err := c.client.DownloadFile(ctx, &pb.DownloadFileRequest{
 		FileId: fileID,
@@ -95,17 +97,18 @@ func (c *Client) DownloadFile(ctx context.Context, fileID string, writer io.Writ
 			return errors.Wrap(err, "failed to receive file chunk")
 		}
 
-		_, err = writer.Write(chunk.Data)
+		_, err = writer.Write(chunk.GetData())
 		if err != nil {
 			return errors.Wrap(err, "failed to write to output")
 		}
 	}
 
 	c.log.Info().Str("file_id", fileID).Msg("file downloaded successfully")
+
 	return nil
 }
 
-// DeleteFile removes a file by ID
+// DeleteFile removes a file by ID.
 func (c *Client) DeleteFile(ctx context.Context, fileID string) (bool, error) {
 	resp, err := c.client.DeleteFile(ctx, &pb.DeleteFileRequest{
 		FileId: fileID,
@@ -114,10 +117,10 @@ func (c *Client) DeleteFile(ctx context.Context, fileID string) (bool, error) {
 		return false, errors.Wrap(err, "failed to delete file")
 	}
 
-	return resp.Ok, nil
+	return resp.GetOk(), nil
 }
 
-// GetFile retrieves metadata for a file by ID
+// GetFile retrieves metadata for a file by ID.
 func (c *Client) GetFile(ctx context.Context, fileID string) (*pb.FileMeta, error) {
 	resp, err := c.client.GetFile(ctx, &pb.GetFileRequest{
 		FileId: fileID,
@@ -126,5 +129,5 @@ func (c *Client) GetFile(ctx context.Context, fileID string) (*pb.FileMeta, erro
 		return nil, errors.Wrap(err, "failed to get file metadata")
 	}
 
-	return resp.File, nil
+	return resp.GetFile(), nil
 }

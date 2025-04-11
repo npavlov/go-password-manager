@@ -5,10 +5,11 @@ import (
 	"os"
 	"sync"
 
-	"github.com/npavlov/go-password-manager/internal/client/config"
-	"github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+
+	"github.com/npavlov/go-password-manager/internal/client/config"
+	"github.com/npavlov/go-password-manager/internal/utils"
 )
 
 type TokenManager struct {
@@ -38,7 +39,7 @@ func NewTokenManager(logger *zerolog.Logger, cfg *config.Config) *TokenManager {
 	}
 }
 
-// LoadTokens reads the tokens from file
+// LoadTokens reads the tokens from file.
 func (tm *TokenManager) LoadTokens() error {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
@@ -48,6 +49,7 @@ func (tm *TokenManager) LoadTokens() error {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil // No file means first-time login
 		}
+
 		return err
 	}
 	defer file.Close()
@@ -66,7 +68,7 @@ func (tm *TokenManager) LoadTokens() error {
 	return nil
 }
 
-// SaveTokens writes tokens to a file
+// SaveTokens writes tokens to a file.
 func (tm *TokenManager) SaveTokens(accessToken, refreshToken string) error {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
@@ -79,10 +81,10 @@ func (tm *TokenManager) SaveTokens(accessToken, refreshToken string) error {
 		return err
 	}
 
-	return os.WriteFile(tm.cfg.TokenFile, data, 0600)
+	return os.WriteFile(tm.cfg.TokenFile, data, 0o600)
 }
 
-// UpdateTokens saves new tokens and marks user as authorized
+// UpdateTokens saves new tokens and marks user as authorized.
 func (tm *TokenManager) UpdateTokens(access, refresh string) error {
 	tm.AccessToken = utils.NewString(access)
 	tm.RefreshToken = utils.NewString(refresh)
@@ -91,14 +93,15 @@ func (tm *TokenManager) UpdateTokens(access, refresh string) error {
 	return tm.SaveTokens(access, refresh)
 }
 
-// IsAuthorized returns the user's authentication state
+// IsAuthorized returns the user's authentication state.
 func (tm *TokenManager) IsAuthorized() bool {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
+
 	return tm.isAuthorized
 }
 
-// HandleAuthFailure clears tokens and notifies the UI
+// HandleAuthFailure clears tokens and notifies the UI.
 func (tm *TokenManager) HandleAuthFailure() {
 	tm.AccessToken = nil
 	tm.RefreshToken = nil
@@ -113,7 +116,7 @@ func (tm *TokenManager) HandleAuthFailure() {
 	}
 }
 
-// SetAuthFailCallback sets a UI callback when authentication fails
+// SetAuthFailCallback sets a UI callback when authentication fails.
 func (tm *TokenManager) SetAuthFailCallback(callback func()) {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()

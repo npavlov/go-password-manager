@@ -35,7 +35,7 @@ message LoginResponse {
 }
 
 message RefreshTokenRequest {
-  string refresh_token = 1;
+  string refresh_token = 1 [(buf.validate.field).required = true];
 }
 
 message RefreshTokenResponse {

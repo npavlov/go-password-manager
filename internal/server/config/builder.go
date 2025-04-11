@@ -1,26 +1,26 @@
-//nolint:tagliatelle
 package config
 
 import (
 	"flag"
 
 	"github.com/caarlos0/env/v6"
-	"github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/rs/zerolog"
+
+	"github.com/npavlov/go-password-manager/internal/utils"
 )
 
 type Config struct {
-	Address          string `env:"ADDRESS"        envDefault:":9090"`
-	Database         string `env:"DATABASE_DSN"          envDefault:""`
-	JwtSecret        string `env:"JWT_SECRET"             envDefault:""`
-	Certificate      string `env:"CERTIFICATE"          envDefault:""`
-	PrivateKey       string `env:"PRIVATE_KEY"          envDefault:""`
-	MasterKey        string `env:"MASTER_KEY"          envDefault:""`
-	Redis            string `env:"REDIS"                  envDefault:"localhost:6379"`
-	Minio            string `env:"MINIO"                  envDefault:""`
-	MinioAccessKey   string `env:"MINIO_ACCESS_KEY"                  envDefault:""`
-	MinioSecretKey   string `env:"MINIO_SECRET_KEY"                  envDefault:""`
-	Bucket           string `env:"BUCKET"                  envDefault:"encrypted-bucket"`
+	Address          string `env:"ADDRESS"          envDefault:":9090"`
+	Database         string `env:"DATABASE_DSN"     envDefault:""`
+	JwtSecret        string `env:"JWT_SECRET"       envDefault:""`
+	Certificate      string `env:"CERTIFICATE"      envDefault:""`
+	PrivateKey       string `env:"PRIVATE_KEY"      envDefault:""`
+	MasterKey        string `env:"MASTER_KEY"       envDefault:""`
+	Redis            string `env:"REDIS"            envDefault:"localhost:6379"`
+	Minio            string `env:"MINIO"            envDefault:""`
+	MinioAccessKey   string `env:"MINIO_ACCESS_KEY" envDefault:""`
+	MinioSecretKey   string `env:"MINIO_SECRET_KEY" envDefault:""`
+	Bucket           string `env:"BUCKET"           envDefault:"encrypted-bucket"`
 	SecuredMasterKey utils.ISecureString
 }
 

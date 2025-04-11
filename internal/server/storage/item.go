@@ -3,11 +3,12 @@ package storage
 import (
 	"context"
 
-	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/pkg/errors"
+
+	"github.com/npavlov/go-password-manager/internal/server/db"
 )
 
-// GetItems get all type of docs
+// GetItems get all type of docs.
 func (ds *DBStorage) GetItems(ctx context.Context, getItems db.GetItemsByUserIDParams) ([]db.GetItemsByUserIDRow, error) {
 	items, err := ds.Queries.GetItemsByUserID(ctx, getItems)
 	if err != nil {

@@ -3,13 +3,14 @@ package auth
 import (
 	"context"
 
-	pb "github.com/npavlov/go-password-manager/gen/proto/auth"
-	"github.com/npavlov/go-password-manager/internal/client/auth"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
+
+	pb "github.com/npavlov/go-password-manager/gen/proto/auth"
+	"github.com/npavlov/go-password-manager/internal/client/auth"
 )
 
-// Client GRPCClient handles communication with the gRPC server
+// Client GRPCClient handles communication with the gRPC server.
 type Client struct {
 	conn         *grpc.ClientConn
 	client       pb.AuthServiceClient
@@ -17,7 +18,7 @@ type Client struct {
 	log          *zerolog.Logger
 }
 
-// NewAuthClient  creates a new gRPC connection
+// NewAuthClient  creates a new gRPC connection.
 func NewAuthClient(conn *grpc.ClientConn, tokenManager *auth.TokenManager, log *zerolog.Logger) *Client {
 	return &Client{
 		conn:         conn,
@@ -27,7 +28,7 @@ func NewAuthClient(conn *grpc.ClientConn, tokenManager *auth.TokenManager, log *
 	}
 }
 
-// Register sends a register request to the server
+// Register sends a register request to the server.
 func (as *Client) Register(username, password, email string) (string, error) {
 	resp, err := as.client.Register(context.Background(), &pb.RegisterRequest{
 		Username: username,
@@ -38,7 +39,7 @@ func (as *Client) Register(username, password, email string) (string, error) {
 		return "", err
 	}
 
-	err = as.tokenManager.UpdateTokens(resp.Token, resp.RefreshToken)
+	err = as.tokenManager.UpdateTokens(resp.GetToken(), resp.GetRefreshToken())
 	if err != nil {
 		as.log.Error().Err(err).Msg("failed to update tokens")
 
@@ -48,7 +49,7 @@ func (as *Client) Register(username, password, email string) (string, error) {
 	return resp.GetUserKey(), nil
 }
 
-// Login sends a login request to the server
+// Login sends a login request to the server.
 func (as *Client) Login(username, password string) error {
 	resp, err := as.client.Login(context.Background(), &pb.LoginRequest{
 		Username: username,
@@ -57,7 +58,7 @@ func (as *Client) Login(username, password string) error {
 	if err != nil {
 		return err
 	}
-	err = as.tokenManager.UpdateTokens(resp.Token, resp.RefreshToken)
+	err = as.tokenManager.UpdateTokens(resp.GetToken(), resp.GetRefreshToken())
 	if err != nil {
 		as.log.Error().Err(err).Msg("failed to update tokens")
 

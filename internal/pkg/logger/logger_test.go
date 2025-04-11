@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/npavlov/go-password-manager/internal/pkg/logger"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/npavlov/go-password-manager/internal/pkg/logger"
 )
 
 func TestNewLogger(t *testing.T) {

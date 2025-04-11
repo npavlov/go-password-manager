@@ -3,12 +3,13 @@ package storage
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/utils"
-	"github.com/pkg/errors"
 )
 
-// AddMeta add meta data
+// AddMeta add meta data.
 func (ds *DBStorage) AddMeta(ctx context.Context, recordId, key, value string) (*db.Metainfo, error) {
 	uuid := utils.GetIdFromString(recordId)
 
@@ -46,7 +47,6 @@ func (ds *DBStorage) DeleteMetaInfo(ctx context.Context, key, itemId string) err
 		Key:    key,
 		ItemID: uuid,
 	})
-
 	if err != nil {
 		ds.log.Error().Err(err).Msg("failed to delete items")
 

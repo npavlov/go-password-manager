@@ -5,14 +5,15 @@ import (
 	"net"
 	"sync"
 
-	"github.com/npavlov/go-password-manager/internal/server/config"
-	"github.com/npavlov/go-password-manager/internal/server/redis"
-	"github.com/npavlov/go-password-manager/internal/server/service/interceptors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
+
+	"github.com/npavlov/go-password-manager/internal/server/config"
+	"github.com/npavlov/go-password-manager/internal/server/redis"
+	"github.com/npavlov/go-password-manager/internal/server/service/interceptors"
 )
 
 type GManager struct {
@@ -37,7 +38,6 @@ func NewGRPCManager(cfg *config.Config, logger *zerolog.Logger, memStorage redis
 		), grpc.Creds(creds))
 	reflection.Register(grpcServer)
 
-	//nolint:exhaustruct
 	return &GManager{
 		logger:     logger,
 		cfg:        cfg,
@@ -65,7 +65,6 @@ func (gs *GManager) Start(ctx context.Context, wg *sync.WaitGroup) {
 		if err := gs.grpcServer.Serve(listener); err != nil {
 			log.Fatal().Err(err).Msg("failed to serve gRPC server")
 		}
-
 	}()
 
 	go func() {

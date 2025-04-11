@@ -5,31 +5,46 @@ import (
 	"io"
 
 	"github.com/bufbuild/protovalidate-go"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/minio/minio-go/v7"
-	pb "github.com/npavlov/go-password-manager/gen/proto/file"
-	"github.com/npavlov/go-password-manager/internal/server/config"
-	"github.com/npavlov/go-password-manager/internal/server/db"
-	"github.com/npavlov/go-password-manager/internal/server/service/utils"
-	"github.com/npavlov/go-password-manager/internal/server/storage"
-	gu "github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	pb "github.com/npavlov/go-password-manager/gen/proto/file"
+	"github.com/npavlov/go-password-manager/internal/server/config"
+	"github.com/npavlov/go-password-manager/internal/server/db"
+	"github.com/npavlov/go-password-manager/internal/server/service/utils"
+	gu "github.com/npavlov/go-password-manager/internal/utils"
 )
+
+type Storage interface {
+	StoreBinary(ctx context.Context, createBinary db.StoreBinaryEntryParams) (*db.BinaryEntry, error)
+	DeleteBinary(ctx context.Context, arg db.DeleteBinaryEntryParams) error
+	GetBinaries(ctx context.Context, userId string) ([]db.BinaryEntry, error)
+	GetBinary(ctx context.Context, binaryId string, userId pgtype.UUID) (*db.BinaryEntry, error)
+	GetUserById(ctx context.Context, id pgtype.UUID) (*db.User, error)
+}
+
+type S3Storage interface {
+	PutObject(ctx context.Context, bucketName string, objectName string, reader io.Reader, objectSize int64, opts minio.PutObjectOptions) (info minio.UploadInfo, err error)
+	GetObject(ctx context.Context, bucketName string, objectName string, opts minio.GetObjectOptions) (io.ReadCloser, error)
+	RemoveObject(ctx context.Context, bucketName string, objectName string, opts minio.RemoveObjectOptions) error
+}
 
 type Service struct {
 	pb.UnimplementedFileServiceServer
 	validator protovalidate.Validator
 	logger    *zerolog.Logger
-	storage   *storage.DBStorage
+	storage   Storage
 	cfg       *config.Config
-	minio     *minio.Client
+	minio     S3Storage
 }
 
-func NewFileService(log *zerolog.Logger, storage *storage.DBStorage, cfg *config.Config, minioClient *minio.Client) *Service {
+func NewFileService(log *zerolog.Logger, storage Storage, cfg *config.Config, minioClient S3Storage) *Service {
 	validator, err := protovalidate.New()
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create validator")
@@ -63,14 +78,7 @@ func (fs *Service) UploadFile(stream grpc.ClientStreamingServer[pb.UploadFileReq
 		return errors.Wrap(err, "failed to validate file metadata")
 	}
 
-	userUUID, err := utils.GetUserId(ctx)
-	if err != nil {
-		fs.logger.Error().Err(err).Msg("error getting user id")
-
-		return errors.Wrap(err, "error getting user id")
-	}
-
-	decryptedUserKey, err := utils.GetUserKey(ctx, fs.storage, userUUID, fs.cfg.SecuredMasterKey.Get())
+	userUUID, decryptedUserKey, err := utils.GetDecryptionKey(ctx, fs.storage, fs.cfg.SecuredMasterKey.Get())
 	if err != nil {
 		fs.logger.Error().Err(err).Msg("error getting user id")
 
@@ -78,7 +86,7 @@ func (fs *Service) UploadFile(stream grpc.ClientStreamingServer[pb.UploadFileReq
 	}
 
 	// Prepare MinIO upload
-	objectName := userUUID.String() + "-" + req.Filename
+	objectName := userUUID.String() + "-" + req.GetFilename()
 	pipeReader, pipeWriter := io.Pipe()
 
 	// Upload file asynchronously
@@ -118,11 +126,11 @@ func (fs *Service) UploadFile(stream grpc.ClientStreamingServer[pb.UploadFileReq
 			return errors.Wrap(err, "failed to receive file data")
 		}
 
-		if len(chunk.Data) == 0 {
+		if len(chunk.GetData()) == 0 {
 			continue
 		}
 
-		blockSize, err := encryptor.Write(chunk.Data)
+		blockSize, err := encryptor.Write(chunk.GetData())
 		totalSize += int64(blockSize)
 		if err != nil {
 			fs.logger.Error().Err(err).Msg("failed to write chunk")
@@ -133,7 +141,7 @@ func (fs *Service) UploadFile(stream grpc.ClientStreamingServer[pb.UploadFileReq
 
 	binary, err := fs.storage.StoreBinary(ctx, db.StoreBinaryEntryParams{
 		UserID:   userUUID,
-		FileName: req.Filename,
+		FileName: req.GetFilename(),
 		FileSize: totalSize,
 		FileUrl:  objectName,
 	})
@@ -171,7 +179,7 @@ func (fs *Service) DeleteFile(ctx context.Context, req *pb.DeleteFileRequest) (*
 	}
 
 	err = fs.storage.DeleteBinary(ctx, db.DeleteBinaryEntryParams{
-		ID:     gu.GetIdFromString(req.FileId),
+		ID:     gu.GetIdFromString(req.GetFileId()),
 		UserID: userUUID,
 	})
 	if err != nil {
@@ -188,17 +196,18 @@ func (fs *Service) DeleteFile(ctx context.Context, req *pb.DeleteFileRequest) (*
 func (fs *Service) DownloadFile(req *pb.DownloadFileRequest, stream grpc.ServerStreamingServer[pb.DownloadFileResponse]) error {
 	ctx := stream.Context()
 
-	// Get user ID from context
-	userUUID, err := utils.GetUserId(ctx)
+	userUUID, decryptedUserKey, err := utils.GetDecryptionKey(ctx, fs.storage, fs.cfg.SecuredMasterKey.Get())
 	if err != nil {
-		fs.logger.Error().Err(err).Msg("error getting user ID")
-		return status.Error(codes.Unauthenticated, "invalid token")
+		fs.logger.Error().Err(err).Msg("error getting user id")
+
+		return errors.Wrap(err, "error getting user id")
 	}
 
 	// Retrieve file metadata from DB
-	fileEntry, err := fs.storage.GetBinary(ctx, req.FileId, userUUID)
+	fileEntry, err := fs.storage.GetBinary(ctx, req.GetFileId(), userUUID)
 	if err != nil {
 		fs.logger.Error().Err(err).Msg("failed to fetch file metadata")
+
 		return status.Error(codes.NotFound, "file not found")
 	}
 
@@ -209,18 +218,12 @@ func (fs *Service) DownloadFile(req *pb.DownloadFileRequest, stream grpc.ServerS
 		return status.Error(codes.PermissionDenied, "you do not have access to this file")
 	}
 
-	// Retrieve user encryption key
-	decryptedUserKey, err := utils.GetUserKey(ctx, fs.storage, userUUID, fs.cfg.SecuredMasterKey.Get())
-	if err != nil {
-		fs.logger.Error().Err(err).Msg("failed to retrieve user encryption key")
-		return status.Error(codes.Internal, "failed to retrieve encryption key")
-	}
-
 	// Fetch encrypted file from MinIO
 	objectName := fileEntry.FileUrl
 	reader, err := fs.minio.GetObject(ctx, fs.cfg.Bucket, objectName, minio.GetObjectOptions{})
 	if err != nil {
 		fs.logger.Error().Err(err).Msg("failed to fetch file from MinIO")
+
 		return status.Error(codes.Internal, "failed to retrieve file")
 	}
 	defer reader.Close()
@@ -276,7 +279,7 @@ func (fs *Service) GetFile(ctx context.Context, req *pb.GetFileRequest) (*pb.Get
 		return nil, errors.Wrap(err, "error getting user id")
 	}
 
-	file, err := fs.storage.GetBinary(ctx, req.FileId, userUUID)
+	file, err := fs.storage.GetBinary(ctx, req.GetFileId(), userUUID)
 	if err != nil {
 		fs.logger.Error().Err(err).Msg("error getting user id")
 

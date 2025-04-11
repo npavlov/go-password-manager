@@ -4,10 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/npavlov/go-password-manager/internal/server/config"
 	"github.com/pkg/errors"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
+
+	"github.com/npavlov/go-password-manager/internal/server/config"
 )
 
 type RStorage struct {

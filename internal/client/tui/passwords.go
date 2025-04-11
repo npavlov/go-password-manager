@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/npavlov/go-password-manager/internal/client/model"
 	"github.com/rivo/tview"
+
+	"github.com/npavlov/go-password-manager/internal/client/model"
 )
 
-// showPasswordList displays stored passwords
+// showPasswordList displays stored passwords.
 func (t *TUI) showPasswordList() {
 	list := tview.NewList()
 
@@ -32,7 +33,7 @@ func (t *TUI) showPasswordList() {
 	t.app.SetRoot(list, true)
 }
 
-// showPasswordDetails displays metadata of a selected password
+// showPasswordDetails displays metadata of a selected password.
 func (t *TUI) showPasswordDetails(pass model.PasswordItem) {
 	flex := tview.NewFlex().SetDirection(tview.FlexRow)
 
@@ -82,7 +83,7 @@ func (t *TUI) showPasswordDetails(pass model.PasswordItem) {
 	t.app.SetRoot(flex, true)
 }
 
-// showChangePasswordForm allows the user to update a password
+// showChangePasswordForm allows the user to update a password.
 func (t *TUI) showChangePasswordForm(pass model.PasswordItem) {
 	form := tview.NewForm()
 
@@ -116,7 +117,7 @@ func (t *TUI) showChangePasswordForm(pass model.PasswordItem) {
 	t.app.SetRoot(form, true)
 }
 
-// showAddPasswordForm displays a form to add a new password entry
+// showAddPasswordForm displays a form to add a new password entry.
 func (t *TUI) showAddPasswordForm() {
 	form := tview.NewForm()
 
@@ -129,6 +130,7 @@ func (t *TUI) showAddPasswordForm() {
 			passwordId, err := t.facade.StorePassword(context.Background(), username, password)
 			if err != nil {
 				t.logger.Error().Err(err).Msg("Failed to add password")
+
 				return
 			}
 
@@ -149,7 +151,7 @@ func (t *TUI) showAddPasswordForm() {
 	t.app.SetRoot(form, true)
 }
 
-// showRemovePasswordForm displays a confirmation dialog before removing a password
+// showRemovePasswordForm displays a confirmation dialog before removing a password.
 func (t *TUI) showRemovePasswordForm(pass model.PasswordItem) {
 	confirmation := tview.NewModal().
 		SetText(fmt.Sprintf("Are you sure you want to delete the password for %s?", pass.Login)).

@@ -3,9 +3,10 @@ package testutils
 import (
 	"testing"
 
-	"github.com/npavlov/go-password-manager/internal/server/storage"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/require"
+
+	"github.com/npavlov/go-password-manager/internal/server/storage"
 )
 
 // SetupDBStorage creates a DBStorage with a pgxmock pool and returns the DBStorate and mock pool.

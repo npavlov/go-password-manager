@@ -4,14 +4,15 @@ import (
 	"context"
 	"time"
 
-	pb "github.com/npavlov/go-password-manager/gen/proto/card"
-	"github.com/npavlov/go-password-manager/internal/client/auth"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
+
+	pb "github.com/npavlov/go-password-manager/gen/proto/card"
+	"github.com/npavlov/go-password-manager/internal/client/auth"
 )
 
-// Client GRPCClient handles communication with the gRPC server
+// Client GRPCClient handles communication with the gRPC server.
 type Client struct {
 	conn         *grpc.ClientConn
 	client       pb.CardServiceClient
@@ -19,7 +20,7 @@ type Client struct {
 	log          *zerolog.Logger
 }
 
-// NewCardClient  creates a new gRPC connection
+// NewCardClient  creates a new gRPC connection.
 func NewCardClient(conn *grpc.ClientConn, tokenManager *auth.TokenManager, log *zerolog.Logger) *Client {
 	return &Client{
 		conn:         conn,
@@ -29,19 +30,18 @@ func NewCardClient(conn *grpc.ClientConn, tokenManager *auth.TokenManager, log *
 	}
 }
 
-// GetCard sends a register request to the server
+// GetCard sends a register request to the server.
 func (as *Client) GetCard(ctx context.Context, id string) (*pb.CardData, time.Time, error) {
 	resp, err := as.client.GetCard(ctx, &pb.GetCardRequest{
 		CardId: id,
 	})
-
 	if err != nil {
 		as.log.Error().Err(err).Msg("error getting password")
 
 		return nil, time.Time{}, errors.Wrap(err, "error getting password")
 	}
 
-	return resp.Card, resp.LastUpdate.AsTime(), nil
+	return resp.GetCard(), resp.GetLastUpdate().AsTime(), nil
 }
 
 func (as *Client) UpdateCard(ctx context.Context, id, cardNum, expDate, Cvv, cardHolder string) error {
@@ -54,7 +54,6 @@ func (as *Client) UpdateCard(ctx context.Context, id, cardNum, expDate, Cvv, car
 			CardholderName: cardHolder,
 		},
 	})
-
 	if err != nil {
 		as.log.Error().Err(err).Msg("error updating card")
 
@@ -73,27 +72,25 @@ func (as *Client) StoreCard(ctx context.Context, cardNum, expDate, Cvv, cardHold
 			CardholderName: cardHolder,
 		},
 	})
-
 	if err != nil {
 		as.log.Error().Err(err).Msg("error storing card")
 
 		return "", errors.Wrap(err, "error storing card")
 	}
 
-	return resp.CardId, nil
+	return resp.GetCardId(), nil
 }
 
-// DeleteCard delete card
+// DeleteCard delete card.
 func (as *Client) DeleteCard(ctx context.Context, id string) (bool, error) {
 	resp, err := as.client.DeleteCard(ctx, &pb.DeleteCardRequest{
 		CardId: id,
 	})
-
 	if err != nil {
 		as.log.Error().Err(err).Msg("error deleting card")
 
 		return false, errors.Wrap(err, "error deleting card")
 	}
 
-	return resp.Ok, nil
+	return resp.GetOk(), nil
 }

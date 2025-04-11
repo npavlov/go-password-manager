@@ -8,6 +8,10 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/npavlov/go-password-manager/internal/server/adapter"
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
+
 	"github.com/npavlov/go-password-manager/internal/pkg/logger"
 	"github.com/npavlov/go-password-manager/internal/server/buildinfo"
 	"github.com/npavlov/go-password-manager/internal/server/config"
@@ -23,8 +27,6 @@ import (
 	"github.com/npavlov/go-password-manager/internal/server/service/password"
 	"github.com/npavlov/go-password-manager/internal/server/storage"
 	"github.com/npavlov/go-password-manager/internal/utils"
-	"github.com/pkg/errors"
-	"github.com/rs/zerolog"
 )
 
 var (
@@ -71,7 +73,6 @@ func loadConfig(log *zerolog.Logger) *config.Config {
 }
 
 func starServer(ctx context.Context, cfg *config.Config, log *zerolog.Logger, wg *sync.WaitGroup, dbM *dbmanager.DBManager) {
-
 	dbStorage, memStorage := setupStorage(ctx, cfg, dbM, log)
 
 	grpcManager := service.NewGRPCManager(cfg, log, memStorage)
@@ -91,7 +92,7 @@ func starServer(ctx context.Context, cfg *config.Config, log *zerolog.Logger, wg
 
 	minioClient := setupMinIO(ctx, cfg, log)
 
-	fileService := file.NewFileService(log, dbStorage, cfg, minioClient)
+	fileService := file.NewFileService(log, dbStorage, cfg, adapter.NewMinioAdapter(minioClient))
 	fileService.RegisterService(grpcServer)
 
 	itemService := item.NewItemService(log, dbStorage, cfg)

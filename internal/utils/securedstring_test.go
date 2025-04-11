@@ -3,8 +3,9 @@ package utils_test
 import (
 	"testing"
 
-	"github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/npavlov/go-password-manager/internal/utils"
 )
 
 func TestNewStringAndGet(t *testing.T) {

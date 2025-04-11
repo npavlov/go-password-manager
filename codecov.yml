@@ -12,4 +12,5 @@ coverage:
 github_checks:
   annotations: false
 ignore:
-  - "swagger"
+  - "internal/server/db"
+  - "internal/test_utils"

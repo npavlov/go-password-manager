@@ -5,8 +5,9 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/npavlov/go-password-manager/internal/server/storage"
 	"github.com/pkg/errors"
+
+	"github.com/npavlov/go-password-manager/internal/server/db"
 )
 
 func GenerateJWT(userID, jwtSecret string, expiration int64) (string, error) {
@@ -54,7 +55,11 @@ func GetUserId(ctx context.Context) (pgtype.UUID, error) {
 	return uuid, nil
 }
 
-func GetUserKey(ctx context.Context, storage *storage.DBStorage, userUUID pgtype.UUID, masterKey string) (string, error) {
+type UserGetter interface {
+	GetUserById(ctx context.Context, id pgtype.UUID) (*db.User, error)
+}
+
+func GetUserKey(ctx context.Context, storage UserGetter, userUUID pgtype.UUID, masterKey string) (string, error) {
 	user, err := storage.GetUserById(ctx, userUUID)
 	if err != nil {
 		return "", errors.Wrap(err, "Error getting user id")

@@ -5,6 +5,10 @@ import (
 	"io"
 	"time"
 
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
+	"google.golang.org/grpc"
+
 	pb_card "github.com/npavlov/go-password-manager/gen/proto/card"
 	pb_file "github.com/npavlov/go-password-manager/gen/proto/file"
 	pb "github.com/npavlov/go-password-manager/gen/proto/item"
@@ -18,9 +22,6 @@ import (
 	"github.com/npavlov/go-password-manager/internal/client/grpc/metainfo"
 	"github.com/npavlov/go-password-manager/internal/client/grpc/notes"
 	"github.com/npavlov/go-password-manager/internal/client/grpc/passwords"
-	"github.com/pkg/errors"
-	"github.com/rs/zerolog"
-	"google.golang.org/grpc"
 )
 
 type Facade struct {
@@ -48,6 +49,7 @@ func NewFacade(conn *grpc.ClientConn, tokenManager *tokenMgr.TokenManager, log *
 func (fa *Facade) Login(username, password string) error {
 	return fa.authClient.Login(username, password)
 }
+
 func (fa *Facade) Register(username, password, email string) (string, error) {
 	masterKey, err := fa.authClient.Register(username, password, email)
 
@@ -86,7 +88,6 @@ func (fa *Facade) DeletePassword(ctx context.Context, id string) (bool, error) {
 
 func (fa *Facade) GetMetainfo(ctx context.Context, id string) (map[string]string, error) {
 	meta, err := fa.metaClient.GetMetainfo(ctx, id)
-
 	if err != nil {
 		return nil, errors.Wrap(err, "error getting metainfo")
 	}
@@ -152,28 +153,28 @@ func (fa *Facade) DeleteCard(ctx context.Context, id string) (bool, error) {
 	return result, errors.Wrap(err, "error deleting card")
 }
 
-// UploadBinary streams and stores a binary file
+// UploadBinary streams and stores a binary file.
 func (fa *Facade) UploadBinary(ctx context.Context, filename string, reader io.Reader) (string, error) {
 	fileID, err := fa.binariesClient.UploadFile(ctx, filename, reader)
 
 	return fileID, errors.Wrap(err, "failed to upload binary")
 }
 
-// DownloadBinary retrieves and writes a binary file
+// DownloadBinary retrieves and writes a binary file.
 func (fa *Facade) DownloadBinary(ctx context.Context, fileID string, writer io.Writer) error {
 	err := fa.binariesClient.DownloadFile(ctx, fileID, writer)
 
 	return errors.Wrap(err, "failed to download binary")
 }
 
-// GetFile retrieves and writes a binary file
+// GetFile retrieves and writes a binary file.
 func (fa *Facade) GetFile(ctx context.Context, fileID string) (*pb_file.FileMeta, error) {
 	file, err := fa.binariesClient.GetFile(ctx, fileID)
-	
+
 	return file, errors.Wrap(err, "error getting file")
 }
 
-// DeleteBinary removes a binary file by ID
+// DeleteBinary removes a binary file by ID.
 func (fa *Facade) DeleteBinary(ctx context.Context, fileID string) (bool, error) {
 	ok, err := fa.binariesClient.DeleteFile(ctx, fileID)
 

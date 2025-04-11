@@ -7,19 +7,18 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
+
 	pb "github.com/npavlov/go-password-manager/gen/proto/item"
 	"github.com/npavlov/go-password-manager/internal/client/auth"
 	"github.com/npavlov/go-password-manager/internal/client/grpc/facade"
 	"github.com/npavlov/go-password-manager/internal/client/model"
-	"github.com/pkg/errors"
-	"github.com/rs/zerolog"
 )
 
-var (
-	pageLimit int32 = 10
-)
+var pageLimit int32 = 10
 
-// StManager manages client-side storage and background syncing
+// StManager manages client-side storage and background syncing.
 type StManager struct {
 	facade     *facade.Facade
 	Password   map[string]model.PasswordItem `json:"passwords"`
@@ -34,7 +33,7 @@ type StManager struct {
 	syncing    int32
 }
 
-// NewStorageManager creates a new StorageManager with background sync
+// NewStorageManager creates a new StorageManager with background sync.
 func NewStorageManager(facade *facade.Facade, tokenMgr *auth.TokenManager, logger *zerolog.Logger) *StManager {
 	sm := &StManager{
 		facade:   facade,
@@ -46,15 +45,16 @@ func NewStorageManager(facade *facade.Facade, tokenMgr *auth.TokenManager, logge
 		Binaries: make(map[string]model.BinaryItem),
 		tokenMgr: tokenMgr,
 	}
+
 	return sm
 }
 
-// FetchItems retrieves all items from the server
+// FetchItems retrieves all items from the server.
 func (sm *StManager) FetchItems(ctx context.Context) ([]*pb.ItemData, error) {
 	sm.mutex.Lock()
 	defer sm.mutex.Unlock()
 
-	var total int = 0
+	total := 0
 	var i int32 = 1
 	allItems := make([]*pb.ItemData, 0)
 	for {
@@ -69,7 +69,7 @@ func (sm *StManager) FetchItems(ctx context.Context) ([]*pb.ItemData, error) {
 
 		total = total + int(count)
 
-		//next page
+		// next page
 		i++
 
 		if count < pageLimit {
@@ -83,7 +83,7 @@ func (sm *StManager) FetchItems(ctx context.Context) ([]*pb.ItemData, error) {
 }
 
 func (sm *StManager) processItem(ctx context.Context, item *pb.ItemData) bool {
-	if item.UpdatedAt.AsTime().Before(sm.lastSyncAt) {
+	if item.GetUpdatedAt().AsTime().Before(sm.lastSyncAt) {
 		return false
 	}
 
@@ -96,7 +96,7 @@ func (sm *StManager) processItem(ctx context.Context, item *pb.ItemData) bool {
 		return false
 	}
 
-	switch item.Type {
+	switch item.GetType() {
 	case pb.ItemType_ITEM_TYPE_PASSWORD:
 		err = sm.ProcessPassword(ctx, itemId, meta)
 	case pb.ItemType_ITEM_TYPE_NOTE:
@@ -115,7 +115,6 @@ func (sm *StManager) processItem(ctx context.Context, item *pb.ItemData) bool {
 
 func (sm *StManager) ProcessPassword(ctx context.Context, passwordId string, meta map[string]string) error {
 	password, lastUpdate, err := sm.facade.GetPassword(ctx, passwordId)
-
 	if err != nil {
 		sm.logger.Error().Err(err).Msg("error getting password")
 
@@ -123,8 +122,8 @@ func (sm *StManager) ProcessPassword(ctx context.Context, passwordId string, met
 	}
 
 	sm.Password[passwordId] = model.PasswordItem{
-		Login:    password.Login,
-		Password: password.Password,
+		Login:    password.GetLogin(),
+		Password: password.GetPassword(),
 		StorageItem: model.StorageItem{
 			Type:      model.ItemTypePassword,
 			ID:        passwordId,
@@ -138,7 +137,6 @@ func (sm *StManager) ProcessPassword(ctx context.Context, passwordId string, met
 
 func (sm *StManager) ProcessNote(ctx context.Context, noteId string, meta map[string]string) error {
 	note, lastUpdate, err := sm.facade.GetNote(ctx, noteId)
-
 	if err != nil {
 		sm.logger.Error().Err(err).Msg("error getting password")
 
@@ -146,7 +144,7 @@ func (sm *StManager) ProcessNote(ctx context.Context, noteId string, meta map[st
 	}
 
 	sm.Notes[noteId] = model.NoteItem{
-		Content: note.Content,
+		Content: note.GetContent(),
 		StorageItem: model.StorageItem{
 			Type:      model.ItemTypeNote,
 			ID:        noteId,
@@ -160,7 +158,6 @@ func (sm *StManager) ProcessNote(ctx context.Context, noteId string, meta map[st
 
 func (sm *StManager) ProcessCard(ctx context.Context, cardId string, meta map[string]string) error {
 	card, lastUpdate, err := sm.facade.GetCard(ctx, cardId)
-
 	if err != nil {
 		sm.logger.Error().Err(err).Msg("error getting card")
 
@@ -168,10 +165,10 @@ func (sm *StManager) ProcessCard(ctx context.Context, cardId string, meta map[st
 	}
 
 	sm.Cards[cardId] = model.CardItem{
-		CardNumber:     card.CardNumber,
-		CVV:            card.Cvv,
-		ExpiryDate:     card.ExpiryDate,
-		CardholderName: card.CardholderName,
+		CardNumber:     card.GetCardNumber(),
+		CVV:            card.GetCvv(),
+		ExpiryDate:     card.GetExpiryDate(),
+		CardholderName: card.GetCardholderName(),
 		StorageItem: model.StorageItem{
 			Type:      model.ItemTypeCard,
 			ID:        cardId,
@@ -183,17 +180,18 @@ func (sm *StManager) ProcessCard(ctx context.Context, cardId string, meta map[st
 	return nil
 }
 
-// ProcessBinary retrieves binary metadata and downloads the file
+// ProcessBinary retrieves binary metadata and downloads the file.
 func (sm *StManager) ProcessBinary(ctx context.Context, fileID string, meta map[string]string) error {
 	file, err := sm.facade.GetFile(ctx, fileID)
 	if err != nil {
 		sm.logger.Error().Err(err).Str("fileID", fileID).Msg("error getting binary metadata")
+
 		return errors.Wrap(err, "error getting binary metadata")
 	}
 
 	sm.Binaries[fileID] = model.BinaryItem{
-		Filename: file.FileName,
-		Size:     file.FileSize,
+		Filename: file.GetFileName(),
+		Size:     file.GetFileSize(),
 		StorageItem: model.StorageItem{
 			Type:      model.ItemTypeBinary,
 			ID:        fileID,
@@ -202,12 +200,12 @@ func (sm *StManager) ProcessBinary(ctx context.Context, fileID string, meta map[
 		},
 	}
 
-	sm.logger.Info().Str("filename", file.FileName).Msg("binary downloaded and stored in temp folder")
+	sm.logger.Info().Str("filename", file.GetFileName()).Msg("binary downloaded and stored in temp folder")
 
 	return nil
 }
 
-// StartBackgroundSync runs a goroutine that checks for updates every minute
+// StartBackgroundSync runs a goroutine that checks for updates every minute.
 func (sm *StManager) StartBackgroundSync(ctx context.Context) {
 	ticker := time.NewTicker(5 * time.Minute)
 	defer ticker.Stop()
@@ -222,21 +220,22 @@ func (sm *StManager) StartBackgroundSync(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			err := sm.SyncItems(ctx)
-
 			if err != nil {
 				sm.logger.Error().Err(err).Msg("error syncing items")
 			}
 		case <-sm.stopChan:
 			sm.logger.Info().Msg("stopping background sync")
+
 			return
 		}
 	}
 }
 
-// SyncItems checks for updates since the last sync
+// SyncItems checks for updates since the last sync.
 func (sm *StManager) SyncItems(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&sm.syncing, 0, 1) {
 		sm.logger.Info().Msg("Sync already in progress, skipping this round.")
+
 		return nil
 	}
 	defer atomic.StoreInt32(&sm.syncing, 0)
@@ -248,7 +247,6 @@ func (sm *StManager) SyncItems(ctx context.Context) error {
 	sm.logger.Info().Msg("syncing items...")
 
 	items, err := sm.FetchItems(ctx)
-
 	if err != nil {
 		return errors.Wrap(err, "error fetching items")
 	}
@@ -273,7 +271,7 @@ func (sm *StManager) SyncItems(ctx context.Context) error {
 	return nil
 }
 
-// StopSync stops the background sync goroutine
+// StopSync stops the background sync goroutine.
 func (sm *StManager) StopSync() {
 	close(sm.stopChan)
 }

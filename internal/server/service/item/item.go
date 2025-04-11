@@ -4,26 +4,30 @@ import (
 	"context"
 
 	"github.com/bufbuild/protovalidate-go"
-	pb "github.com/npavlov/go-password-manager/gen/proto/item"
-	"github.com/npavlov/go-password-manager/internal/server/config"
-	"github.com/npavlov/go-password-manager/internal/server/db"
-	"github.com/npavlov/go-password-manager/internal/server/service/utils"
-	"github.com/npavlov/go-password-manager/internal/server/storage"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	pb "github.com/npavlov/go-password-manager/gen/proto/item"
+	"github.com/npavlov/go-password-manager/internal/server/config"
+	"github.com/npavlov/go-password-manager/internal/server/db"
+	"github.com/npavlov/go-password-manager/internal/server/service/utils"
 )
+
+type Storage interface {
+	GetItems(ctx context.Context, getItems db.GetItemsByUserIDParams) ([]db.GetItemsByUserIDRow, error)
+}
 
 type Service struct {
 	pb.UnimplementedItemServiceServer
 	validator protovalidate.Validator
 	logger    *zerolog.Logger
-	storage   *storage.DBStorage
+	storage   Storage
 	cfg       *config.Config
 }
 
-func NewItemService(log *zerolog.Logger, storage *storage.DBStorage, cfg *config.Config) *Service {
+func NewItemService(log *zerolog.Logger, storage Storage, cfg *config.Config) *Service {
 	validator, err := protovalidate.New()
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create validator")
@@ -55,10 +59,9 @@ func (is *Service) GetItems(ctx context.Context, req *pb.GetItemsRequest) (*pb.G
 
 	data, err := is.storage.GetItems(ctx, db.GetItemsByUserIDParams{
 		UserID: userUUID,
-		Offset: (req.Page - 1) * req.PageSize,
-		Limit:  req.PageSize,
+		Offset: (req.GetPage() - 1) * req.GetPageSize(),
+		Limit:  req.GetPageSize(),
 	})
-
 	if err != nil {
 		is.logger.Error().Err(err).Msg("error getting items")
 
@@ -85,7 +88,6 @@ func (is *Service) GetItems(ctx context.Context, req *pb.GetItemsRequest) (*pb.G
 		case db.ItemTypeText:
 			items[i].Type = pb.ItemType_ITEM_TYPE_NOTE
 		}
-
 	}
 
 	return &pb.GetItemsResponse{

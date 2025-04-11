@@ -8,6 +8,7 @@ func FormatCardNumber(cardNumber string) string {
 		if r >= '0' && r <= '9' {
 			return r
 		}
+
 		return -1
 	}, cardNumber)
 

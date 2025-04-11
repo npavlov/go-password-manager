@@ -1,19 +1,19 @@
-//nolint:tagliatelle
 package config
 
 import (
 	"flag"
 
 	"github.com/caarlos0/env/v6"
-	"github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/rs/zerolog"
+
+	"github.com/npavlov/go-password-manager/internal/utils"
 )
 
 type Config struct {
-	Address          string `env:"ADDRESS"        envDefault:":9090"`
-	MasterKey        string `env:"MASTER_KEY"          envDefault:""`
-	Certificate      string `env:"CERTIFICATE"          envDefault:""`
-	TokenFile        string `env:"TOKEN_FILE"          envDefault:""`
+	Address          string `env:"ADDRESS"     envDefault:":9090"`
+	MasterKey        string `env:"MASTER_KEY"  envDefault:""`
+	Certificate      string `env:"CERTIFICATE" envDefault:""`
+	TokenFile        string `env:"TOKEN_FILE"  envDefault:""`
 	SecuredMasterKey utils.ISecureString
 }
 

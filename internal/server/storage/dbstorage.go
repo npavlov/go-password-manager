@@ -1,9 +1,10 @@
 package storage
 
 import (
+	"github.com/rs/zerolog"
+
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/server/dbmanager"
-	"github.com/rs/zerolog"
 )
 
 type DBStorage struct {

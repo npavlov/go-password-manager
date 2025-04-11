@@ -5,14 +5,15 @@ import (
 	"strings"
 	"sync"
 
-	pb "github.com/npavlov/go-password-manager/gen/proto/auth"
-	"github.com/npavlov/go-password-manager/internal/client/auth"
-	"github.com/npavlov/go-password-manager/internal/client/config"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+
+	pb "github.com/npavlov/go-password-manager/gen/proto/auth"
+	"github.com/npavlov/go-password-manager/internal/client/auth"
+	"github.com/npavlov/go-password-manager/internal/client/config"
 )
 
 type AuthInterceptor struct {
@@ -22,7 +23,7 @@ type AuthInterceptor struct {
 	tokenManager *auth.TokenManager
 }
 
-// NewAuthInterceptor initializes the interceptor with tokens
+// NewAuthInterceptor initializes the interceptor with tokens.
 func NewAuthInterceptor(cfg config.Config, tokenManager *auth.TokenManager) *AuthInterceptor {
 	return &AuthInterceptor{
 		config:       cfg,
@@ -34,7 +35,7 @@ func (ai *AuthInterceptor) SetAuthClient(conn *grpc.ClientConn) {
 	ai.authClient = pb.NewAuthServiceClient(conn)
 }
 
-// UnaryInterceptor checks for authentication errors and refreshes token if necessary
+// UnaryInterceptor checks for authentication errors and refreshes token if necessary.
 func (ai *AuthInterceptor) UnaryInterceptor(
 	ctx context.Context,
 	method string,
@@ -77,7 +78,7 @@ func (ai *AuthInterceptor) UnaryInterceptor(
 		}
 
 		// Retry the original request with the new token
-		ctx = metadata.AppendToOutgoingContext(ctx, "token", newToken)
+		ctx = metadata.AppendToOutgoingContext(ctx, "authorization", newToken)
 
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
@@ -85,7 +86,7 @@ func (ai *AuthInterceptor) UnaryInterceptor(
 	return err
 }
 
-// refreshAccessToken calls the auth service to get a new token
+// refreshAccessToken calls the auth service to get a new token.
 func (ai *AuthInterceptor) refreshAccessToken(ctx context.Context) (string, string, error) {
 	ai.mu.Lock()
 	defer ai.mu.Unlock()
@@ -98,10 +99,10 @@ func (ai *AuthInterceptor) refreshAccessToken(ctx context.Context) (string, stri
 		return "", "", errors.Wrap(err, "failed to get new access token")
 	}
 
-	return resp.Token, resp.RefreshToken, nil
+	return resp.GetToken(), resp.GetRefreshToken(), nil
 }
 
-// StreamInterceptor attaches the token to streaming RPCs
+// StreamInterceptor attaches the token to streaming RPCs.
 func (a *AuthInterceptor) StreamInterceptor(
 	ctx context.Context,
 	desc *grpc.StreamDesc,
@@ -120,6 +121,6 @@ func (a *AuthInterceptor) StreamInterceptor(
 	}
 
 	newCtx := metadata.AppendToOutgoingContext(ctx, "authorization", token)
-	
+
 	return streamer(newCtx, desc, cc, method, opts...)
 }

@@ -5,11 +5,12 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/pkg/errors"
+
+	"github.com/npavlov/go-password-manager/internal/server/db"
 )
 
-// StoreToken stores refresh token
+// StoreToken stores refresh token.
 func (ds *DBStorage) StoreToken(ctx context.Context, userID pgtype.UUID, refreshToken string, expiresAt time.Time) error {
 	var pgExpiresAt pgtype.Timestamp
 	err := pgExpiresAt.Scan(expiresAt)
@@ -23,12 +24,12 @@ func (ds *DBStorage) StoreToken(ctx context.Context, userID pgtype.UUID, refresh
 		ExpiresAt: pgExpiresAt,
 	})
 
-	return err
+	return errors.Wrap(err, "error creating refresh token")
 }
 
-// GetToken gets refresh token
+// GetToken gets refresh token.
 func (ds *DBStorage) GetToken(ctx context.Context, token string) (db.GetRefreshTokenRow, error) {
 	tokenDb, err := ds.Queries.GetRefreshToken(ctx, token)
 
-	return tokenDb, err
+	return tokenDb, errors.Wrap(err, "error getting refresh token")
 }

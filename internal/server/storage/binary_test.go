@@ -1,24 +1,24 @@
 package storage_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/npavlov/go-password-manager/internal/server/db"
-	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/npavlov/go-password-manager/internal/server/db"
+	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 )
 
 func TestStoreBinary(t *testing.T) {
 	t.Parallel()
 
 	dbStorage, mock := testutils.SetupDBStorage(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	userID := uuid.New()
 	id := uuid.New().String()
@@ -52,7 +52,7 @@ func TestGetBinary(t *testing.T) {
 	t.Parallel()
 
 	dbStorage, mock := testutils.SetupDBStorage(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	binaryID := uuid.New()
 	userID := uuid.New()
@@ -81,7 +81,7 @@ func TestGetBinaries(t *testing.T) {
 	t.Parallel()
 
 	dbStorage, mock := testutils.SetupDBStorage(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	userID := uuid.New()
 	now := time.Now()
@@ -104,9 +104,9 @@ func TestGetBinaries(t *testing.T) {
 
 func TestDeleteBinary(t *testing.T) {
 	t.Parallel()
-	
+
 	dbStorage, mock := testutils.SetupDBStorage(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	param := db.DeleteBinaryEntryParams{
 		ID:     pgtype.UUID{Bytes: uuid.New(), Valid: true},

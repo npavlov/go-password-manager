@@ -3,11 +3,12 @@ package tui
 import (
 	"context"
 
-	"github.com/npavlov/go-password-manager/internal/client/model"
 	"github.com/rivo/tview"
+
+	"github.com/npavlov/go-password-manager/internal/client/model"
 )
 
-// showAddMetadataForm allows the user to add metadata to an item
+// showAddMetadataForm allows the user to add metadata to an item.
 func (t *TUI) showAddMetadataForm(storageItem model.StorageItem, backFunc func()) {
 	form := tview.NewForm()
 
@@ -50,7 +51,7 @@ func (t *TUI) showAddMetadataForm(storageItem model.StorageItem, backFunc func()
 	t.app.SetRoot(form, true)
 }
 
-// showRemoveMetadataForm allows the user to remove metadata from a password
+// showRemoveMetadataForm allows the user to remove metadata from a password.
 func (t *TUI) showRemoveMetadataForm(storageItem model.StorageItem, backFunc func()) {
 	form := tview.NewForm()
 

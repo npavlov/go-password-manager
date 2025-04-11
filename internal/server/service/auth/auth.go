@@ -6,17 +6,16 @@ import (
 
 	"github.com/bufbuild/protovalidate-go"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
+	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/grpc"
+
+	pb "github.com/npavlov/go-password-manager/gen/proto/auth"
 	"github.com/npavlov/go-password-manager/internal/server/config"
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/server/redis"
 	"github.com/npavlov/go-password-manager/internal/server/service/utils"
-	"github.com/npavlov/go-password-manager/internal/server/storage"
-	"github.com/pkg/errors"
-	"google.golang.org/grpc"
-
-	pb "github.com/npavlov/go-password-manager/gen/proto/auth"
-	"github.com/rs/zerolog"
-	"golang.org/x/crypto/bcrypt"
 )
 
 const (
@@ -24,16 +23,23 @@ const (
 	RefreshTokenExpiration = time.Hour * 24 * 7 // 7 days
 )
 
+type Storage interface {
+	GetUser(ctx context.Context, username string) (*db.User, error)
+	GetUserById(ctx context.Context, userId pgtype.UUID) (*db.User, error)
+	RegisterUser(ctx context.Context, createUser db.CreateUserParams) (*db.User, error)
+	GetToken(ctx context.Context, token string) (db.GetRefreshTokenRow, error)
+	StoreToken(ctx context.Context, userID pgtype.UUID, refreshToken string, expiresAt time.Time) error
+}
 type Service struct {
 	pb.UnimplementedAuthServiceServer
 	validator  protovalidate.Validator
 	logger     *zerolog.Logger
-	storage    *storage.DBStorage
+	Storage    Storage
 	cfg        *config.Config
 	memStorage redis.MemStorage
 }
 
-func NewAuthService(log *zerolog.Logger, storage *storage.DBStorage, cfg *config.Config, memStorage redis.MemStorage) *Service {
+func NewAuthService(log *zerolog.Logger, storage Storage, cfg *config.Config, memStorage redis.MemStorage) *Service {
 	validator, err := protovalidate.New()
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create validator")
@@ -42,7 +48,7 @@ func NewAuthService(log *zerolog.Logger, storage *storage.DBStorage, cfg *config
 	return &Service{
 		logger:     log,
 		validator:  validator,
-		storage:    storage,
+		Storage:    storage,
 		cfg:        cfg,
 		memStorage: memStorage,
 	}
@@ -52,14 +58,14 @@ func (as *Service) RegisterService(grpcServer *grpc.Server) {
 	pb.RegisterAuthServiceServer(grpcServer, as)
 }
 
-// Register a new user
+// Register a new user.
 func (as *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
 	if err := as.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
 	// Hash the password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.GetPassword()), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, errors.Wrap(err, "error hashing password")
 	}
@@ -75,13 +81,12 @@ func (as *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.R
 		return nil, err
 	}
 
-	user, err := as.storage.RegisterUser(ctx, db.CreateUserParams{
-		Username:      req.Username,
+	user, err := as.Storage.RegisterUser(ctx, db.CreateUserParams{
+		Username:      req.GetUsername(),
 		Password:      string(hashedPassword),
 		EncryptionKey: encryptedKey,
-		Email:         req.Email,
+		Email:         req.GetEmail(),
 	})
-
 	if err != nil {
 		as.logger.Error().Err(err).Msg("failed to register user")
 
@@ -100,13 +105,13 @@ func (as *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.R
 	return &pb.RegisterResponse{Token: token, RefreshToken: refreshToken, UserKey: userKey}, nil
 }
 
-// Login user and return JWT token
+// Login user and return JWT token.
 func (as *Service) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
 	if err := as.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	user, err := as.storage.GetUser(ctx, req.Username)
+	user, err := as.Storage.GetUser(ctx, req.GetUsername())
 	if err != nil {
 		as.logger.Error().Err(err).Msg("failed to get user")
 
@@ -114,7 +119,7 @@ func (as *Service) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginRe
 	}
 
 	// Compare password
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.GetPassword()))
 	if err != nil {
 		as.logger.Error().Err(err).Msg("invalid password")
 
@@ -137,9 +142,10 @@ func (as *Service) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest
 	}
 
 	// Get refresh token from DB
-	tokenRow, err := as.storage.GetToken(ctx, req.RefreshToken)
+	tokenRow, err := as.Storage.GetToken(ctx, req.GetRefreshToken())
 	if err != nil {
 		as.logger.Error().Err(err).Msg("failed to get refresh token")
+
 		return nil, errors.Wrap(err, "invalid refresh token")
 	}
 
@@ -185,7 +191,7 @@ func (as *Service) tokenGeneration(ctx context.Context, userID pgtype.UUID) (str
 		return "", "", errors.Wrap(err, "error generating refresh token")
 	}
 
-	err = as.storage.StoreToken(ctx, userID, refreshToken, refreshTokenExp)
+	err = as.Storage.StoreToken(ctx, userID, refreshToken, refreshTokenExp)
 	if err != nil {
 		return "", "", errors.Wrap(err, "error storing token")
 	}

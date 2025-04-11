@@ -4,16 +4,17 @@ import (
 	"context"
 
 	"github.com/bufbuild/protovalidate-go"
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	pb "github.com/npavlov/go-password-manager/gen/proto/password"
 	"github.com/npavlov/go-password-manager/internal/server/config"
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/server/service/utils"
 	"github.com/npavlov/go-password-manager/internal/server/storage"
 	gu "github.com/npavlov/go-password-manager/internal/utils"
-	"github.com/pkg/errors"
-	"github.com/rs/zerolog"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Service struct {
@@ -61,7 +62,7 @@ func (ps *Service) StorePassword(ctx context.Context, req *pb.StorePasswordReque
 		return nil, errors.Wrap(err, "error getting user id")
 	}
 
-	encryptedPassword, err := utils.Encrypt(req.Password.Password, decryptedUserKey)
+	encryptedPassword, err := utils.Encrypt(req.GetPassword().GetPassword(), decryptedUserKey)
 	if err != nil {
 		ps.logger.Error().Err(err).Msg("failed to encrypt password")
 
@@ -70,7 +71,7 @@ func (ps *Service) StorePassword(ctx context.Context, req *pb.StorePasswordReque
 
 	password, err := ps.storage.StorePassword(ctx, db.CreatePasswordEntryParams{
 		UserID:   userUUID,
-		Login:    req.Password.Login,
+		Login:    req.GetPassword().GetLogin(),
 		Password: encryptedPassword,
 	})
 	if err != nil {
@@ -103,7 +104,7 @@ func (ps *Service) GetPassword(ctx context.Context, req *pb.GetPasswordRequest) 
 		return nil, errors.Wrap(err, "error getting user id")
 	}
 
-	password, err := ps.storage.GetPassword(ctx, req.PasswordId, userUUID)
+	password, err := ps.storage.GetPassword(ctx, req.GetPasswordId(), userUUID)
 	if err != nil {
 		ps.logger.Error().Err(err).Msg("error getting user id")
 
@@ -153,7 +154,7 @@ func (ps *Service) UpdatePassword(ctx context.Context, req *pb.UpdatePasswordReq
 		return nil, errors.Wrap(err, "error getting user id")
 	}
 
-	encryptedPassword, err := utils.Encrypt(req.Data.Password, decryptedUserKey)
+	encryptedPassword, err := utils.Encrypt(req.GetData().GetPassword(), decryptedUserKey)
 	if err != nil {
 		ps.logger.Error().Err(err).Msg("failed to encrypt password")
 
@@ -161,8 +162,8 @@ func (ps *Service) UpdatePassword(ctx context.Context, req *pb.UpdatePasswordReq
 	}
 
 	password, err := ps.storage.UpdatePassword(ctx, db.UpdatePasswordEntryParams{
-		ID:       gu.GetIdFromString(req.PasswordId),
-		Login:    req.Data.Login,
+		ID:       gu.GetIdFromString(req.GetPasswordId()),
+		Login:    req.GetData().GetLogin(),
 		Password: encryptedPassword,
 	})
 	if err != nil {
@@ -188,7 +189,7 @@ func (ps *Service) DeletePassword(ctx context.Context, req *pb.DeletePasswordReq
 		return nil, errors.Wrap(err, "error getting user id")
 	}
 
-	err = ps.storage.DeletePassword(ctx, req.PasswordId, userUUID)
+	err = ps.storage.DeletePassword(ctx, req.GetPasswordId(), userUUID)
 	if err != nil {
 		ps.logger.Error().Err(err).Msg("error deleting password")
 

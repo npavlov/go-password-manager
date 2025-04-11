@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Decryptor wraps an io.Reader and decrypts data in blocks
+// Decryptor wraps an io.Reader and decrypts data in blocks.
 type Decryptor struct {
 	reader io.Reader
 	gcm    cipher.AEAD
@@ -38,7 +38,7 @@ func (d *Decryptor) Read(p []byte) (int, error) {
 
 	// Read the nonce first
 	if _, err := io.ReadFull(d.reader, nonce); err != nil {
-		return 0, fmt.Errorf("failed to read nonce: %v", err)
+		return 0, fmt.Errorf("failed to read nonce: %w", err)
 	}
 
 	// Read the encrypted block

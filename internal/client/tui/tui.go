@@ -4,14 +4,15 @@ import (
 	"context"
 	"log"
 
+	"github.com/rivo/tview"
+	"github.com/rs/zerolog"
+
 	"github.com/npavlov/go-password-manager/internal/client/auth"
 	"github.com/npavlov/go-password-manager/internal/client/grpc/facade"
 	"github.com/npavlov/go-password-manager/internal/client/storage"
-	"github.com/rivo/tview"
-	"github.com/rs/zerolog"
 )
 
-// TUI handles the terminal user interface
+// TUI handles the terminal user interface.
 type TUI struct {
 	app      *tview.Application
 	facade   *facade.Facade
@@ -20,7 +21,7 @@ type TUI struct {
 	tokenMgr *auth.TokenManager
 }
 
-// NewTUI creates a new TUI instance
+// NewTUI creates a new TUI instance.
 func NewTUI(app *tview.Application, facade *facade.Facade, storage *storage.StManager, tokenMgr *auth.TokenManager, log *zerolog.Logger) *TUI {
 	return &TUI{
 		app:      app,
@@ -31,18 +32,18 @@ func NewTUI(app *tview.Application, facade *facade.Facade, storage *storage.StMa
 	}
 }
 
-// Run starts the TUI
+// Run starts the TUI.
 func (t *TUI) Run() error {
 	return t.app.SetRoot(t.mainMenu(), true).Run()
 }
 
-// ResetToLoginScreen resets the UI and goes back to the login screen
+// ResetToLoginScreen resets the UI and goes back to the login screen.
 func (t *TUI) ResetToLoginScreen() {
 	t.logger.Warn().Msg("Authentication failed. Redirecting to login screen...")
 	t.showLoginForm()
 }
 
-// mainMenu creates the main menu UI
+// mainMenu creates the main menu UI.
 func (t *TUI) mainMenu() *tview.List {
 	menu := tview.NewList()
 
@@ -59,10 +60,11 @@ func (t *TUI) mainMenu() *tview.List {
 	}
 
 	menu.SetTitle("Password Manager").SetBorder(true)
+
 	return menu
 }
 
-// showRegisterForm displays the registration form
+// showRegisterForm displays the registration form.
 func (t *TUI) showRegisterForm() {
 	form := tview.NewForm()
 	form.AddInputField("Username", "", 20, nil, nil).
@@ -76,6 +78,7 @@ func (t *TUI) showRegisterForm() {
 			userID, err := t.facade.Register(username, password, email)
 			if err != nil {
 				log.Println("Registration failed:", err)
+
 				return
 			}
 
@@ -88,7 +91,7 @@ func (t *TUI) showRegisterForm() {
 	t.app.SetRoot(form, true)
 }
 
-// showLoginForm displays the login form
+// showLoginForm displays the login form.
 func (t *TUI) showLoginForm() {
 	form := tview.NewForm()
 	form.AddInputField("Username", "", 20, nil, nil).
@@ -100,6 +103,7 @@ func (t *TUI) showLoginForm() {
 			err := t.facade.Login(username, password)
 			if err != nil {
 				log.Println("Login failed:", err)
+
 				return
 			}
 

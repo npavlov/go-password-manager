@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-// HashCardNumber hashes the card number to enforce uniqueness
+// HashCardNumber hashes the card number to enforce uniqueness.
 func HashCardNumber(cardNumber string) pgtype.Text {
 	hash := sha256.Sum256([]byte(cardNumber))
 

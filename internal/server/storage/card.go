@@ -4,12 +4,13 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/pkg/errors"
+
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/utils"
-	"github.com/pkg/errors"
 )
 
-// StoreCard creates new card record
+// StoreCard creates new card record.
 func (ds *DBStorage) StoreCard(ctx context.Context, createCard db.StoreCardParams) (*db.Card, error) {
 	card, err := ds.Queries.StoreCard(ctx, createCard)
 	if err != nil {
@@ -21,7 +22,7 @@ func (ds *DBStorage) StoreCard(ctx context.Context, createCard db.StoreCardParam
 	return &card, nil
 }
 
-// GetCard retrieves card record
+// GetCard retrieves card record.
 func (ds *DBStorage) GetCard(ctx context.Context, cardId string, userId pgtype.UUID) (*db.Card, error) {
 	uuid := utils.GetIdFromString(cardId)
 
@@ -38,7 +39,7 @@ func (ds *DBStorage) GetCard(ctx context.Context, cardId string, userId pgtype.U
 	return &card, nil
 }
 
-// GetCards retrieves password record
+// GetCards retrieves password record.
 func (ds *DBStorage) GetCards(ctx context.Context, userId string) ([]db.Card, error) {
 	uuid := utils.GetIdFromString(userId)
 
@@ -68,7 +69,7 @@ func (ds *DBStorage) DeleteCard(ctx context.Context, cardId string, userId pgtyp
 	return nil
 }
 
-// UpdateCard updates card record
+// UpdateCard updates card record.
 func (ds *DBStorage) UpdateCard(ctx context.Context, updateCard db.UpdateCardParams) (*db.Card, error) {
 	card, err := ds.Queries.UpdateCard(ctx, updateCard)
 	if err != nil {

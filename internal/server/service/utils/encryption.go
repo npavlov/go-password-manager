@@ -5,21 +5,23 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
-	"fmt"
 	"io"
+
+	"github.com/pkg/errors"
 )
 
-// GenerateRandomKey a random encryption key
+// GenerateRandomKey a random encryption key.
 func GenerateRandomKey() (string, error) {
 	key := make([]byte, 32) // AES-256 key size
 	_, err := rand.Read(key)
 	if err != nil {
 		return "", err
 	}
+
 	return base64.StdEncoding.EncodeToString(key), nil
 }
 
-// Encrypt using AES-GCM
+// Encrypt using AES-GCM.
 func Encrypt(text, base64Key string) (string, error) {
 	key, err := base64.StdEncoding.DecodeString(base64Key)
 	if err != nil {
@@ -42,10 +44,11 @@ func Encrypt(text, base64Key string) (string, error) {
 	}
 
 	ciphertext := aesGCM.Seal(nonce, nonce, []byte(text), nil)
+
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
-// Decrypt using AES-GCM
+// Decrypt using AES-GCM.
 func Decrypt(encryptedText, base64Key string) (string, error) {
 	// Decode the base64-encoded key
 	key, err := base64.StdEncoding.DecodeString(base64Key)
@@ -74,7 +77,7 @@ func Decrypt(encryptedText, base64Key string) (string, error) {
 	// Extract the nonce from the ciphertext
 	nonceSize := aesGCM.NonceSize()
 	if len(data) < nonceSize {
-		return "", fmt.Errorf("invalid ciphertext")
+		return "", errors.New("invalid ciphertext")
 	}
 
 	nonce, ciphertext := data[:nonceSize], data[nonceSize:]

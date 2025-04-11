@@ -5,6 +5,12 @@ import (
 	"fmt"
 
 	"github.com/joho/godotenv"
+	"github.com/pkg/errors"
+	"github.com/rivo/tview"
+	"github.com/rs/zerolog"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+
 	"github.com/npavlov/go-password-manager/internal/client/auth"
 	"github.com/npavlov/go-password-manager/internal/client/buildinfo"
 	"github.com/npavlov/go-password-manager/internal/client/config"
@@ -13,11 +19,6 @@ import (
 	"github.com/npavlov/go-password-manager/internal/client/storage"
 	"github.com/npavlov/go-password-manager/internal/client/tui"
 	"github.com/npavlov/go-password-manager/internal/pkg/logger"
-	"github.com/pkg/errors"
-	"github.com/rivo/tview"
-	"github.com/rs/zerolog"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
 func main() {
@@ -65,7 +66,6 @@ func main() {
 	fmt.Println("Shutting down...")
 
 	storageManager.StopSync()
-
 }
 
 func loadConfig(log *zerolog.Logger) *config.Config {

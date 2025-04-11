@@ -8,7 +8,7 @@ import (
 	"io"
 )
 
-// Encryptor wraps an io.Writer and encrypts data in blocks
+// Encryptor wraps an io.Writer and encrypts data in blocks.
 type Encryptor struct {
 	writer io.Writer
 	block  cipher.Block

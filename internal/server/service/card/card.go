@@ -4,27 +4,37 @@ import (
 	"context"
 
 	"github.com/bufbuild/protovalidate-go"
-	pb "github.com/npavlov/go-password-manager/gen/proto/card"
-	"github.com/npavlov/go-password-manager/internal/server/config"
-	"github.com/npavlov/go-password-manager/internal/server/db"
-	"github.com/npavlov/go-password-manager/internal/server/service/utils"
-	"github.com/npavlov/go-password-manager/internal/server/storage"
-	gu "github.com/npavlov/go-password-manager/internal/utils"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	pb "github.com/npavlov/go-password-manager/gen/proto/card"
+	"github.com/npavlov/go-password-manager/internal/server/config"
+	"github.com/npavlov/go-password-manager/internal/server/db"
+	"github.com/npavlov/go-password-manager/internal/server/service/utils"
+	gu "github.com/npavlov/go-password-manager/internal/utils"
 )
 
 type Service struct {
 	pb.UnimplementedCardServiceServer
 	validator protovalidate.Validator
 	logger    *zerolog.Logger
-	storage   *storage.DBStorage
+	storage   Storage
 	cfg       *config.Config
 }
 
-func NewCardService(log *zerolog.Logger, storage *storage.DBStorage, cfg *config.Config) *Service {
+type Storage interface {
+	UpdateCard(ctx context.Context, updateCard db.UpdateCardParams) (*db.Card, error)
+	DeleteCard(ctx context.Context, cardId string, userId pgtype.UUID) error
+	GetCards(ctx context.Context, userId string) ([]db.Card, error)
+	GetCard(ctx context.Context, cardId string, userId pgtype.UUID) (*db.Card, error)
+	StoreCard(ctx context.Context, createCard db.StoreCardParams) (*db.Card, error)
+	GetUserById(ctx context.Context, id pgtype.UUID) (*db.User, error)
+}
+
+func NewCardService(log *zerolog.Logger, storage Storage, cfg *config.Config) *Service {
 	validator, err := protovalidate.New()
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create validator")
@@ -47,43 +57,19 @@ func (ns *Service) StoreCard(ctx context.Context, req *pb.StoreCardRequest) (*pb
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	userUUID, err := utils.GetUserId(ctx)
+	userUUID, decryptedUserKey, err := utils.GetDecryptionKey(ctx, ns.storage, ns.cfg.SecuredMasterKey.Get())
+
+	data := req.GetCard()
+
+	encryptedCardNumber, encryptedCVV, encryptedExpiryDate, err := ns.EncryptCard(decryptedUserKey, data.CardNumber, data.Cvv, data.ExpiryDate)
 	if err != nil {
-		ns.logger.Error().Err(err).Msg("error getting user id")
+		ns.logger.Error().Err(err).Msg("error encrypting card")
 
-		return nil, errors.Wrap(err, "error getting user id")
-	}
-
-	decryptedUserKey, err := utils.GetUserKey(ctx, ns.storage, userUUID, ns.cfg.SecuredMasterKey.Get())
-	if err != nil {
-		ns.logger.Error().Err(err).Msg("error getting user id")
-
-		return nil, errors.Wrap(err, "error getting user id")
-	}
-
-	encryptedCardNumber, err := utils.Encrypt(req.Card.CardNumber, decryptedUserKey)
-	if err != nil {
-		ns.logger.Error().Err(err).Msg("failed to encrypt card number")
-
-		return nil, errors.Wrap(err, "failed to encrypt card number")
-	}
-
-	encryptedCVV, err := utils.Encrypt(req.Card.Cvv, decryptedUserKey)
-	if err != nil {
-		ns.logger.Error().Err(err).Msg("failed to encrypt card CVV")
-
-		return nil, errors.Wrap(err, "failed to encrypt card CVV")
-	}
-
-	encryptedExpiryDate, err := utils.Encrypt(req.Card.ExpiryDate, decryptedUserKey)
-	if err != nil {
-		ns.logger.Error().Err(err).Msg("failed to encrypt card Expiry Date")
-
-		return nil, errors.Wrap(err, "failed to encrypt card Expiry Date")
+		return nil, errors.Wrap(err, "error encrypting card")
 	}
 
 	// Hash card number for uniqueness check
-	hashedCardNumber := utils.HashCardNumber(req.Card.CardNumber)
+	hashedCardNumber := utils.HashCardNumber(req.GetCard().GetCardNumber())
 
 	Card, err := ns.storage.StoreCard(ctx, db.StoreCardParams{
 		UserID:              userUUID,
@@ -91,7 +77,7 @@ func (ns *Service) StoreCard(ctx context.Context, req *pb.StoreCardRequest) (*pb
 		HashedCardNumber:    hashedCardNumber,
 		EncryptedCvv:        encryptedCVV,
 		EncryptedExpiryDate: encryptedExpiryDate,
-		CardholderName:      req.Card.CardholderName,
+		CardholderName:      req.GetCard().GetCardholderName(),
 	})
 	if err != nil {
 		ns.logger.Error().Err(err).Msg("failed to store card")
@@ -109,51 +95,27 @@ func (ns *Service) UpdateCard(ctx context.Context, req *pb.UpdateCardRequest) (*
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	userUUID, err := utils.GetUserId(ctx)
+	data := req.GetData()
+
+	_, decryptedUserKey, err := utils.GetDecryptionKey(ctx, ns.storage, ns.cfg.SecuredMasterKey.Get())
+
+	encryptedCardNumber, encryptedCVV, encryptedExpiryDate, err := ns.EncryptCard(decryptedUserKey, data.CardNumber, data.Cvv, data.ExpiryDate)
 	if err != nil {
-		ns.logger.Error().Err(err).Msg("error getting user id")
+		ns.logger.Error().Err(err).Msg("error encrypting card")
 
-		return nil, errors.Wrap(err, "error getting user id")
-	}
-
-	decryptedUserKey, err := utils.GetUserKey(ctx, ns.storage, userUUID, ns.cfg.SecuredMasterKey.Get())
-	if err != nil {
-		ns.logger.Error().Err(err).Msg("error getting user id")
-
-		return nil, errors.Wrap(err, "error getting user id")
-	}
-
-	encryptedCardNumber, err := utils.Encrypt(req.Data.CardNumber, decryptedUserKey)
-	if err != nil {
-		ns.logger.Error().Err(err).Msg("failed to encrypt card number")
-
-		return nil, errors.Wrap(err, "failed to encrypt card number")
-	}
-
-	encryptedCVV, err := utils.Encrypt(req.Data.Cvv, decryptedUserKey)
-	if err != nil {
-		ns.logger.Error().Err(err).Msg("failed to encrypt card CVV")
-
-		return nil, errors.Wrap(err, "failed to encrypt card CVV")
-	}
-
-	encryptedExpiryDate, err := utils.Encrypt(req.Data.ExpiryDate, decryptedUserKey)
-	if err != nil {
-		ns.logger.Error().Err(err).Msg("failed to encrypt card Expiry Date")
-
-		return nil, errors.Wrap(err, "failed to encrypt card Expiry Date")
+		return nil, errors.Wrap(err, "error encrypting card")
 	}
 
 	// Hash card number for uniqueness check
-	hashedCardNumber := utils.HashCardNumber(req.Data.CardNumber)
+	hashedCardNumber := utils.HashCardNumber(req.GetData().GetCardNumber())
 
 	card, err := ns.storage.UpdateCard(ctx, db.UpdateCardParams{
-		ID:                  gu.GetIdFromString(req.CardId),
+		ID:                  gu.GetIdFromString(req.GetCardId()),
 		EncryptedCardNumber: encryptedCardNumber,
 		HashedCardNumber:    hashedCardNumber,
 		EncryptedCvv:        encryptedCVV,
 		EncryptedExpiryDate: encryptedExpiryDate,
-		CardholderName:      req.Data.CardholderName,
+		CardholderName:      req.GetData().GetCardholderName(),
 	})
 	if err != nil {
 		ns.logger.Error().Err(err).Msg("failed to store password")
@@ -166,26 +128,40 @@ func (ns *Service) UpdateCard(ctx context.Context, req *pb.UpdateCardRequest) (*
 	}, nil
 }
 
+func (ns *Service) EncryptCard(decryptedUserKey, cardNum, CVV, ExpiryDate string) (string, string, string, error) {
+
+	encryptedCardNumber, err := utils.Encrypt(cardNum, decryptedUserKey)
+	if err != nil {
+		ns.logger.Error().Err(err).Msg("failed to encrypt card number")
+
+		return "", "", "", errors.Wrap(err, "failed to encrypt card number")
+	}
+
+	encryptedCVV, err := utils.Encrypt(CVV, decryptedUserKey)
+	if err != nil {
+		ns.logger.Error().Err(err).Msg("failed to encrypt card CVV")
+
+		return "", "", "", errors.Wrap(err, "failed to encrypt card CVV")
+	}
+
+	encryptedExpiryDate, err := utils.Encrypt(ExpiryDate, decryptedUserKey)
+	if err != nil {
+		ns.logger.Error().Err(err).Msg("failed to encrypt card Expiry Date")
+
+		return "", "", "", errors.Wrap(err, "failed to encrypt card Expiry Date")
+	}
+
+	return encryptedCardNumber, encryptedCVV, encryptedExpiryDate, nil
+}
+
 func (ns *Service) GetCard(ctx context.Context, req *pb.GetCardRequest) (*pb.GetCardResponse, error) {
 	if err := ns.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	userUUID, err := utils.GetUserId(ctx)
-	if err != nil {
-		ns.logger.Error().Err(err).Msg("error getting user id")
+	userUUID, decryptedUserKey, err := utils.GetDecryptionKey(ctx, ns.storage, ns.cfg.SecuredMasterKey.Get())
 
-		return nil, errors.Wrap(err, "error getting user id")
-	}
-
-	decryptedUserKey, err := utils.GetUserKey(ctx, ns.storage, userUUID, ns.cfg.SecuredMasterKey.Get())
-	if err != nil {
-		ns.logger.Error().Err(err).Msg("error getting user id")
-
-		return nil, errors.Wrap(err, "error getting user id")
-	}
-
-	Card, err := ns.storage.GetCard(ctx, req.CardId, userUUID)
+	Card, err := ns.storage.GetCard(ctx, req.GetCardId(), userUUID)
 	if err != nil {
 		ns.logger.Error().Err(err).Msg("error getting user id")
 
@@ -237,14 +213,9 @@ func (ns *Service) DeleteCard(ctx context.Context, req *pb.DeleteCardRequest) (*
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	userUUID, err := utils.GetUserId(ctx)
-	if err != nil {
-		ns.logger.Error().Err(err).Msg("error getting user id")
+	userUUID, _, err := utils.GetDecryptionKey(ctx, ns.storage, ns.cfg.SecuredMasterKey.Get())
 
-		return nil, errors.Wrap(err, "error getting user id")
-	}
-
-	err = ns.storage.DeleteCard(ctx, req.CardId, userUUID)
+	err = ns.storage.DeleteCard(ctx, req.GetCardId(), userUUID)
 	if err != nil {
 		ns.logger.Error().Err(err).Msg("error deleting Card")
 

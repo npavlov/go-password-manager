@@ -6,12 +6,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/npavlov/go-password-manager/internal/client/model"
-
 	"github.com/rivo/tview"
+
+	"github.com/npavlov/go-password-manager/internal/client/model"
 )
 
-// showBinaryList displays stored binary files
+// showBinaryList displays stored binary files.
 func (t *TUI) showBinaryList() {
 	list := tview.NewList()
 
@@ -35,7 +35,7 @@ func (t *TUI) showBinaryList() {
 	t.app.SetRoot(list, true)
 }
 
-// showBinaryDetails displays metadata and allows download
+// showBinaryDetails displays metadata and allows download.
 func (t *TUI) showBinaryDetails(file model.BinaryItem) {
 	flex := tview.NewFlex().SetDirection(tview.FlexRow)
 
@@ -88,7 +88,7 @@ func (t *TUI) showBinaryDetails(file model.BinaryItem) {
 	t.app.SetRoot(flex, true)
 }
 
-// showUploadBinaryForm uploads a new file
+// showUploadBinaryForm uploads a new file.
 func (t *TUI) showUploadBinaryForm() {
 	form := tview.NewForm()
 
@@ -99,6 +99,7 @@ func (t *TUI) showUploadBinaryForm() {
 			file, err := os.Open(path)
 			if err != nil {
 				t.logger.Error().Err(err).Msg("Failed to open file")
+
 				return
 			}
 			defer file.Close()
@@ -108,12 +109,14 @@ func (t *TUI) showUploadBinaryForm() {
 			id, err := t.facade.UploadBinary(context.Background(), filename, file)
 			if err != nil {
 				t.logger.Error().Err(err).Msg("Failed to store binary")
+
 				return
 			}
 
 			err = t.storage.ProcessBinary(context.Background(), id, map[string]string{})
 			if err != nil {
 				t.logger.Error().Err(err).Msg("Failed to update storage")
+
 				return
 			}
 
@@ -128,7 +131,7 @@ func (t *TUI) showUploadBinaryForm() {
 	t.app.SetRoot(form, true)
 }
 
-// showRemoveBinaryForm prompts for binary deletion
+// showRemoveBinaryForm prompts for binary deletion.
 func (t *TUI) showRemoveBinaryForm(file model.BinaryItem) {
 	confirmation := tview.NewModal().
 		SetText(fmt.Sprintf("Delete '%s'?", file.Filename)).
@@ -138,6 +141,7 @@ func (t *TUI) showRemoveBinaryForm(file model.BinaryItem) {
 				ok, err := t.facade.DeleteBinary(context.Background(), file.ID)
 				if !ok || err != nil {
 					t.logger.Error().Err(err).Msg("Failed to delete binary")
+
 					return
 				}
 

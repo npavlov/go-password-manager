@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/npavlov/go-password-manager/internal/client/model"
 	"github.com/rivo/tview"
+
+	"github.com/npavlov/go-password-manager/internal/client/model"
 )
 
-// showCardList displays stored cards
+// showCardList displays stored cards.
 func (t *TUI) showCardList() {
 	list := tview.NewList()
 
@@ -34,7 +35,7 @@ func (t *TUI) showCardList() {
 	t.app.SetRoot(list, true)
 }
 
-// showCardDetails displays metadata of a selected card
+// showCardDetails displays metadata of a selected card.
 func (t *TUI) showCardDetails(card model.CardItem) {
 	flex := tview.NewFlex().SetDirection(tview.FlexRow)
 
@@ -85,7 +86,7 @@ func (t *TUI) showCardDetails(card model.CardItem) {
 	t.app.SetRoot(flex, true)
 }
 
-// showAddCardForm creates a form for new card entry
+// showAddCardForm creates a form for new card entry.
 func (t *TUI) showAddCardForm() {
 	form := tview.NewForm()
 
@@ -102,12 +103,14 @@ func (t *TUI) showAddCardForm() {
 			cardID, err := t.facade.StoreCard(context.Background(), cardNum, expiry, cvv, cardHolder)
 			if err != nil {
 				t.logger.Error().Err(err).Msg("Failed to add card")
+
 				return
 			}
 
 			err = t.storage.ProcessCard(context.Background(), cardID, map[string]string{})
 			if err != nil {
 				t.logger.Error().Err(err).Msg("Failed to store card")
+
 				return
 			}
 
@@ -122,7 +125,7 @@ func (t *TUI) showAddCardForm() {
 	t.app.SetRoot(form, true)
 }
 
-// showEditCardForm lets user update card info
+// showEditCardForm lets user update card info.
 func (t *TUI) showEditCardForm(card model.CardItem) {
 	form := tview.NewForm()
 
@@ -139,12 +142,14 @@ func (t *TUI) showEditCardForm(card model.CardItem) {
 			err := t.facade.UpdateCard(context.Background(), card.ID, cardNum, expiry, cvv, cardHolder)
 			if err != nil {
 				t.logger.Error().Err(err).Msg("Failed to update card")
+
 				return
 			}
 
 			err = t.storage.ProcessCard(context.Background(), card.ID, card.Metadata)
 			if err != nil {
 				t.logger.Error().Err(err).Msg("Failed to update local card")
+
 				return
 			}
 
@@ -159,7 +164,7 @@ func (t *TUI) showEditCardForm(card model.CardItem) {
 	t.app.SetRoot(form, true)
 }
 
-// showRemoveCardForm confirmation before delete
+// showRemoveCardForm confirmation before delete.
 func (t *TUI) showRemoveCardForm(card model.CardItem) {
 	confirmation := tview.NewModal().
 		SetText(fmt.Sprintf("Are you sure you want to delete the card %s?", card.CardNumber)).
@@ -169,6 +174,7 @@ func (t *TUI) showRemoveCardForm(card model.CardItem) {
 				ok, err := t.facade.DeleteCard(context.Background(), card.ID)
 				if !ok || err != nil {
 					t.logger.Error().Err(err).Msg("Failed to delete card")
+
 					return
 				}
 

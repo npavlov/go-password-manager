@@ -26,7 +26,7 @@ func WithSignalCancel(ctx context.Context, log *zerolog.Logger) (context.Context
 
 func WaitForShutdown(wg *sync.WaitGroup) {
 	sync.OnceFunc(func() {
-		//test
+		// test
 	})
 
 	wg.Wait()

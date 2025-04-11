@@ -4,12 +4,13 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/pkg/errors"
+
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/utils"
-	"github.com/pkg/errors"
 )
 
-// StoreBinary creates new binary record
+// StoreBinary creates new binary record.
 func (ds *DBStorage) StoreBinary(ctx context.Context, createBinary db.StoreBinaryEntryParams) (*db.BinaryEntry, error) {
 	binary, err := ds.Queries.StoreBinaryEntry(ctx, createBinary)
 	if err != nil {
@@ -21,7 +22,7 @@ func (ds *DBStorage) StoreBinary(ctx context.Context, createBinary db.StoreBinar
 	return &binary, nil
 }
 
-// GetBinary retrieves binary record
+// GetBinary retrieves binary record.
 func (ds *DBStorage) GetBinary(ctx context.Context, binaryId string, userId pgtype.UUID) (*db.BinaryEntry, error) {
 	uuid := utils.GetIdFromString(binaryId)
 
@@ -38,7 +39,7 @@ func (ds *DBStorage) GetBinary(ctx context.Context, binaryId string, userId pgty
 	return &binary, nil
 }
 
-// GetBinaries retrieves binary record
+// GetBinaries retrieves binary record.
 func (ds *DBStorage) GetBinaries(ctx context.Context, userId string) ([]db.BinaryEntry, error) {
 	uuid := utils.GetIdFromString(userId)
 
@@ -52,7 +53,7 @@ func (ds *DBStorage) GetBinaries(ctx context.Context, userId string) ([]db.Binar
 	return cards, nil
 }
 
-// DeleteBinary removes binary record
+// DeleteBinary removes binary record.
 func (ds *DBStorage) DeleteBinary(ctx context.Context, arg db.DeleteBinaryEntryParams) error {
 	err := ds.Queries.DeleteBinaryEntry(ctx, arg)
 	if err != nil {

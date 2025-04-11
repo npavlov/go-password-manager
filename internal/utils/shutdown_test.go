@@ -8,17 +8,18 @@ import (
 	"testing"
 	"time"
 
-	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
-	"github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
+	"github.com/npavlov/go-password-manager/internal/utils"
 )
 
 func TestWithSignalCancel(t *testing.T) {
 	t.Parallel()
 	// Create a context and call WithSignalCancel
 	l := testutils.GetTLogger()
-	ctx := context.Background()
+	ctx := t.Context()
 	ctxWithCancel, _ := utils.WithSignalCancel(ctx, l)
 
 	// Create a wait group to wait for the cancellation

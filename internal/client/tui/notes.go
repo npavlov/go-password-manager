@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/npavlov/go-password-manager/internal/client/model"
 	"github.com/rivo/tview"
+
+	"github.com/npavlov/go-password-manager/internal/client/model"
 )
 
 func (t *TUI) showNoteList() {
@@ -88,6 +89,7 @@ func (t *TUI) showAddNoteForm() {
 			noteID, err := t.facade.StoreNote(context.Background(), content)
 			if err != nil {
 				t.logger.Error().Err(err).Msg("Failed to add note")
+
 				return
 			}
 

@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// ItemType defines the type of stored data
+// ItemType defines the type of stored data.
 type ItemType string
 
 const (
@@ -14,7 +14,7 @@ const (
 	ItemTypeBinary   ItemType = "binary"
 )
 
-// StorageItem represents a generic stored item with metadata
+// StorageItem represents a generic stored item with metadata.
 type StorageItem struct {
 	ID        string            `json:"id"`
 	Type      ItemType          `json:"type"`
@@ -22,20 +22,20 @@ type StorageItem struct {
 	Metadata  map[string]string `json:"metadata"` // Key-value metadata
 }
 
-// PasswordItem stores encrypted passwords
+// PasswordItem stores encrypted passwords.
 type PasswordItem struct {
 	StorageItem
 	Login    string `json:"username"`
 	Password string `json:"password"` // Encrypted
 }
 
-// NoteItem stores secure notes
+// NoteItem stores secure notes.
 type NoteItem struct {
 	StorageItem
 	Content string `json:"content"` // Encrypted
 }
 
-// CardItem stores encrypted card details
+// CardItem stores encrypted card details.
 type CardItem struct {
 	StorageItem
 	CardNumber     string `json:"card_number"` // Encrypted
@@ -44,7 +44,7 @@ type CardItem struct {
 	CardholderName string `json:"cardholder_name"`
 }
 
-// BinaryItem stores metadata for large binary files
+// BinaryItem stores metadata for large binary files.
 type BinaryItem struct {
 	StorageItem
 	Filename string `json:"filename"`

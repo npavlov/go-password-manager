@@ -3,15 +3,16 @@ package interceptors
 import (
 	"context"
 
-	pb "github.com/npavlov/go-password-manager/gen/proto/auth"
-	"github.com/npavlov/go-password-manager/internal/server/redis"
-	"github.com/npavlov/go-password-manager/internal/server/service/utils"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+
+	pb "github.com/npavlov/go-password-manager/gen/proto/auth"
+	"github.com/npavlov/go-password-manager/internal/server/redis"
+	"github.com/npavlov/go-password-manager/internal/server/service/utils"
 )
 
 // TokenInterceptor extracts a token from metadata and injects it into the context.
@@ -36,7 +37,7 @@ func TokenInterceptor(logger *zerolog.Logger, jwtSecret string, memStorage redis
 			return handler(ctx, req)
 		}
 
-		userId, err := authenticateToken(ctx, jwtSecret, memStorage)
+		userId, err := AuthenticateToken(ctx, jwtSecret, memStorage)
 		if err != nil {
 			logger.Info().Str("method", info.FullMethod).Msg("authentication failed")
 
@@ -56,7 +57,7 @@ type wrappedStream struct {
 	ctx context.Context
 }
 
-// Context Override Context() to return the modified context
+// Context Override Context() to return the modified context.
 func (w *wrappedStream) Context() context.Context {
 	return w.ctx
 }
@@ -72,7 +73,7 @@ func StreamTokenInterceptor(logger *zerolog.Logger, jwtSecret string, memStorage
 		ctx := stream.Context()
 
 		// Authenticate token
-		userID, err := authenticateToken(ctx, jwtSecret, memStorage)
+		userID, err := AuthenticateToken(ctx, jwtSecret, memStorage)
 		if err != nil {
 			logger.Error().Err(err).Msg("Unauthorized stream request")
 
@@ -90,8 +91,7 @@ func StreamTokenInterceptor(logger *zerolog.Logger, jwtSecret string, memStorage
 	}
 }
 
-func authenticateToken(ctx context.Context, jwtSecret string, memStorage redis.MemStorage) (string, error) {
-
+func AuthenticateToken(ctx context.Context, jwtSecret string, memStorage redis.MemStorage) (string, error) {
 	// Extract token from metadata
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
