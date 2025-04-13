@@ -6,6 +6,18 @@ type MockTokenManager struct {
 	mock.Mock
 }
 
+func (m *MockTokenManager) GetAccessToken() string {
+	args := m.Called()
+	
+	return args.String(0)
+}
+
+func (m *MockTokenManager) GetRefreshToken() string {
+	args := m.Called()
+
+	return args.String(0)
+}
+
 func (m *MockTokenManager) LoadTokens() error {
 	return m.Called().Error(0)
 }

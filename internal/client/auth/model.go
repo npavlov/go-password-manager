@@ -7,4 +7,6 @@ type ITokenManager interface {
 	IsAuthorized() bool
 	HandleAuthFailure()
 	SetAuthFailCallback(callback func())
+	GetAccessToken() string
+	GetRefreshToken() string
 }

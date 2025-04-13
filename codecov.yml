@@ -17,4 +17,5 @@ ignore:
   - "internal/server/adapter"
   - "internal/test_utils"
   - "internal/client/model"
+  - "internal/client/buildinfo"
   - "gen"

@@ -16,23 +16,27 @@ import (
 	"github.com/npavlov/go-password-manager/internal/client/config"
 )
 
+type Client interface {
+	RefreshToken(ctx context.Context, in *pb.RefreshTokenRequest, opts ...grpc.CallOption) (*pb.RefreshTokenResponse, error)
+}
+
 type AuthInterceptor struct {
 	mu           sync.Mutex
-	authClient   pb.AuthServiceClient
+	AuthClient   Client
 	config       config.Config
-	tokenManager *auth.TokenManager
+	tokenManager auth.ITokenManager
 }
 
 // NewAuthInterceptor initializes the interceptor with tokens.
-func NewAuthInterceptor(cfg config.Config, tokenManager *auth.TokenManager) *AuthInterceptor {
+func NewAuthInterceptor(cfg config.Config, tokenManager auth.ITokenManager) *AuthInterceptor {
 	return &AuthInterceptor{
 		config:       cfg,
 		tokenManager: tokenManager,
 	}
 }
 
-func (ai *AuthInterceptor) SetAuthClient(conn *grpc.ClientConn) {
-	ai.authClient = pb.NewAuthServiceClient(conn)
+func (ai *AuthInterceptor) SetAuthClient(client Client) {
+	ai.AuthClient = client
 }
 
 // UnaryInterceptor checks for authentication errors and refreshes token if necessary.
@@ -52,7 +56,7 @@ func (ai *AuthInterceptor) UnaryInterceptor(
 	}
 
 	// Add access token to request metadata
-	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", ai.tokenManager.AccessToken.Get())
+	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", ai.tokenManager.GetAccessToken())
 
 	// Perform the gRPC request
 	err := invoker(ctx, method, req, reply, cc, opts...)
@@ -92,8 +96,8 @@ func (ai *AuthInterceptor) refreshAccessToken(ctx context.Context) (string, stri
 	defer ai.mu.Unlock()
 
 	// Call the RefreshToken gRPC endpoint
-	resp, err := ai.authClient.RefreshToken(ctx, &pb.RefreshTokenRequest{
-		RefreshToken: ai.tokenManager.RefreshToken.Get(),
+	resp, err := ai.AuthClient.RefreshToken(ctx, &pb.RefreshTokenRequest{
+		RefreshToken: ai.tokenManager.GetRefreshToken(),
 	})
 	if err != nil {
 		return "", "", errors.Wrap(err, "failed to get new access token")
@@ -103,7 +107,7 @@ func (ai *AuthInterceptor) refreshAccessToken(ctx context.Context) (string, stri
 }
 
 // StreamInterceptor attaches the token to streaming RPCs.
-func (a *AuthInterceptor) StreamInterceptor(
+func (ai *AuthInterceptor) StreamInterceptor(
 	ctx context.Context,
 	desc *grpc.StreamDesc,
 	cc *grpc.ClientConn,
@@ -111,11 +115,11 @@ func (a *AuthInterceptor) StreamInterceptor(
 	streamer grpc.Streamer,
 	opts ...grpc.CallOption,
 ) (grpc.ClientStream, error) {
-	if a.tokenManager == nil {
+	if ai.tokenManager == nil {
 		return streamer(ctx, desc, cc, method, opts...)
 	}
 
-	token := a.tokenManager.AccessToken.Get()
+	token := ai.tokenManager.GetAccessToken()
 	if token == "" {
 		return nil, status.Error(codes.Unauthenticated, "no access token")
 	}

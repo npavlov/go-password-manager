@@ -88,7 +88,6 @@ func (tm *TokenManager) SaveTokens(accessToken, refreshToken string) error {
 func (tm *TokenManager) UpdateTokens(access, refresh string) error {
 	tm.AccessToken = utils.NewString(access)
 	tm.RefreshToken = utils.NewString(refresh)
-	tm.isAuthorized = true
 
 	return tm.SaveTokens(access, refresh)
 }
@@ -120,5 +119,20 @@ func (tm *TokenManager) HandleAuthFailure() {
 func (tm *TokenManager) SetAuthFailCallback(callback func()) {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
+	tm.isAuthorized = false
 	tm.onAuthFail = callback
+}
+
+func (tm *TokenManager) GetAccessToken() string {
+	tm.mu.Lock()
+	defer tm.mu.Unlock()
+
+	return tm.AccessToken.Get()
+}
+
+func (tm *TokenManager) GetRefreshToken() string {
+	tm.mu.Lock()
+	defer tm.mu.Unlock()
+
+	return tm.RefreshToken.Get()
 }

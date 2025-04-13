@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/joho/godotenv"
+	pb "github.com/npavlov/go-password-manager/gen/proto/auth"
 	"github.com/pkg/errors"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog"
@@ -98,7 +99,8 @@ func makeConnection(cfg config.Config, interceptor *interceptors.AuthInterceptor
 		return nil, errors.Wrap(err, "could not dial gRPC server")
 	}
 
-	interceptor.SetAuthClient(conn)
+	authClient := pb.NewAuthServiceClient(conn)
+	interceptor.SetAuthClient(authClient)
 
 	return conn, nil
 }
