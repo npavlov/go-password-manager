@@ -20,7 +20,7 @@ var pageLimit int32 = 10
 
 // StManager manages client-side storage and background syncing.
 type StManager struct {
-	facade     *facade.Facade
+	facade     facade.IFacade
 	Password   map[string]model.PasswordItem `json:"passwords"`
 	Notes      map[string]model.NoteItem     `json:"notes"`
 	Cards      map[string]model.CardItem     `json:"cards"`
@@ -34,7 +34,7 @@ type StManager struct {
 }
 
 // NewStorageManager creates a new StorageManager with background sync.
-func NewStorageManager(facade *facade.Facade, tokenMgr *auth.TokenManager, logger *zerolog.Logger) *StManager {
+func NewStorageManager(facade facade.IFacade, tokenMgr *auth.TokenManager, logger *zerolog.Logger) *StManager {
 	sm := &StManager{
 		facade:   facade,
 		stopChan: make(chan struct{}),

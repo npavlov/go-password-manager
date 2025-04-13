@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/protovalidate-go"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
@@ -13,19 +14,26 @@ import (
 	"github.com/npavlov/go-password-manager/internal/server/config"
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/server/service/utils"
-	"github.com/npavlov/go-password-manager/internal/server/storage"
 	gu "github.com/npavlov/go-password-manager/internal/utils"
 )
+
+type Storage interface {
+	StorePassword(ctx context.Context, createPassword db.CreatePasswordEntryParams) (*db.Password, error)
+	GetPassword(ctx context.Context, passwordId string, userId pgtype.UUID) (*db.Password, error)
+	UpdatePassword(ctx context.Context, updatePassword db.UpdatePasswordEntryParams) (*db.Password, error)
+	DeletePassword(ctx context.Context, passwordId string, userId pgtype.UUID) error
+	GetUserById(ctx context.Context, id pgtype.UUID) (*db.User, error)
+}
 
 type Service struct {
 	pb.UnimplementedPasswordServiceServer
 	validator protovalidate.Validator
 	logger    *zerolog.Logger
-	storage   *storage.DBStorage
+	storage   Storage
 	cfg       *config.Config
 }
 
-func NewPasswordService(log *zerolog.Logger, storage *storage.DBStorage, cfg *config.Config) *Service {
+func NewPasswordService(log *zerolog.Logger, storage Storage, cfg *config.Config) *Service {
 	validator, err := protovalidate.New()
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create validator")
@@ -48,18 +56,9 @@ func (ps *Service) StorePassword(ctx context.Context, req *pb.StorePasswordReque
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	userUUID, err := utils.GetUserId(ctx)
+	userUUID, decryptedUserKey, err := utils.GetDecryptionKey(ctx, ps.storage, ps.cfg.SecuredMasterKey.Get())
 	if err != nil {
-		ps.logger.Error().Err(err).Msg("error getting user id")
-
-		return nil, errors.Wrap(err, "error getting user id")
-	}
-
-	decryptedUserKey, err := utils.GetUserKey(ctx, ps.storage, userUUID, ps.cfg.SecuredMasterKey.Get())
-	if err != nil {
-		ps.logger.Error().Err(err).Msg("error getting user id")
-
-		return nil, errors.Wrap(err, "error getting user id")
+		return nil, err
 	}
 
 	encryptedPassword, err := utils.Encrypt(req.GetPassword().GetPassword(), decryptedUserKey)
@@ -90,18 +89,9 @@ func (ps *Service) GetPassword(ctx context.Context, req *pb.GetPasswordRequest) 
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	userUUID, err := utils.GetUserId(ctx)
+	userUUID, decryptedUserKey, err := utils.GetDecryptionKey(ctx, ps.storage, ps.cfg.SecuredMasterKey.Get())
 	if err != nil {
-		ps.logger.Error().Err(err).Msg("error getting user id")
-
-		return nil, errors.Wrap(err, "error getting user id")
-	}
-
-	decryptedUserKey, err := utils.GetUserKey(ctx, ps.storage, userUUID, ps.cfg.SecuredMasterKey.Get())
-	if err != nil {
-		ps.logger.Error().Err(err).Msg("error getting user id")
-
-		return nil, errors.Wrap(err, "error getting user id")
+		return nil, err
 	}
 
 	password, err := ps.storage.GetPassword(ctx, req.GetPasswordId(), userUUID)
@@ -140,18 +130,9 @@ func (ps *Service) UpdatePassword(ctx context.Context, req *pb.UpdatePasswordReq
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	userUUID, err := utils.GetUserId(ctx)
+	_, decryptedUserKey, err := utils.GetDecryptionKey(ctx, ps.storage, ps.cfg.SecuredMasterKey.Get())
 	if err != nil {
-		ps.logger.Error().Err(err).Msg("error getting user id")
-
-		return nil, errors.Wrap(err, "error getting user id")
-	}
-
-	decryptedUserKey, err := utils.GetUserKey(ctx, ps.storage, userUUID, ps.cfg.SecuredMasterKey.Get())
-	if err != nil {
-		ps.logger.Error().Err(err).Msg("error getting user id")
-
-		return nil, errors.Wrap(err, "error getting user id")
+		return nil, err
 	}
 
 	encryptedPassword, err := utils.Encrypt(req.GetData().GetPassword(), decryptedUserKey)

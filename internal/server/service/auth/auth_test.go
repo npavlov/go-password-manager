@@ -189,7 +189,7 @@ func TestTokenGenerationFailsToStoreToken(t *testing.T) {
 	mockStorage := serviceStorage(service)
 
 	// Simulate failure
-	mockStorage.RegisterError = errors.New("error storing token")
+	mockStorage.CallError = errors.New("error storing token")
 
 	registerResp, err := service.Register(ctx, &pb.RegisterRequest{
 		Username: "failstore",

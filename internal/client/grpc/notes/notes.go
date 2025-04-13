@@ -15,28 +15,28 @@ import (
 // Client GRPCClient handles communication with the gRPC server.
 type Client struct {
 	conn         *grpc.ClientConn
-	client       pb.NoteServiceClient
-	tokenManager *auth.TokenManager
-	log          *zerolog.Logger
+	Client       pb.NoteServiceClient
+	TokenManager auth.ITokenManager
+	Log          *zerolog.Logger
 }
 
 // NewNoteClient  creates a new gRPC connection.
-func NewNoteClient(conn *grpc.ClientConn, tokenManager *auth.TokenManager, log *zerolog.Logger) *Client {
+func NewNoteClient(conn *grpc.ClientConn, tokenManager auth.ITokenManager, log *zerolog.Logger) *Client {
 	return &Client{
 		conn:         conn,
-		client:       pb.NewNoteServiceClient(conn),
-		tokenManager: tokenManager,
-		log:          log,
+		Client:       pb.NewNoteServiceClient(conn),
+		TokenManager: tokenManager,
+		Log:          log,
 	}
 }
 
 // GetNote sends a register request to the server.
 func (as *Client) GetNote(ctx context.Context, id string) (*pb.NoteData, time.Time, error) {
-	resp, err := as.client.GetNote(ctx, &pb.GetNoteRequest{
+	resp, err := as.Client.GetNote(ctx, &pb.GetNoteRequest{
 		NoteId: id,
 	})
 	if err != nil {
-		as.log.Error().Err(err).Msg("error getting password")
+		as.Log.Error().Err(err).Msg("error getting password")
 
 		return nil, time.Time{}, errors.Wrap(err, "error getting password")
 	}
@@ -45,13 +45,13 @@ func (as *Client) GetNote(ctx context.Context, id string) (*pb.NoteData, time.Ti
 }
 
 func (as *Client) StoreNote(ctx context.Context, content string) (string, error) {
-	resp, err := as.client.StoreNote(ctx, &pb.StoreNoteRequest{
+	resp, err := as.Client.StoreNote(ctx, &pb.StoreNoteRequest{
 		Note: &pb.NoteData{
 			Content: content,
 		},
 	})
 	if err != nil {
-		as.log.Error().Err(err).Msg("error storing note")
+		as.Log.Error().Err(err).Msg("error storing note")
 
 		return "", errors.Wrap(err, "error storing note")
 	}
@@ -60,11 +60,11 @@ func (as *Client) StoreNote(ctx context.Context, content string) (string, error)
 }
 
 func (as *Client) DeleteNote(ctx context.Context, id string) (bool, error) {
-	resp, err := as.client.DeleteNote(ctx, &pb.DeleteNoteRequest{
+	resp, err := as.Client.DeleteNote(ctx, &pb.DeleteNoteRequest{
 		NoteId: id,
 	})
 	if err != nil {
-		as.log.Error().Err(err).Msg("error deleting note")
+		as.Log.Error().Err(err).Msg("error deleting note")
 
 		return false, errors.Wrap(err, "error deleting note")
 	}

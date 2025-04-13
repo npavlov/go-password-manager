@@ -105,7 +105,7 @@ func starServer(ctx context.Context, cfg *config.Config, log *zerolog.Logger, wg
 }
 
 func setupDatabase(ctx context.Context, cfg *config.Config, log *zerolog.Logger) *dbmanager.DBManager {
-	dbManager := dbmanager.NewDBManager(cfg.Database, log).Connect(ctx).ApplyMigrations()
+	dbManager := dbmanager.NewDBManager(cfg.Database, log).Connect(ctx).VerifyConnection(ctx).ApplyMigrations()
 	if dbManager.DB == nil {
 		log.Fatal().Err(ErrDatabaseNotConnected).Msg("Database is not connected")
 	}

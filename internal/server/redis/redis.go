@@ -11,9 +11,14 @@ import (
 	"github.com/npavlov/go-password-manager/internal/server/config"
 )
 
+type MemStorage interface {
+	Get(ctx context.Context, key string) (string, error)
+	Set(ctx context.Context, key string, value string, expiration time.Duration) error
+}
+
 type RStorage struct {
-	client *redis.Client
-	logger *zerolog.Logger
+	Client *redis.Client
+	Logger *zerolog.Logger
 }
 
 func NewRStorage(cfg config.Config, logger *zerolog.Logger) *RStorage {
@@ -26,59 +31,59 @@ func NewRStorage(cfg config.Config, logger *zerolog.Logger) *RStorage {
 	})
 
 	return &RStorage{
-		client: redisClient,
-		logger: logger,
+		Client: redisClient,
+		Logger: logger,
 	}
 }
 
 func (rst *RStorage) Ping(ctx context.Context) error {
 	// Log the start of the operation
-	rst.logger.Info().Msg("Pinging Redis server")
+	rst.Logger.Info().Msg("Pinging Redis server")
 
-	err := rst.client.Ping(ctx).Err()
+	err := rst.Client.Ping(ctx).Err()
 	// Record the result in the span
 	if err != nil {
-		rst.logger.Error().Err(err).Msg("Redis ping failed")
+		rst.Logger.Error().Err(err).Msg("Redis ping failed")
 
 		return errors.Wrap(err, "redis ping")
 	}
 
-	rst.logger.Info().Msg("Redis ping successful")
+	rst.Logger.Info().Msg("Redis ping successful")
 
 	return nil
 }
 
 func (rst *RStorage) Get(ctx context.Context, key string) (string, error) {
 	// Log the operation
-	rst.logger.Info().Str("key", key).Msg("Getting value from Redis")
+	rst.Logger.Info().Str("key", key).Msg("Getting value from Redis")
 
-	result, err := rst.client.Get(ctx, key).Result()
+	result, err := rst.Client.Get(ctx, key).Result()
 	if err != nil {
-		rst.logger.Error().Err(err).Str("key", key).Msg("Failed to get value from Redis")
+		rst.Logger.Error().Err(err).Str("key", key).Msg("Failed to get value from Redis")
 
 		return "", errors.Wrap(err, "failed to get value")
 	}
 
-	rst.logger.Info().Str("key", key).Msg("Successfully retrieved value from Redis")
+	rst.Logger.Info().Str("key", key).Msg("Successfully retrieved value from Redis")
 
 	return result, nil
 }
 
 func (rst *RStorage) Set(ctx context.Context, key string, value string, expiration time.Duration) error {
 	// Log the operation
-	rst.logger.Info().
+	rst.Logger.Info().
 		Str("key", key).
 		Dur("expiration", expiration).
 		Msg("Setting value in Redis")
 
-	err := rst.client.Set(ctx, key, value, expiration).Err()
+	err := rst.Client.Set(ctx, key, value, expiration).Err()
 	if err != nil {
-		rst.logger.Error().Err(err).Str("key", key).Msg("Failed to set value in Redis")
+		rst.Logger.Error().Err(err).Str("key", key).Msg("Failed to set value in Redis")
 
 		return errors.Wrap(err, "failed to set value")
 	}
 
-	rst.logger.Info().Str("key", key).Msg("Successfully set value in Redis")
+	rst.Logger.Info().Str("key", key).Msg("Successfully set value in Redis")
 
 	return nil
 }

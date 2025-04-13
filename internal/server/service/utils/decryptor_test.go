@@ -99,5 +99,5 @@ func TestDecryptor_Read_InvalidNonce(t *testing.T) {
 	_, err = decryptor.Read(buf)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to read nonce")
+	assert.Contains(t, err.Error(), "unexpected EOF")
 }

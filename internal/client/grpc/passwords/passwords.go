@@ -15,28 +15,28 @@ import (
 // Client GRPCClient handles communication with the gRPC server.
 type Client struct {
 	conn         *grpc.ClientConn
-	client       pb.PasswordServiceClient
-	tokenManager *auth.TokenManager
-	log          *zerolog.Logger
+	Client       pb.PasswordServiceClient
+	TokenManager auth.ITokenManager
+	Log          *zerolog.Logger
 }
 
 // NewPasswordClient  creates a new gRPC connection.
-func NewPasswordClient(conn *grpc.ClientConn, tokenManager *auth.TokenManager, log *zerolog.Logger) *Client {
+func NewPasswordClient(conn *grpc.ClientConn, tokenManager auth.ITokenManager, log *zerolog.Logger) *Client {
 	return &Client{
 		conn:         conn,
-		client:       pb.NewPasswordServiceClient(conn),
-		tokenManager: tokenManager,
-		log:          log,
+		Client:       pb.NewPasswordServiceClient(conn),
+		TokenManager: tokenManager,
+		Log:          log,
 	}
 }
 
 // GetPassword sends a register request to the server.
 func (as *Client) GetPassword(ctx context.Context, id string) (*pb.PasswordData, time.Time, error) {
-	resp, err := as.client.GetPassword(ctx, &pb.GetPasswordRequest{
+	resp, err := as.Client.GetPassword(ctx, &pb.GetPasswordRequest{
 		PasswordId: id,
 	})
 	if err != nil {
-		as.log.Error().Err(err).Msg("error getting password")
+		as.Log.Error().Err(err).Msg("error getting password")
 
 		return nil, time.Time{}, errors.Wrap(err, "error getting password")
 	}
@@ -45,7 +45,7 @@ func (as *Client) GetPassword(ctx context.Context, id string) (*pb.PasswordData,
 }
 
 func (as *Client) UpdatePassword(ctx context.Context, id, login, password string) error {
-	_, err := as.client.UpdatePassword(ctx, &pb.UpdatePasswordRequest{
+	_, err := as.Client.UpdatePassword(ctx, &pb.UpdatePasswordRequest{
 		PasswordId: id,
 		Data: &pb.PasswordData{
 			Login:    login,
@@ -53,7 +53,7 @@ func (as *Client) UpdatePassword(ctx context.Context, id, login, password string
 		},
 	})
 	if err != nil {
-		as.log.Error().Err(err).Msg("error updating password")
+		as.Log.Error().Err(err).Msg("error updating password")
 
 		return errors.Wrap(err, "error updating password")
 	}
@@ -62,14 +62,14 @@ func (as *Client) UpdatePassword(ctx context.Context, id, login, password string
 }
 
 func (as *Client) StorePassword(ctx context.Context, login, password string) (string, error) {
-	resp, err := as.client.StorePassword(ctx, &pb.StorePasswordRequest{
+	resp, err := as.Client.StorePassword(ctx, &pb.StorePasswordRequest{
 		Password: &pb.PasswordData{
 			Login:    login,
 			Password: password,
 		},
 	})
 	if err != nil {
-		as.log.Error().Err(err).Msg("error storing password")
+		as.Log.Error().Err(err).Msg("error storing password")
 
 		return "", errors.Wrap(err, "error storing password")
 	}
@@ -78,11 +78,11 @@ func (as *Client) StorePassword(ctx context.Context, login, password string) (st
 }
 
 func (as *Client) DeletePassword(ctx context.Context, id string) (bool, error) {
-	resp, err := as.client.DeletePassword(ctx, &pb.DeletePasswordRequest{
+	resp, err := as.Client.DeletePassword(ctx, &pb.DeletePasswordRequest{
 		PasswordId: id,
 	})
 	if err != nil {
-		as.log.Error().Err(err).Msg("error deleting password")
+		as.Log.Error().Err(err).Msg("error deleting password")
 
 		return false, errors.Wrap(err, "error deleting password")
 	}

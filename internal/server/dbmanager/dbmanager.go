@@ -56,11 +56,19 @@ func (m *DBManager) Connect(ctx context.Context) *DBManager {
 		return m
 	}
 
-	if err := pool.Ping(ctx); err != nil {
+	m.DB = pool
+
+	return m
+}
+
+func (m *DBManager) VerifyConnection(ctx context.Context) *DBManager {
+	if err := m.DB.Ping(ctx); err != nil {
+		m.DB = nil
+		m.IsConnected = false
+
 		return m
 	}
 
-	m.DB = pool
 	m.IsConnected = true
 
 	return m

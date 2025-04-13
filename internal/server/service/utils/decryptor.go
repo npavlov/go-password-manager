@@ -4,7 +4,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/base64"
-	"fmt"
 	"io"
 
 	"github.com/pkg/errors"
@@ -38,7 +37,7 @@ func (d *Decryptor) Read(p []byte) (int, error) {
 
 	// Read the nonce first
 	if _, err := io.ReadFull(d.reader, nonce); err != nil {
-		return 0, fmt.Errorf("failed to read nonce: %w", err)
+		return 0, err
 	}
 
 	// Read the encrypted block

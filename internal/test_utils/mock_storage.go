@@ -15,29 +15,33 @@ import (
 
 // MockDBStorage implements a mock version of DBStorage with map-based storage.
 type MockDBStorage struct {
-	mu            sync.RWMutex
-	usersByID     map[pgtype.UUID]db.User
-	usersByName   map[string]db.User
-	tokens        map[string]db.GetRefreshTokenRow
-	cards         map[string]db.Card
-	binaries      map[string]db.BinaryEntry
-	items         map[string]db.Item
-	metaInfo      map[string]map[string]string
-	log           *zerolog.Logger
-	RegisterError error
-	masterKey     string
+	mu          sync.RWMutex
+	UsersByID   map[pgtype.UUID]db.User
+	usersByName map[string]db.User
+	tokens      map[string]db.GetRefreshTokenRow
+	cards       map[string]db.Card
+	binaries    map[string]db.BinaryEntry
+	items       map[string]db.Item
+	metaInfo    map[string]map[string]string
+	notes       map[string]db.Note
+	passwords   map[string]db.Password
+	log         *zerolog.Logger
+	CallError   error
+	masterKey   string
 }
 
 func NewMockDBStorage(logger *zerolog.Logger, masterKey string) *MockDBStorage {
 
 	return &MockDBStorage{
-		usersByID:   make(map[pgtype.UUID]db.User),
+		UsersByID:   make(map[pgtype.UUID]db.User),
 		usersByName: make(map[string]db.User),
 		tokens:      make(map[string]db.GetRefreshTokenRow),
 		cards:       make(map[string]db.Card),
 		binaries:    make(map[string]db.BinaryEntry),
 		items:       make(map[string]db.Item),
 		metaInfo:    make(map[string]map[string]string),
+		notes:       make(map[string]db.Note),
+		passwords:   make(map[string]db.Password),
 		log:         logger,
 		masterKey:   masterKey,
 	}
@@ -48,7 +52,7 @@ func (m *MockDBStorage) AddTestUser(user db.User) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.usersByID[user.ID] = user
+	m.UsersByID[user.ID] = user
 	m.usersByName[user.Username] = user
 }
 
@@ -57,8 +61,8 @@ func (m *MockDBStorage) RegisterUser(_ context.Context, createUser db.CreateUser
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if m.RegisterError != nil {
-		return nil, m.RegisterError
+	if m.CallError != nil {
+		return nil, m.CallError
 	}
 
 	// Check if username already exists
@@ -75,7 +79,7 @@ func (m *MockDBStorage) RegisterUser(_ context.Context, createUser db.CreateUser
 	}
 
 	// Add to both maps
-	m.usersByID[user.ID] = user
+	m.UsersByID[user.ID] = user
 	m.usersByName[user.Username] = user
 
 	return &user, nil
@@ -103,7 +107,7 @@ func (m *MockDBStorage) GetUserById(ctx context.Context, userId pgtype.UUID) (*d
 		return nil, errors.New("invalid user ID")
 	}
 
-	user, exists := m.usersByID[userId]
+	user, exists := m.UsersByID[userId]
 	if !exists {
 		return nil, errors.New("user not found")
 	}
@@ -278,6 +282,10 @@ func (m *MockDBStorage) StoreBinary(ctx context.Context, createBinary db.StoreBi
 func (m *MockDBStorage) DeleteBinary(ctx context.Context, arg db.DeleteBinaryEntryParams) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	if m.CallError != nil {
+		return m.CallError
+	}
 
 	if !arg.ID.Valid {
 		return errors.New("invalid binary ID")
@@ -463,17 +471,172 @@ func (m *MockDBStorage) GetMetaInfo(ctx context.Context, itemID string) ([]db.Ge
 	return result, nil
 }
 
+// StoreNote Add these new methods to MockDBStorage
+func (m *MockDBStorage) StoreNote(ctx context.Context, params db.CreateNoteEntryParams) (*db.Note, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.CallError != nil {
+		return nil, m.CallError
+	}
+
+	note := db.Note{
+		ID:               pgtype.UUID{Bytes: uuid.New(), Valid: true},
+		UserID:           params.UserID,
+		EncryptedContent: params.EncryptedContent,
+		CreatedAt:        pgtype.Timestamp{Time: time.Now(), Valid: true},
+		UpdatedAt:        pgtype.Timestamp{Time: time.Now(), Valid: true},
+	}
+
+	m.notes[note.ID.String()] = note
+	return &note, nil
+}
+
+func (m *MockDBStorage) GetNote(ctx context.Context, noteID string, userID pgtype.UUID) (*db.Note, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	note, exists := m.notes[noteID]
+	if !exists {
+		return nil, errors.New("note not found")
+	}
+
+	if note.UserID != userID {
+		return nil, errors.New("unauthorized access to note")
+	}
+
+	return &note, nil
+}
+
+func (m *MockDBStorage) GetNotes(ctx context.Context, userID pgtype.UUID) ([]db.Note, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	var result []db.Note
+	for _, note := range m.notes {
+		if note.UserID == userID {
+			result = append(result, note)
+		}
+	}
+
+	return result, nil
+}
+
+func (m *MockDBStorage) DeleteNote(ctx context.Context, noteID string, userID pgtype.UUID) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.CallError != nil {
+		return m.CallError
+	}
+
+	note, exists := m.notes[noteID]
+	if !exists {
+		return errors.New("note not found")
+	}
+
+	if note.UserID != userID {
+		return errors.New("unauthorized access to note")
+	}
+
+	delete(m.notes, noteID)
+	return nil
+}
+
+// Add these new methods to MockDBStorage
+func (m *MockDBStorage) StorePassword(ctx context.Context, params db.CreatePasswordEntryParams) (*db.Password, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.CallError != nil {
+		return nil, m.CallError
+	}
+
+	password := db.Password{
+		ID:        pgtype.UUID{Bytes: uuid.New(), Valid: true},
+		UserID:    params.UserID,
+		Login:     params.Login,
+		Password:  params.Password,
+		CreatedAt: pgtype.Timestamp{Time: time.Now(), Valid: true},
+		UpdatedAt: pgtype.Timestamp{Time: time.Now(), Valid: true},
+	}
+
+	m.passwords[password.ID.String()] = password
+	return &password, nil
+}
+
+func (m *MockDBStorage) GetPassword(ctx context.Context, passwordId string, userId pgtype.UUID) (*db.Password, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	password, exists := m.passwords[passwordId]
+	if !exists {
+		return nil, errors.New("password not found")
+	}
+
+	if password.UserID != userId {
+		return nil, errors.New("unauthorized access to password")
+	}
+
+	return &password, nil
+}
+
+func (m *MockDBStorage) UpdatePassword(ctx context.Context, params db.UpdatePasswordEntryParams) (*db.Password, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.CallError != nil {
+		return nil, m.CallError
+	}
+
+	id := params.ID.String()
+	password, exists := m.passwords[id]
+	if !exists {
+		return nil, errors.New("password not found")
+	}
+
+	password.Login = params.Login
+	password.Password = params.Password
+	password.UpdatedAt = pgtype.Timestamp{Time: time.Now(), Valid: true}
+
+	m.passwords[id] = password
+	return &password, nil
+}
+
+func (m *MockDBStorage) DeletePassword(ctx context.Context, passwordId string, userId pgtype.UUID) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.CallError != nil {
+		return m.CallError
+	}
+
+	password, exists := m.passwords[passwordId]
+	if !exists {
+		return errors.New("password not found")
+	}
+
+	if password.UserID != userId {
+		return errors.New("unauthorized access to password")
+	}
+
+	delete(m.passwords, passwordId)
+	return nil
+}
+
 func (m *MockDBStorage) ClearTestData() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.usersByID = make(map[pgtype.UUID]db.User)
+	m.UsersByID = make(map[pgtype.UUID]db.User)
 	m.usersByName = make(map[string]db.User)
 	m.tokens = make(map[string]db.GetRefreshTokenRow)
 	m.cards = make(map[string]db.Card)
 	m.binaries = make(map[string]db.BinaryEntry)
 	m.items = make(map[string]db.Item)
 	m.metaInfo = make(map[string]map[string]string)
+	m.notes = make(map[string]db.Note)
+	m.passwords = make(map[string]db.Password)
 
-	m.RegisterError = nil
+	m.CallError = nil
 }

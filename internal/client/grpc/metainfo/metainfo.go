@@ -14,28 +14,28 @@ import (
 // Client GRPCClient handles communication with the gRPC server.
 type Client struct {
 	conn         *grpc.ClientConn
-	client       pb.MetadataServiceClient
-	tokenManager *auth.TokenManager
-	log          *zerolog.Logger
+	Client       pb.MetadataServiceClient
+	TokenManager auth.ITokenManager
+	Log          *zerolog.Logger
 }
 
 // NewMetainfoClient  creates a new gRPC connection.
-func NewMetainfoClient(conn *grpc.ClientConn, tokenManager *auth.TokenManager, log *zerolog.Logger) *Client {
+func NewMetainfoClient(conn *grpc.ClientConn, tokenManager auth.ITokenManager, log *zerolog.Logger) *Client {
 	return &Client{
 		conn:         conn,
-		client:       pb.NewMetadataServiceClient(conn),
-		tokenManager: tokenManager,
-		log:          log,
+		Client:       pb.NewMetadataServiceClient(conn),
+		TokenManager: tokenManager,
+		Log:          log,
 	}
 }
 
 // GetMetainfo sends a register request to the server.
 func (as *Client) GetMetainfo(ctx context.Context, id string) (map[string]string, error) {
-	resp, err := as.client.GetMetaInfo(ctx, &pb.GetMetaInfoRequest{
+	resp, err := as.Client.GetMetaInfo(ctx, &pb.GetMetaInfoRequest{
 		ItemId: id,
 	})
 	if err != nil {
-		as.log.Error().Err(err).Msg("error getting metainfo")
+		as.Log.Error().Err(err).Msg("error getting metainfo")
 
 		return nil, errors.Wrap(err, "error getting metainfo")
 	}
@@ -45,12 +45,12 @@ func (as *Client) GetMetainfo(ctx context.Context, id string) (map[string]string
 
 // SetMetainfo sets meta information for the record.
 func (as *Client) SetMetainfo(ctx context.Context, id string, meta map[string]string) (bool, error) {
-	data, err := as.client.AddMetaInfo(ctx, &pb.AddMetaInfoRequest{
+	data, err := as.Client.AddMetaInfo(ctx, &pb.AddMetaInfoRequest{
 		ItemId:   id,
 		Metadata: meta,
 	})
 	if err != nil {
-		as.log.Error().Err(err).Msg("error setting metainfo")
+		as.Log.Error().Err(err).Msg("error setting metainfo")
 
 		return false, errors.Wrap(err, "error setting metainfo")
 	}
@@ -60,12 +60,12 @@ func (as *Client) SetMetainfo(ctx context.Context, id string, meta map[string]st
 
 // DeleteMetainfo deletes meta information for the record.
 func (as *Client) DeleteMetainfo(ctx context.Context, id, key string) (bool, error) {
-	data, err := as.client.RemoveMetaInfo(ctx, &pb.RemoveMetaInfoRequest{
+	data, err := as.Client.RemoveMetaInfo(ctx, &pb.RemoveMetaInfoRequest{
 		ItemId: id,
 		Key:    key,
 	})
 	if err != nil {
-		as.log.Error().Err(err).Msg("error deleting metainfo")
+		as.Log.Error().Err(err).Msg("error deleting metainfo")
 
 		return false, errors.Wrap(err, "error deleting metainfo")
 	}

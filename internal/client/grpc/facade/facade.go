@@ -5,6 +5,13 @@ import (
 	"io"
 	"time"
 
+	"github.com/npavlov/go-password-manager/internal/client/grpc/auth"
+	binary "github.com/npavlov/go-password-manager/internal/client/grpc/binaries"
+	"github.com/npavlov/go-password-manager/internal/client/grpc/cards"
+	"github.com/npavlov/go-password-manager/internal/client/grpc/items"
+	"github.com/npavlov/go-password-manager/internal/client/grpc/metainfo"
+	"github.com/npavlov/go-password-manager/internal/client/grpc/notes"
+	"github.com/npavlov/go-password-manager/internal/client/grpc/passwords"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
@@ -15,35 +22,101 @@ import (
 	pb_note "github.com/npavlov/go-password-manager/gen/proto/note"
 	pb_password "github.com/npavlov/go-password-manager/gen/proto/password"
 	tokenMgr "github.com/npavlov/go-password-manager/internal/client/auth"
-	"github.com/npavlov/go-password-manager/internal/client/grpc/auth"
-	binary "github.com/npavlov/go-password-manager/internal/client/grpc/binaries"
-	"github.com/npavlov/go-password-manager/internal/client/grpc/cards"
-	"github.com/npavlov/go-password-manager/internal/client/grpc/items"
-	"github.com/npavlov/go-password-manager/internal/client/grpc/metainfo"
-	"github.com/npavlov/go-password-manager/internal/client/grpc/notes"
-	"github.com/npavlov/go-password-manager/internal/client/grpc/passwords"
 )
 
-type Facade struct {
-	authClient     *auth.Client
-	itemsClient    *items.Client
-	passwordClient *passwords.Client
-	metaClient     *metainfo.Client
-	noteClient     *notes.Client
-	cardsClient    *cards.Client
-	binariesClient *binary.Client
+// Client interfaces for all dependencies
+type AuthClient interface {
+	Login(username, password string) error
+	Register(username, password, email string) (string, error)
 }
 
-func NewFacade(conn *grpc.ClientConn, tokenManager *tokenMgr.TokenManager, log *zerolog.Logger) *Facade {
+type ItemsClient interface {
+	GetItems(ctx context.Context, page, pageSize int32) ([]*pb.ItemData, int32, error)
+}
+
+type PasswordClient interface {
+	StorePassword(ctx context.Context, login, password string) (string, error)
+	GetPassword(ctx context.Context, id string) (*pb_password.PasswordData, time.Time, error)
+	UpdatePassword(ctx context.Context, id, login, password string) error
+	DeletePassword(ctx context.Context, id string) (bool, error)
+}
+
+type MetaClient interface {
+	GetMetainfo(ctx context.Context, id string) (map[string]string, error)
+	SetMetainfo(ctx context.Context, id string, meta map[string]string) (bool, error)
+	DeleteMetainfo(ctx context.Context, id, key string) (bool, error)
+}
+
+type NoteClient interface {
+	StoreNote(ctx context.Context, content string) (string, error)
+	GetNote(ctx context.Context, id string) (*pb_note.NoteData, time.Time, error)
+	DeleteNote(ctx context.Context, id string) (bool, error)
+}
+
+type CardClient interface {
+	StoreCard(ctx context.Context, cardNum, expDate, Cvv, cardHolder string) (string, error)
+	UpdateCard(ctx context.Context, id, cardNum, expDate, Cvv, cardHolder string) error
+	GetCard(ctx context.Context, id string) (*pb_card.CardData, time.Time, error)
+	DeleteCard(ctx context.Context, id string) (bool, error)
+}
+
+type BinaryClient interface {
+	UploadFile(ctx context.Context, filename string, reader io.Reader) (string, error)
+	DownloadFile(ctx context.Context, fileID string, writer io.Writer) error
+	GetFile(ctx context.Context, fileID string) (*pb_file.FileMeta, error)
+	DeleteFile(ctx context.Context, fileID string) (bool, error)
+}
+
+// Facade implementation
+type Facade struct {
+	authClient     AuthClient
+	itemsClient    ItemsClient
+	passwordClient PasswordClient
+	metaClient     MetaClient
+	noteClient     NoteClient
+	cardsClient    CardClient
+	binariesClient BinaryClient
+}
+
+// Verify Facade implements IFacade
+var _ IFacade = (*Facade)(nil)
+
+// FacadeOptions contains all dependencies for the Facade
+type FacadeOptions struct {
+	AuthClient     AuthClient
+	ItemsClient    ItemsClient
+	PasswordClient PasswordClient
+	MetaClient     MetaClient
+	NoteClient     NoteClient
+	CardClient     CardClient
+	BinaryClient   BinaryClient
+}
+
+// NewFacadeWithOptions creates a new Facade with explicit dependencies
+func NewFacadeWithOptions(opts FacadeOptions) *Facade {
 	return &Facade{
-		authClient:     auth.NewAuthClient(conn, tokenManager, log),
-		itemsClient:    items.NewItemsClient(conn, tokenManager, log),
-		passwordClient: passwords.NewPasswordClient(conn, tokenManager, log),
-		metaClient:     metainfo.NewMetainfoClient(conn, tokenManager, log),
-		noteClient:     notes.NewNoteClient(conn, tokenManager, log),
-		cardsClient:    cards.NewCardClient(conn, tokenManager, log),
-		binariesClient: binary.NewBinaryClient(conn, tokenManager, log),
+		authClient:     opts.AuthClient,
+		itemsClient:    opts.ItemsClient,
+		passwordClient: opts.PasswordClient,
+		metaClient:     opts.MetaClient,
+		noteClient:     opts.NoteClient,
+		cardsClient:    opts.CardClient,
+		binariesClient: opts.BinaryClient,
 	}
+}
+
+// NewFacade creates a new Facade with default gRPC implementations
+func NewFacade(conn *grpc.ClientConn, tokenManager *tokenMgr.TokenManager, log *zerolog.Logger) *Facade {
+	opts := FacadeOptions{
+		AuthClient:     auth.NewAuthClient(conn, tokenManager, log),
+		ItemsClient:    items.NewItemsClient(conn, tokenManager, log),
+		PasswordClient: passwords.NewPasswordClient(conn, tokenManager, log),
+		MetaClient:     metainfo.NewMetainfoClient(conn, tokenManager, log),
+		NoteClient:     notes.NewNoteClient(conn, tokenManager, log),
+		CardClient:     cards.NewCardClient(conn, tokenManager, log),
+		BinaryClient:   binary.NewBinaryClient(conn, tokenManager, log),
+	}
+	return NewFacadeWithOptions(opts)
 }
 
 func (fa *Facade) Login(username, password string) error {

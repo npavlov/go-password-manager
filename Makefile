@@ -119,3 +119,22 @@ buf-generate:
 
 buf-lint:
 	buf lint
+
+# Cross-platform builds for client
+.PHONY: build-client-all
+build-client-all: build-client-linux build-client-mac build-client-windows
+
+# Build client for Linux
+.PHONY: build-client-linux
+build-client-linux:
+	GOOS=linux GOARCH=amd64 $(GO) build -gcflags="all=-N -l" -ldflags="${BUILD_FLAGS_CLIENT}" -o bin/client-linux ${CURDIR}/cmd/client/main.go
+
+# Build client for Mac (darwin)
+.PHONY: build-client-mac
+build-client-mac:
+	GOOS=darwin GOARCH=amd64 $(GO) build -gcflags="all=-N -l" -ldflags="${BUILD_FLAGS_CLIENT}" -o bin/client-mac ${CURDIR}/cmd/client/main.go
+
+# Build client for Windows (with .exe extension)
+.PHONY: build-client-windows
+build-client-windows:
+	GOOS=windows GOARCH=amd64 $(GO) build -gcflags="all=-N -l" -ldflags="${BUILD_FLAGS_CLIENT}" -o bin/client-windows.exe ${CURDIR}/cmd/client/main.go

@@ -15,28 +15,28 @@ import (
 // Client GRPCClient handles communication with the gRPC server.
 type Client struct {
 	conn         *grpc.ClientConn
-	client       pb.CardServiceClient
-	tokenManager *auth.TokenManager
-	log          *zerolog.Logger
+	Client       pb.CardServiceClient
+	TokenManager auth.ITokenManager
+	Log          *zerolog.Logger
 }
 
 // NewCardClient  creates a new gRPC connection.
-func NewCardClient(conn *grpc.ClientConn, tokenManager *auth.TokenManager, log *zerolog.Logger) *Client {
+func NewCardClient(conn *grpc.ClientConn, tokenManager auth.ITokenManager, log *zerolog.Logger) *Client {
 	return &Client{
 		conn:         conn,
-		client:       pb.NewCardServiceClient(conn),
-		tokenManager: tokenManager,
-		log:          log,
+		Client:       pb.NewCardServiceClient(conn),
+		TokenManager: tokenManager,
+		Log:          log,
 	}
 }
 
 // GetCard sends a register request to the server.
 func (as *Client) GetCard(ctx context.Context, id string) (*pb.CardData, time.Time, error) {
-	resp, err := as.client.GetCard(ctx, &pb.GetCardRequest{
+	resp, err := as.Client.GetCard(ctx, &pb.GetCardRequest{
 		CardId: id,
 	})
 	if err != nil {
-		as.log.Error().Err(err).Msg("error getting password")
+		as.Log.Error().Err(err).Msg("error getting password")
 
 		return nil, time.Time{}, errors.Wrap(err, "error getting password")
 	}
@@ -45,7 +45,7 @@ func (as *Client) GetCard(ctx context.Context, id string) (*pb.CardData, time.Ti
 }
 
 func (as *Client) UpdateCard(ctx context.Context, id, cardNum, expDate, Cvv, cardHolder string) error {
-	_, err := as.client.UpdateCard(ctx, &pb.UpdateCardRequest{
+	_, err := as.Client.UpdateCard(ctx, &pb.UpdateCardRequest{
 		CardId: id,
 		Data: &pb.CardData{
 			CardNumber:     cardNum,
@@ -55,7 +55,7 @@ func (as *Client) UpdateCard(ctx context.Context, id, cardNum, expDate, Cvv, car
 		},
 	})
 	if err != nil {
-		as.log.Error().Err(err).Msg("error updating card")
+		as.Log.Error().Err(err).Msg("error updating card")
 
 		return errors.Wrap(err, "error updating card")
 	}
@@ -64,7 +64,7 @@ func (as *Client) UpdateCard(ctx context.Context, id, cardNum, expDate, Cvv, car
 }
 
 func (as *Client) StoreCard(ctx context.Context, cardNum, expDate, Cvv, cardHolder string) (string, error) {
-	resp, err := as.client.StoreCard(ctx, &pb.StoreCardRequest{
+	resp, err := as.Client.StoreCard(ctx, &pb.StoreCardRequest{
 		Card: &pb.CardData{
 			CardNumber:     cardNum,
 			ExpiryDate:     expDate,
@@ -73,7 +73,7 @@ func (as *Client) StoreCard(ctx context.Context, cardNum, expDate, Cvv, cardHold
 		},
 	})
 	if err != nil {
-		as.log.Error().Err(err).Msg("error storing card")
+		as.Log.Error().Err(err).Msg("error storing card")
 
 		return "", errors.Wrap(err, "error storing card")
 	}
@@ -83,11 +83,11 @@ func (as *Client) StoreCard(ctx context.Context, cardNum, expDate, Cvv, cardHold
 
 // DeleteCard delete card.
 func (as *Client) DeleteCard(ctx context.Context, id string) (bool, error) {
-	resp, err := as.client.DeleteCard(ctx, &pb.DeleteCardRequest{
+	resp, err := as.Client.DeleteCard(ctx, &pb.DeleteCardRequest{
 		CardId: id,
 	})
 	if err != nil {
-		as.log.Error().Err(err).Msg("error deleting card")
+		as.Log.Error().Err(err).Msg("error deleting card")
 
 		return false, errors.Wrap(err, "error deleting card")
 	}

@@ -13,24 +13,24 @@ import (
 // Client GRPCClient handles communication with the gRPC server.
 type Client struct {
 	conn         *grpc.ClientConn
-	client       pb.AuthServiceClient
-	tokenManager *auth.TokenManager
-	log          *zerolog.Logger
+	Client       pb.AuthServiceClient
+	TokenManager auth.ITokenManager
+	Log          *zerolog.Logger
 }
 
 // NewAuthClient  creates a new gRPC connection.
-func NewAuthClient(conn *grpc.ClientConn, tokenManager *auth.TokenManager, log *zerolog.Logger) *Client {
+func NewAuthClient(conn *grpc.ClientConn, tokenManager auth.ITokenManager, log *zerolog.Logger) *Client {
 	return &Client{
 		conn:         conn,
-		client:       pb.NewAuthServiceClient(conn),
-		tokenManager: tokenManager,
-		log:          log,
+		Client:       pb.NewAuthServiceClient(conn),
+		TokenManager: tokenManager,
+		Log:          log,
 	}
 }
 
 // Register sends a register request to the server.
 func (as *Client) Register(username, password, email string) (string, error) {
-	resp, err := as.client.Register(context.Background(), &pb.RegisterRequest{
+	resp, err := as.Client.Register(context.Background(), &pb.RegisterRequest{
 		Username: username,
 		Password: password,
 		Email:    email,
@@ -39,9 +39,9 @@ func (as *Client) Register(username, password, email string) (string, error) {
 		return "", err
 	}
 
-	err = as.tokenManager.UpdateTokens(resp.GetToken(), resp.GetRefreshToken())
+	err = as.TokenManager.UpdateTokens(resp.GetToken(), resp.GetRefreshToken())
 	if err != nil {
-		as.log.Error().Err(err).Msg("failed to update tokens")
+		as.Log.Error().Err(err).Msg("failed to update tokens")
 
 		return "", err
 	}
@@ -51,16 +51,16 @@ func (as *Client) Register(username, password, email string) (string, error) {
 
 // Login sends a login request to the server.
 func (as *Client) Login(username, password string) error {
-	resp, err := as.client.Login(context.Background(), &pb.LoginRequest{
+	resp, err := as.Client.Login(context.Background(), &pb.LoginRequest{
 		Username: username,
 		Password: password,
 	})
 	if err != nil {
 		return err
 	}
-	err = as.tokenManager.UpdateTokens(resp.GetToken(), resp.GetRefreshToken())
+	err = as.TokenManager.UpdateTokens(resp.GetToken(), resp.GetRefreshToken())
 	if err != nil {
-		as.log.Error().Err(err).Msg("failed to update tokens")
+		as.Log.Error().Err(err).Msg("failed to update tokens")
 
 		return err
 	}

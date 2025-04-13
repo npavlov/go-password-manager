@@ -14,24 +14,24 @@ import (
 // Client GRPCClient handles communication with the gRPC server.
 type Client struct {
 	conn         *grpc.ClientConn
-	client       pb.ItemServiceClient
-	tokenManager *auth.TokenManager
-	log          *zerolog.Logger
+	Client       pb.ItemServiceClient
+	TokenManager auth.ITokenManager
+	Log          *zerolog.Logger
 }
 
 // NewItemsClient  creates a new gRPC connection.
-func NewItemsClient(conn *grpc.ClientConn, tokenManager *auth.TokenManager, log *zerolog.Logger) *Client {
+func NewItemsClient(conn *grpc.ClientConn, tokenManager auth.ITokenManager, log *zerolog.Logger) *Client {
 	return &Client{
 		conn:         conn,
-		client:       pb.NewItemServiceClient(conn),
-		tokenManager: tokenManager,
-		log:          log,
+		Client:       pb.NewItemServiceClient(conn),
+		TokenManager: tokenManager,
+		Log:          log,
 	}
 }
 
 // GetItems sends a register request to the server.
 func (as *Client) GetItems(ctx context.Context, page, pageSize int32) ([]*pb.ItemData, int32, error) {
-	resp, err := as.client.GetItems(ctx, &pb.GetItemsRequest{
+	resp, err := as.Client.GetItems(ctx, &pb.GetItemsRequest{
 		Page:     page,
 		PageSize: pageSize,
 	})

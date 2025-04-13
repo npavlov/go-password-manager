@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/protovalidate-go"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
@@ -13,18 +14,24 @@ import (
 	"github.com/npavlov/go-password-manager/internal/server/config"
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/server/service/utils"
-	"github.com/npavlov/go-password-manager/internal/server/storage"
 )
+
+type Storage interface {
+	StoreNote(ctx context.Context, createNote db.CreateNoteEntryParams) (*db.Note, error)
+	GetNote(ctx context.Context, noteId string, userId pgtype.UUID) (*db.Note, error)
+	GetUserById(ctx context.Context, id pgtype.UUID) (*db.User, error)
+	DeleteNote(ctx context.Context, noteID string, userID pgtype.UUID) error
+}
 
 type Service struct {
 	pb.UnimplementedNoteServiceServer
 	validator protovalidate.Validator
 	logger    *zerolog.Logger
-	storage   *storage.DBStorage
+	storage   Storage
 	cfg       *config.Config
 }
 
-func NewNoteService(log *zerolog.Logger, storage *storage.DBStorage, cfg *config.Config) *Service {
+func NewNoteService(log *zerolog.Logger, storage Storage, cfg *config.Config) *Service {
 	validator, err := protovalidate.New()
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create validator")
@@ -47,18 +54,9 @@ func (ns *Service) StoreNote(ctx context.Context, req *pb.StoreNoteRequest) (*pb
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	userUUID, err := utils.GetUserId(ctx)
+	userUUID, decryptedUserKey, err := utils.GetDecryptionKey(ctx, ns.storage, ns.cfg.SecuredMasterKey.Get())
 	if err != nil {
-		ns.logger.Error().Err(err).Msg("error getting user id")
-
-		return nil, errors.Wrap(err, "error getting user id")
-	}
-
-	decryptedUserKey, err := utils.GetUserKey(ctx, ns.storage, userUUID, ns.cfg.SecuredMasterKey.Get())
-	if err != nil {
-		ns.logger.Error().Err(err).Msg("error getting user id")
-
-		return nil, errors.Wrap(err, "error getting user id")
+		return nil, err
 	}
 
 	encryptedNote, err := utils.Encrypt(req.GetNote().GetContent(), decryptedUserKey)
@@ -88,19 +86,7 @@ func (ns *Service) GetNote(ctx context.Context, req *pb.GetNoteRequest) (*pb.Get
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	userUUID, err := utils.GetUserId(ctx)
-	if err != nil {
-		ns.logger.Error().Err(err).Msg("error getting user id")
-
-		return nil, errors.Wrap(err, "error getting user id")
-	}
-
-	decryptedUserKey, err := utils.GetUserKey(ctx, ns.storage, userUUID, ns.cfg.SecuredMasterKey.Get())
-	if err != nil {
-		ns.logger.Error().Err(err).Msg("error getting user id")
-
-		return nil, errors.Wrap(err, "error getting user id")
-	}
+	userUUID, decryptedUserKey, err := utils.GetDecryptionKey(ctx, ns.storage, ns.cfg.SecuredMasterKey.Get())
 
 	note, err := ns.storage.GetNote(ctx, req.GetNoteId(), userUUID)
 	if err != nil {
@@ -144,7 +130,7 @@ func (ns *Service) DeleteNote(ctx context.Context, req *pb.DeleteNoteRequest) (*
 		return nil, errors.Wrap(err, "error getting user id")
 	}
 
-	err = ns.storage.DeletePassword(ctx, req.GetNoteId(), userUUID)
+	err = ns.storage.DeleteNote(ctx, req.GetNoteId(), userUUID)
 	if err != nil {
 		ns.logger.Error().Err(err).Msg("error deleting note")
 

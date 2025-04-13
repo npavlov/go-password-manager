@@ -15,24 +15,24 @@ import (
 // Client handles file (binary) operations over gRPC.
 type Client struct {
 	conn         *grpc.ClientConn
-	client       pb.FileServiceClient
-	tokenManager *auth.TokenManager
-	log          *zerolog.Logger
+	Client       pb.FileServiceClient
+	TokenManager auth.ITokenManager
+	Log          *zerolog.Logger
 }
 
 // NewBinaryClient creates a new FileService client.
-func NewBinaryClient(conn *grpc.ClientConn, tokenManager *auth.TokenManager, log *zerolog.Logger) *Client {
+func NewBinaryClient(conn *grpc.ClientConn, tokenManager auth.ITokenManager, log *zerolog.Logger) *Client {
 	return &Client{
 		conn:         conn,
-		client:       pb.NewFileServiceClient(conn),
-		tokenManager: tokenManager,
-		log:          log,
+		Client:       pb.NewFileServiceClient(conn),
+		TokenManager: tokenManager,
+		Log:          log,
 	}
 }
 
 // UploadFile streams file data to the server.
 func (c *Client) UploadFile(ctx context.Context, filename string, reader io.Reader) (string, error) {
-	stream, err := c.client.UploadFile(ctx)
+	stream, err := c.Client.UploadFile(ctx)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to start upload stream")
 	}
@@ -74,14 +74,14 @@ func (c *Client) UploadFile(ctx context.Context, filename string, reader io.Read
 		return "", errors.Wrap(err, "failed to receive upload response")
 	}
 
-	c.log.Info().Str("file_id", resp.GetFileId()).Msg("file uploaded successfully")
+	c.Log.Info().Str("file_id", resp.GetFileId()).Msg("file uploaded successfully")
 
 	return resp.GetFileId(), nil
 }
 
 // DownloadFile streams file data from the server.
 func (c *Client) DownloadFile(ctx context.Context, fileID string, writer io.Writer) error {
-	stream, err := c.client.DownloadFile(ctx, &pb.DownloadFileRequest{
+	stream, err := c.Client.DownloadFile(ctx, &pb.DownloadFileRequest{
 		FileId: fileID,
 	})
 	if err != nil {
@@ -103,14 +103,14 @@ func (c *Client) DownloadFile(ctx context.Context, fileID string, writer io.Writ
 		}
 	}
 
-	c.log.Info().Str("file_id", fileID).Msg("file downloaded successfully")
+	c.Log.Info().Str("file_id", fileID).Msg("file downloaded successfully")
 
 	return nil
 }
 
 // DeleteFile removes a file by ID.
 func (c *Client) DeleteFile(ctx context.Context, fileID string) (bool, error) {
-	resp, err := c.client.DeleteFile(ctx, &pb.DeleteFileRequest{
+	resp, err := c.Client.DeleteFile(ctx, &pb.DeleteFileRequest{
 		FileId: fileID,
 	})
 	if err != nil {
@@ -122,7 +122,7 @@ func (c *Client) DeleteFile(ctx context.Context, fileID string) (bool, error) {
 
 // GetFile retrieves metadata for a file by ID.
 func (c *Client) GetFile(ctx context.Context, fileID string) (*pb.FileMeta, error) {
-	resp, err := c.client.GetFile(ctx, &pb.GetFileRequest{
+	resp, err := c.Client.GetFile(ctx, &pb.GetFileRequest{
 		FileId: fileID,
 	})
 	if err != nil {

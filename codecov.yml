@@ -13,5 +13,8 @@ github_checks:
   annotations: false
 ignore:
   - "internal/server/db"
+  - "internal/server/buildinfo"
+  - "internal/server/adapter"
   - "internal/test_utils"
+  - "internal/client/model"
   - "gen"

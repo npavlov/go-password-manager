@@ -250,16 +250,16 @@ func (fs *Service) DownloadFile(req *pb.DownloadFileRequest, stream grpc.ServerS
 				return errors.Wrap(err, "error sending download response")
 			}
 		}
+		if err != nil && err != io.EOF {
+			fs.logger.Error().Err(err).Msg("error reading and decrypting file")
+
+			return status.Error(codes.Internal, "error reading and decrypting file")
+		}
 
 		if n < len(buffer) || err == io.EOF {
 			break
 		}
 
-		if err != nil {
-			fs.logger.Error().Err(err).Msg("error reading and decrypting file")
-
-			return status.Error(codes.Internal, "error reading and decrypting file")
-		}
 	}
 
 	fs.logger.Info().Str("file", fileEntry.FileName).Msg("file successfully streamed")
