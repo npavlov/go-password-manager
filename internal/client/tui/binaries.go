@@ -15,7 +15,7 @@ import (
 func (t *TUI) showBinaryList() {
 	list := tview.NewList()
 
-	for _, file := range t.storage.Binaries {
+	for _, file := range t.storage.GetBinaries() {
 		binCopy := file
 		filename := file.Filename
 		list.AddItem(filename, "(Press Enter to view details)", 0, func() {
@@ -145,7 +145,8 @@ func (t *TUI) showRemoveBinaryForm(file model.BinaryItem) {
 					return
 				}
 
-				delete(t.storage.Binaries, file.ID)
+				t.storage.DeleteBinary(file.ID)
+
 				t.logger.Info().Msgf("Binary removed: %s", file.Filename)
 				t.showBinaryList()
 			} else {

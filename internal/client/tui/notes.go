@@ -12,7 +12,7 @@ import (
 func (t *TUI) showNoteList() {
 	list := tview.NewList()
 
-	for _, note := range t.storage.Notes {
+	for _, note := range t.storage.GetNotes() {
 		noteCopy := note
 		list.AddItem(note.Content, "(Press Enter to view details)", 0, func() {
 			t.showNoteDetails(noteCopy)
@@ -126,7 +126,7 @@ func (t *TUI) showRemoveNoteForm(note model.NoteItem) {
 					return
 				}
 
-				delete(t.storage.Notes, note.ID)
+				t.storage.DeleteNotes(note.ID)
 
 				t.logger.Info().Msg("Note removed successfully")
 				t.showNoteList()

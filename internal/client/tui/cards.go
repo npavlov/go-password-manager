@@ -13,7 +13,7 @@ import (
 func (t *TUI) showCardList() {
 	list := tview.NewList()
 
-	for _, card := range t.storage.Cards {
+	for _, card := range t.storage.GetCards() {
 		cardCopy := card
 
 		cardNumber := FormatCardNumber(card.CardNumber)
@@ -178,7 +178,7 @@ func (t *TUI) showRemoveCardForm(card model.CardItem) {
 					return
 				}
 
-				delete(t.storage.Cards, card.ID)
+				t.storage.DeleteCards(card.ID)
 				t.logger.Info().Msg("Card removed successfully")
 				t.showCardList()
 			} else {

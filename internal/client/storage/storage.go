@@ -275,3 +275,35 @@ func (sm *StManager) SyncItems(ctx context.Context) error {
 func (sm *StManager) StopSync() {
 	close(sm.stopChan)
 }
+
+func (sm *StManager) GetBinaries() map[string]model.BinaryItem {
+	return sm.Binaries
+}
+
+func (sm *StManager) GetPasswords() map[string]model.PasswordItem {
+	return sm.Password
+}
+
+func (sm *StManager) GetNotes() map[string]model.NoteItem {
+	return sm.Notes
+}
+
+func (sm *StManager) GetCards() map[string]model.CardItem {
+	return sm.Cards
+}
+
+func (sm *StManager) DeleteBinary(Id string) {
+	delete(sm.Binaries, Id)
+}
+
+func (sm *StManager) DeleteCards(Id string) {
+	delete(sm.Cards, Id)
+}
+
+func (sm *StManager) DeleteNotes(Id string) {
+	delete(sm.Notes, Id)
+}
+
+func (sm *StManager) DeletePassword(Id string) {
+	delete(sm.Password, Id)
+}

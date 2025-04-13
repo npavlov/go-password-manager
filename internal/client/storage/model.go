@@ -4,6 +4,7 @@ import (
 	"context"
 
 	pb "github.com/npavlov/go-password-manager/gen/proto/item"
+	"github.com/npavlov/go-password-manager/internal/client/model"
 )
 
 type IStorageManager interface {
@@ -16,4 +17,12 @@ type IStorageManager interface {
 	StartBackgroundSync(ctx context.Context)
 	SyncItems(ctx context.Context) error
 	StopSync()
+	GetBinaries() map[string]model.BinaryItem
+	GetCards() map[string]model.CardItem
+	GetPasswords() map[string]model.PasswordItem
+	GetNotes() map[string]model.NoteItem
+	DeleteBinary(Id string)
+	DeleteCards(Id string)
+	DeleteNotes(Id string)
+	DeletePassword(Id string)
 }

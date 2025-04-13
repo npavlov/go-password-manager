@@ -14,7 +14,7 @@ func (t *TUI) showPasswordList() {
 	list := tview.NewList()
 
 	// List stored passwords
-	for _, pass := range t.storage.Password {
+	for _, pass := range t.storage.GetPasswords() {
 		passCopy := pass // Avoid closure issues
 		list.AddItem(pass.Login, "(Press Enter to view details)", 0, func() {
 			t.showPasswordDetails(passCopy)
@@ -165,7 +165,7 @@ func (t *TUI) showRemovePasswordForm(pass model.PasswordItem) {
 					return
 				}
 
-				delete(t.storage.Password, pass.ID)
+				t.storage.DeletePassword(pass.ID)
 
 				t.logger.Info().Msg("Password removed successfully")
 				t.showPasswordList()
