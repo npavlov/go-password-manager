@@ -25,16 +25,16 @@ type StManager struct {
 	Notes      map[string]model.NoteItem     `json:"notes"`
 	Cards      map[string]model.CardItem     `json:"cards"`
 	Binaries   map[string]model.BinaryItem   `json:"binaries"`
-	lastSyncAt time.Time
+	LastSyncAt time.Time
 	mutex      sync.Mutex
 	stopChan   chan struct{}
 	logger     *zerolog.Logger
-	tokenMgr   *auth.TokenManager
-	syncing    int32
+	tokenMgr   auth.ITokenManager
+	Syncing    int32
 }
 
 // NewStorageManager creates a new StorageManager with background sync.
-func NewStorageManager(facade facade.IFacade, tokenMgr *auth.TokenManager, logger *zerolog.Logger) *StManager {
+func NewStorageManager(facade facade.IFacade, tokenMgr auth.ITokenManager, logger *zerolog.Logger) *StManager {
 	sm := &StManager{
 		facade:   facade,
 		stopChan: make(chan struct{}),
@@ -82,8 +82,8 @@ func (sm *StManager) FetchItems(ctx context.Context) ([]*pb.ItemData, error) {
 	return allItems, nil
 }
 
-func (sm *StManager) processItem(ctx context.Context, item *pb.ItemData) bool {
-	if item.GetUpdatedAt().AsTime().Before(sm.lastSyncAt) {
+func (sm *StManager) ProcessItem(ctx context.Context, item *pb.ItemData) bool {
+	if item.GetUpdatedAt().AsTime().Before(sm.LastSyncAt) {
 		return false
 	}
 
@@ -233,12 +233,12 @@ func (sm *StManager) StartBackgroundSync(ctx context.Context) {
 
 // SyncItems checks for updates since the last sync.
 func (sm *StManager) SyncItems(ctx context.Context) error {
-	if !atomic.CompareAndSwapInt32(&sm.syncing, 0, 1) {
+	if !atomic.CompareAndSwapInt32(&sm.Syncing, 0, 1) {
 		sm.logger.Info().Msg("Sync already in progress, skipping this round.")
 
 		return nil
 	}
-	defer atomic.StoreInt32(&sm.syncing, 0)
+	defer atomic.StoreInt32(&sm.Syncing, 0)
 
 	if !sm.tokenMgr.IsAuthorized() {
 		return errors.New("not authorized")
@@ -256,7 +256,7 @@ func (sm *StManager) SyncItems(ctx context.Context) error {
 	for i, item := range items {
 		sm.logger.Info().Int("Item num", i).Msg("got Processing item")
 
-		ok := sm.processItem(ctx, item)
+		ok := sm.ProcessItem(ctx, item)
 
 		if ok {
 			updatedCount++
@@ -264,7 +264,7 @@ func (sm *StManager) SyncItems(ctx context.Context) error {
 	}
 
 	if updatedCount > 0 {
-		sm.lastSyncAt = time.Now()
+		sm.LastSyncAt = time.Now()
 		log.Println("Sync complete:", updatedCount, "items updated.")
 	}
 

@@ -5,52 +5,186 @@ import (
 	"os"
 	"testing"
 
-	"github.com/caarlos0/env/v6"
+	"github.com/npavlov/go-password-manager/internal/client/config"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"github.com/npavlov/go-password-manager/internal/server/config"
-	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 )
 
-// TestNewConfigBuilder checks if the default values are initialized properly.
 func TestNewConfigBuilder(t *testing.T) {
-	t.Parallel()
+	logger := zerolog.Nop()
+	builder := config.NewConfigBuilder(&logger)
 
-	cfg := config.NewConfigBuilder(testutils.GetTLogger()).Build()
-	assert.NotNil(t, cfg, "Config should be initialized")
+	assert.NotNil(t, builder)
+
 }
 
-// TestFromEnv checks if environment variables are properly parsed into the config.
 func TestFromEnv(t *testing.T) {
-	// Set environment variables to test parsing
-	t.Setenv("ADDRESS", "localhost:8082")
-
-	cfg := config.NewConfigBuilder(testutils.GetTLogger()).FromEnv().Build()
-
-	// Manually parse the environment variables to a temporary config for comparison
-	tmpConfig := &config.Config{}
-	err := env.Parse(tmpConfig)
-	require.NoError(t, err, "Env parsing should not produce an error")
-
-	assert.Equal(t, tmpConfig.Address, cfg.Address, "Address should match the env value")
-}
-
-// TestFromFlags checks if command line flags are properly parsed into the config.
-func TestFromFlags(t *testing.T) {
-	t.Parallel()
-
-	// Reset command-line flags between tests
-	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-
-	// Prepare the command-line arguments to test
-	os.Args = []string{
-		"cmd",
-		"-a", "localhost:8091",
+	tests := []struct {
+		name     string
+		envVars  map[string]string
+		expected *config.Config
+	}{
+		{
+			name: "All environment variables set",
+			envVars: map[string]string{
+				"ADDRESS":     "localhost:8080",
+				"MASTER_KEY":  "testkey",
+				"CERTIFICATE": "cert.pem",
+				"TOKEN_FILE":  "tokens.json",
+			},
+			expected: &config.Config{
+				Address:     "localhost:8080",
+				MasterKey:   "testkey",
+				Certificate: "cert.pem",
+				TokenFile:   "tokens.json",
+			},
+		},
+		{
+			name:    "No environment variables set",
+			envVars: map[string]string{},
+			expected: &config.Config{
+				Address:     ":9090", // default from envDefault tag
+				MasterKey:   "",
+				Certificate: "",
+				TokenFile:   "",
+			},
+		},
 	}
 
-	cfg := config.NewConfigBuilder(testutils.GetTLogger()).FromFlags().Build()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set environment variables
+			for k, v := range tt.envVars {
+				os.Setenv(k, v)
+				defer os.Unsetenv(k)
+			}
 
-	// Verify that flags were correctly parsed into the config
-	assert.Equal(t, "localhost:8091", cfg.Address, "Address should be set by flag")
+			logger := zerolog.Nop()
+			builder := config.NewConfigBuilder(&logger).FromEnv()
+			cfg := builder.Build()
+
+			assert.Equal(t, tt.expected.Address, cfg.Address)
+			assert.Equal(t, tt.expected.Certificate, cfg.Certificate)
+			assert.Equal(t, tt.expected.TokenFile, cfg.TokenFile)
+			// MasterKey should be cleared after Build()
+			assert.Equal(t, "", cfg.MasterKey)
+			assert.NotNil(t, cfg.SecuredMasterKey)
+		})
+	}
+}
+
+func TestFromFlags(t *testing.T) {
+	tests := []struct {
+		name     string
+		args     []string
+		expected *config.Config
+	}{
+		{
+			name: "All flags set",
+			args: []string{
+				"-a", "localhost:8080",
+				"-masterkey", "testkey",
+				"-cert", "cert.pem",
+				"-token_file", "tokens.json",
+			},
+			expected: &config.Config{
+				Address:     "localhost:8080",
+				MasterKey:   "testkey",
+				Certificate: "cert.pem",
+				TokenFile:   "tokens.json",
+			},
+		},
+		{
+			name: "No flags set",
+			args: []string{},
+			expected: &config.Config{
+				Address:     "",
+				MasterKey:   "",
+				Certificate: "",
+				TokenFile:   "",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Reset flag.CommandLine to avoid flag redefinition errors
+			flag.CommandLine = flag.NewFlagSet(tt.name, flag.ContinueOnError)
+
+			logger := zerolog.Nop()
+			builder := config.NewConfigBuilder(&logger)
+
+			// Simulate command line arguments
+			os.Args = append([]string{"test"}, tt.args...)
+			builder.FromFlags()
+			cfg := builder.Build()
+
+			assert.Equal(t, tt.expected.Address, cfg.Address)
+			assert.Equal(t, tt.expected.Certificate, cfg.Certificate)
+			assert.Equal(t, tt.expected.TokenFile, cfg.TokenFile)
+			// MasterKey should be cleared after Build()
+			assert.Equal(t, "", cfg.MasterKey)
+			assert.NotNil(t, cfg.SecuredMasterKey)
+		})
+	}
+}
+
+func TestFromObj(t *testing.T) {
+	inputCfg := &config.Config{
+		Address:     "localhost:8080",
+		MasterKey:   "testkey",
+		Certificate: "cert.pem",
+		TokenFile:   "tokens.json",
+	}
+
+	logger := zerolog.Nop()
+	builder := config.NewConfigBuilder(&logger).FromObj(inputCfg)
+	cfg := builder.Build()
+
+	assert.Equal(t, inputCfg.Address, cfg.Address)
+	assert.Equal(t, inputCfg.Certificate, cfg.Certificate)
+	assert.Equal(t, inputCfg.TokenFile, cfg.TokenFile)
+	// MasterKey should be cleared after Build()
+	assert.Equal(t, "", cfg.MasterKey)
+	assert.NotNil(t, cfg.SecuredMasterKey)
+}
+
+func TestBuild(t *testing.T) {
+	tests := []struct {
+		name          string
+		masterKey     string
+		expectSecure  bool
+		expectCleared bool
+	}{
+		{
+			name:          "With master key",
+			masterKey:     "testkey",
+			expectSecure:  true,
+			expectCleared: true,
+		},
+		{
+			name:          "Empty master key",
+			masterKey:     "",
+			expectSecure:  false,
+			expectCleared: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			logger := zerolog.Nop()
+			builder := config.NewConfigBuilder(&logger)
+
+			if tt.masterKey != "" {
+				os.Setenv("MASTER_KEY", tt.masterKey)
+				defer os.Unsetenv("MASTER_KEY")
+			}
+
+			cfg := builder.Build()
+
+			assert.Empty(t, cfg.MasterKey)
+
+			assert.Equal(t, "", cfg.MasterKey)
+		})
+	}
 }
