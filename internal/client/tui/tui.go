@@ -15,14 +15,14 @@ import (
 // TUI handles the terminal user interface.
 type TUI struct {
 	app      *tview.Application
-	facade   *facade.Facade
-	storage  *storage.StManager
+	facade   facade.IFacade
+	storage  storage.IStorageManager
 	logger   *zerolog.Logger
-	tokenMgr *auth.TokenManager
+	tokenMgr auth.ITokenManager
 }
 
 // NewTUI creates a new TUI instance.
-func NewTUI(app *tview.Application, facade *facade.Facade, storage *storage.StManager, tokenMgr *auth.TokenManager, log *zerolog.Logger) *TUI {
+func NewTUI(app *tview.Application, facade facade.IFacade, storage storage.IStorageManager, tokenMgr auth.ITokenManager, log *zerolog.Logger) *TUI {
 	return &TUI{
 		app:      app,
 		facade:   facade,

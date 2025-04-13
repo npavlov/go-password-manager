@@ -29,7 +29,7 @@ func main() {
 		Str("buildCommit", buildinfo.Commit).
 		Str("buildDate", buildinfo.Date).Msg("Starting agent")
 
-	cfg := loadConfig(&log)
+	cfg := LoadConfig(&log)
 
 	tokenManager := auth.NewTokenManager(&log, cfg)
 	err := tokenManager.LoadTokens()
@@ -41,7 +41,7 @@ func main() {
 	authInterceptor := interceptors.NewAuthInterceptor(*cfg, tokenManager)
 
 	// Initialize gRPC conn
-	conn, err := makeConnection(*cfg, authInterceptor)
+	conn, err := MakeConnection(*cfg, authInterceptor)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to make connection")
 	}
@@ -69,7 +69,7 @@ func main() {
 	storageManager.StopSync()
 }
 
-func loadConfig(log *zerolog.Logger) *config.Config {
+func LoadConfig(log *zerolog.Logger) *config.Config {
 	err := godotenv.Load("client.env")
 	if err != nil {
 		log.Error().Err(err).Msg("Error loading client.env file")
@@ -85,7 +85,7 @@ func loadConfig(log *zerolog.Logger) *config.Config {
 	return cfg
 }
 
-func makeConnection(cfg config.Config, interceptor *interceptors.AuthInterceptor) (*grpc.ClientConn, error) {
+func MakeConnection(cfg config.Config, interceptor *interceptors.AuthInterceptor) (*grpc.ClientConn, error) {
 	creds, err := credentials.NewClientTLSFromFile(cfg.Certificate, "")
 	if err != nil {
 		return nil, errors.Wrap(err, "could not load TLS keys")
