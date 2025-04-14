@@ -159,3 +159,13 @@ func TestGetItems_InvalidPageParams(t *testing.T) {
 	_, _, err = client.GetItems(context.Background(), -1, 10)
 	assert.NoError(t, err) // The client doesn't validate parameters
 }
+
+func TestNewItemsClient(t *testing.T) {
+
+	tm := new(testutils.MockTokenManager)
+	logger := zerolog.Nop()
+
+	client := items.NewItemsClient(nil, tm, &logger)
+
+	assert.NotNil(t, client)
+}

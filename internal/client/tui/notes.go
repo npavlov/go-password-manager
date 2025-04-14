@@ -12,7 +12,7 @@ import (
 func (t *TUI) showNoteList() {
 	list := tview.NewList()
 
-	for _, note := range t.storage.GetNotes() {
+	for _, note := range t.Storage.GetNotes() {
 		noteCopy := note
 		list.AddItem(note.Content, "(Press Enter to view details)", 0, func() {
 			t.showNoteDetails(noteCopy)
@@ -24,11 +24,11 @@ func (t *TUI) showNoteList() {
 	})
 
 	list.AddItem("⬅ Back", "Return to main menu", 'b', func() {
-		t.app.SetRoot(t.mainMenu(), true)
+		t.App.SetRoot(t.MainMenu(), true)
 	})
 
 	list.SetTitle("📝 Notes").SetBorder(true)
-	t.app.SetRoot(list, true)
+	t.App.SetRoot(list, true)
 }
 
 func (t *TUI) showNoteDetails(note model.NoteItem) {
@@ -40,9 +40,9 @@ func (t *TUI) showNoteDetails(note model.NoteItem) {
 		note.Content,
 	))
 
-	metainfo, err := t.facade.GetMetainfo(context.Background(), note.ID)
+	metainfo, err := t.Facade.GetMetainfo(context.Background(), note.ID)
 	if err != nil {
-		t.logger.Error().Err(err).Msg("Error getting metainfo")
+		t.Logger.Error().Err(err).Msg("Error getting metainfo")
 		textView.SetText(textView.GetText(false) + "\n❌ Error loading metadata")
 	} else {
 		for key, value := range metainfo {
@@ -75,7 +75,7 @@ func (t *TUI) showNoteDetails(note model.NoteItem) {
 	flex.AddItem(textView, 0, 1, false)
 	flex.AddItem(menu, 0, 1, true)
 
-	t.app.SetRoot(flex, true)
+	t.App.SetRoot(flex, true)
 }
 
 func (t *TUI) showAddNoteForm() {
@@ -86,22 +86,22 @@ func (t *TUI) showAddNoteForm() {
 		AddButton("Save", func() {
 			content := form.GetFormItem(0).(*tview.TextArea).GetText()
 
-			noteID, err := t.facade.StoreNote(context.Background(), content)
+			noteID, err := t.Facade.StoreNote(context.Background(), content)
 			if err != nil {
-				t.logger.Error().Err(err).Msg("Failed to add note")
+				t.Logger.Error().Err(err).Msg("Failed to add note")
 
 				return
 			}
 
 			// no meta because password is new!
-			err = t.storage.ProcessNote(context.Background(), noteID, map[string]string{})
+			err = t.Storage.ProcessNote(context.Background(), noteID, map[string]string{})
 			if err != nil {
-				t.logger.Error().Err(err).Msg("Failed to add note")
+				t.Logger.Error().Err(err).Msg("Failed to add note")
 
 				return
 			}
 
-			t.logger.Info().Msg("Note added successfully")
+			t.Logger.Info().Msg("Note added successfully")
 			t.showNoteList()
 		}).
 		AddButton("Cancel", func() {
@@ -110,7 +110,7 @@ func (t *TUI) showAddNoteForm() {
 		SetTitle("➕ Add New Note").
 		SetBorder(true)
 
-	t.app.SetRoot(form, true)
+	t.App.SetRoot(form, true)
 }
 
 func (t *TUI) showRemoveNoteForm(note model.NoteItem) {
@@ -119,21 +119,21 @@ func (t *TUI) showRemoveNoteForm(note model.NoteItem) {
 		AddButtons([]string{"Yes", "No"}).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 			if buttonLabel == "Yes" {
-				ok, err := t.facade.DeleteNote(context.Background(), note.ID)
+				ok, err := t.Facade.DeleteNote(context.Background(), note.ID)
 				if !ok || err != nil {
-					t.logger.Error().Err(err).Msg("Failed to remove note")
+					t.Logger.Error().Err(err).Msg("Failed to remove note")
 
 					return
 				}
 
-				t.storage.DeleteNotes(note.ID)
+				t.Storage.DeleteNotes(note.ID)
 
-				t.logger.Info().Msg("Note removed successfully")
+				t.Logger.Info().Msg("Note removed successfully")
 				t.showNoteList()
 			} else {
 				t.showNoteDetails(note)
 			}
 		})
 
-	t.app.SetRoot(confirmation, true)
+	t.App.SetRoot(confirmation, true)
 }

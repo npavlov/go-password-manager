@@ -248,3 +248,13 @@ func TestDeleteMetainfo_NotSuccessful(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, success)
 }
+
+func TestNewMetaClient(t *testing.T) {
+
+	tm := new(testutils.MockTokenManager)
+	logger := zerolog.Nop()
+
+	client := metainfo.NewMetainfoClient(nil, tm, &logger)
+
+	assert.NotNil(t, client)
+}

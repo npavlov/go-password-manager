@@ -2,7 +2,6 @@ package tui
 
 import (
 	"context"
-	"log"
 
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog"
@@ -12,51 +11,61 @@ import (
 	"github.com/npavlov/go-password-manager/internal/client/storage"
 )
 
-// TUI handles the terminal user interface.
 type TUI struct {
-	app      *tview.Application
-	facade   facade.IFacade
-	storage  storage.IStorageManager
-	logger   *zerolog.Logger
-	tokenMgr auth.ITokenManager
+	App        *tview.Application
+	Facade     facade.IFacade
+	Storage    storage.IStorageManager
+	Logger     *zerolog.Logger
+	TokenMgr   auth.ITokenManager
+	OnLogin    func()
+	OnRegister func()
+	stopApp    func()
+	SetRoot    func(p tview.Primitive, fullscreen bool) *tview.Application
 }
 
-// NewTUI creates a new TUI instance.
 func NewTUI(app *tview.Application, facade facade.IFacade, storage storage.IStorageManager, tokenMgr auth.ITokenManager, log *zerolog.Logger) *TUI {
 	return &TUI{
-		app:      app,
-		facade:   facade,
-		logger:   log,
-		storage:  storage,
-		tokenMgr: tokenMgr,
+		App:      app,
+		Facade:   facade,
+		Logger:   log,
+		Storage:  storage,
+		TokenMgr: tokenMgr,
+		SetRoot:  app.SetRoot,
+		stopApp:  app.Stop,
 	}
 }
 
-// Run starts the TUI.
-func (t *TUI) Run() error {
-	return t.app.SetRoot(t.mainMenu(), true).Run()
+func (t *TUI) GetApp() *tview.Application {
+	return t.SetRoot(t.MainMenu(), true)
 }
 
-// ResetToLoginScreen resets the UI and goes back to the login screen.
 func (t *TUI) ResetToLoginScreen() {
-	t.logger.Warn().Msg("Authentication failed. Redirecting to login screen...")
-	t.showLoginForm()
+	t.TokenMgr.HandleAuthFailure()
+	t.Logger.Warn().Msg("Authentication failed. Redirecting to login screen...")
+	t.SetRoot(t.ShowLoginForm(), true)
 }
 
-// mainMenu creates the main menu UI.
-func (t *TUI) mainMenu() *tview.List {
+func (t *TUI) MainMenu() *tview.List {
 	menu := tview.NewList()
 
-	if t.tokenMgr.IsAuthorized() {
-		menu.AddItem("Passwords", "View and manage stored passwords", 'p', func() { t.showPasswordList() })
-		menu.AddItem("Notes", "View and manage notes", 'n', func() { t.showNoteList() })
-		menu.AddItem("Cards", "View and manage cards", 'c', func() { t.showCardList() })
-		menu.AddItem("Binaries", "View and manage binary files", 'b', func() { t.showBinaryList() })
-		menu.AddItem("Logout", "Sign out of the application", 'q', func() { t.ResetToLoginScreen() })
+	if t.TokenMgr.IsAuthorized() {
+		menu.AddItem("Passwords", "View and manage stored passwords", 'p', t.showPasswordList)
+		menu.AddItem("Notes", "View and manage notes", 'n', t.showNoteList)
+		menu.AddItem("Cards", "View and manage cards", 'c', func() {
+			t.SetRoot(t.ShowCardList(), true)
+		})
+		menu.AddItem("Binaries", "View and manage binary files", 'b', func() {
+			t.SetRoot(t.ShowBinaryList(), true)
+		})
+		menu.AddItem("Logout", "Sign out", 'q', t.ResetToLoginScreen)
 	} else {
-		menu.AddItem("Register", "Create a new account", 'r', func() { t.showRegisterForm() })
-		menu.AddItem("Login", "Sign in to your account", 'l', func() { t.showLoginForm() })
-		menu.AddItem("Quit", "Exit the application", 'q', func() { t.app.Stop() })
+		menu.AddItem("Register", "Create new account", 'r', func() {
+			t.SetRoot(t.ShowRegisterForm(), true)
+		})
+		menu.AddItem("Login", "Sign in", 'l', func() {
+			t.SetRoot(t.ShowLoginForm(), true)
+		})
+		menu.AddItem("Quit", "Exit", 'q', t.stopApp)
 	}
 
 	menu.SetTitle("Password Manager").SetBorder(true)
@@ -64,59 +73,75 @@ func (t *TUI) mainMenu() *tview.List {
 	return menu
 }
 
-// showRegisterForm displays the registration form.
-func (t *TUI) showRegisterForm() {
+func (t *TUI) ShowRegisterForm() *tview.Form {
 	form := tview.NewForm()
-	form.AddInputField("Username", "", 20, nil, nil).
+
+	form.
+		AddInputField("Username", "", 20, nil, nil).
 		AddPasswordField("Password", "", 20, '*', nil).
 		AddInputField("Email", "", 50, nil, nil).
-		AddButton("Register", func() {
-			username := form.GetFormItem(0).(*tview.InputField).GetText()
-			password := form.GetFormItem(1).(*tview.InputField).GetText()
-			email := form.GetFormItem(2).(*tview.InputField).GetText()
-
-			userID, err := t.facade.Register(username, password, email)
-			if err != nil {
-				log.Println("Registration failed:", err)
-
-				return
-			}
-
-			log.Println("Registration successful! User ID:", userID)
-			t.app.SetRoot(t.mainMenu(), true)
-		}).
-		AddButton("Back", func() { t.app.SetRoot(t.mainMenu(), true) })
+		AddButton("Register", func() { t.HandleRegister(form) }).
+		AddButton("Back", func() { t.SetRoot(t.MainMenu(), true) })
 
 	form.SetTitle("Register").SetBorder(true)
-	t.app.SetRoot(form, true)
+
+	return form
 }
 
-// showLoginForm displays the login form.
-func (t *TUI) showLoginForm() {
+func (t *TUI) ShowLoginForm() *tview.Form {
 	form := tview.NewForm()
-	form.AddInputField("Username", "", 20, nil, nil).
+
+	form.
+		AddInputField("Username", "", 20, nil, nil).
 		AddPasswordField("Password", "", 20, '*', nil).
-		AddButton("Login", func() {
-			username := form.GetFormItem(0).(*tview.InputField).GetText()
-			password := form.GetFormItem(1).(*tview.InputField).GetText()
-
-			err := t.facade.Login(username, password)
-			if err != nil {
-				log.Println("Login failed:", err)
-
-				return
-			}
-
-			err = t.storage.SyncItems(context.Background())
-			if err != nil {
-				t.logger.Error().Err(err).Msg("SyncItems failed")
-			}
-
-			t.logger.Info().Msg("SyncItems successful")
-			t.app.SetRoot(t.mainMenu(), true)
-		}).
-		AddButton("Back", func() { t.app.SetRoot(t.mainMenu(), true) })
+		AddButton("Login", func() { t.HandleLogin(form) }).
+		AddButton("Back", func() { t.SetRoot(t.MainMenu(), true) })
 
 	form.SetTitle("Login").SetBorder(true)
-	t.app.SetRoot(form, true)
+	return form
+}
+
+// ---- Handlers ----
+
+func (t *TUI) HandleRegister(form *tview.Form) {
+	username := form.GetFormItem(0).(*tview.InputField).GetText()
+	password := form.GetFormItem(1).(*tview.InputField).GetText()
+	email := form.GetFormItem(2).(*tview.InputField).GetText()
+
+	userID, err := t.Facade.Register(username, password, email)
+	if err != nil {
+		t.Logger.Error().Err(err).Msg("Registration failed")
+		return
+	}
+
+	t.Logger.Info().Str("userID", userID).Msg("Registration successful")
+
+	if t.OnRegister != nil {
+		t.OnRegister()
+	}
+
+	t.SetRoot(t.MainMenu(), true)
+}
+
+func (t *TUI) HandleLogin(form *tview.Form) {
+	username := form.GetFormItem(0).(*tview.InputField).GetText()
+	password := form.GetFormItem(1).(*tview.InputField).GetText()
+
+	err := t.Facade.Login(username, password)
+	if err != nil {
+		t.Logger.Error().Err(err).Msg("Login failed")
+		return
+	}
+
+	if err := t.Storage.SyncItems(context.Background()); err != nil {
+		t.Logger.Error().Err(err).Msg("SyncItems failed")
+	} else {
+		t.Logger.Info().Msg("SyncItems successful")
+	}
+
+	if t.OnLogin != nil {
+		t.OnLogin()
+	}
+
+	t.SetRoot(t.MainMenu(), true)
 }

@@ -14,7 +14,7 @@ func (t *TUI) showPasswordList() {
 	list := tview.NewList()
 
 	// List stored passwords
-	for _, pass := range t.storage.GetPasswords() {
+	for _, pass := range t.Storage.GetPasswords() {
 		passCopy := pass // Avoid closure issues
 		list.AddItem(pass.Login, "(Press Enter to view details)", 0, func() {
 			t.showPasswordDetails(passCopy)
@@ -27,10 +27,10 @@ func (t *TUI) showPasswordList() {
 	})
 
 	// Back button
-	list.AddItem("⬅ Back", "Return to main menu", 'b', func() { t.app.SetRoot(t.mainMenu(), true) })
+	list.AddItem("⬅ Back", "Return to main menu", 'b', func() { t.App.SetRoot(t.MainMenu(), true) })
 
 	list.SetTitle("🔐 Passwords").SetBorder(true)
-	t.app.SetRoot(list, true)
+	t.App.SetRoot(list, true)
 }
 
 // showPasswordDetails displays metadata of a selected password.
@@ -42,9 +42,9 @@ func (t *TUI) showPasswordDetails(pass model.PasswordItem) {
 	textView.SetText(fmt.Sprintf("👤 Username: %s\n🔑 Password: %s\n📌 Metadata:\n", pass.Login, pass.Password))
 
 	// Fetch and display metadata
-	metainfo, err := t.facade.GetMetainfo(context.Background(), pass.ID)
+	metainfo, err := t.Facade.GetMetainfo(context.Background(), pass.ID)
 	if err != nil {
-		t.logger.Error().Err(err).Msg("Error getting metainfo")
+		t.Logger.Error().Err(err).Msg("Error getting metainfo")
 		textView.SetText(textView.GetText(false) + "\n❌ Error loading metadata")
 	} else {
 		for key, value := range metainfo {
@@ -80,7 +80,7 @@ func (t *TUI) showPasswordDetails(pass model.PasswordItem) {
 	flex.AddItem(textView, 0, 1, false)
 	flex.AddItem(menu, 0, 1, true)
 
-	t.app.SetRoot(flex, true)
+	t.App.SetRoot(flex, true)
 }
 
 // showChangePasswordForm allows the user to update a password.
@@ -93,28 +93,28 @@ func (t *TUI) showChangePasswordForm(pass model.PasswordItem) {
 			newLogin := form.GetFormItem(0).(*tview.InputField).GetText()
 			newPassword := form.GetFormItem(1).(*tview.InputField).GetText()
 
-			err := t.facade.UpdatePassword(context.Background(), pass.ID, newLogin, newPassword)
+			err := t.Facade.UpdatePassword(context.Background(), pass.ID, newLogin, newPassword)
 			if err != nil {
-				t.logger.Error().Err(err).Msg("Failed to change password")
+				t.Logger.Error().Err(err).Msg("Failed to change password")
 
 				return
 			}
 
 			// Update local storage
-			err = t.storage.ProcessPassword(context.Background(), pass.ID, pass.Metadata)
+			err = t.Storage.ProcessPassword(context.Background(), pass.ID, pass.Metadata)
 			if err != nil {
-				t.logger.Error().Err(err).Msg("Failed to update password in storage")
+				t.Logger.Error().Err(err).Msg("Failed to update password in storage")
 
 				return
 			}
 
-			t.logger.Info().Msg("Password changed successfully")
+			t.Logger.Info().Msg("Password changed successfully")
 			t.showPasswordDetails(pass) // Refresh details
 		}).
 		AddButton("Cancel", func() { t.showPasswordDetails(pass) })
 
 	form.SetTitle("✏ Change Password").SetBorder(true)
-	t.app.SetRoot(form, true)
+	t.App.SetRoot(form, true)
 }
 
 // showAddPasswordForm displays a form to add a new password entry.
@@ -127,28 +127,28 @@ func (t *TUI) showAddPasswordForm() {
 			username := form.GetFormItem(0).(*tview.InputField).GetText()
 			password := form.GetFormItem(1).(*tview.InputField).GetText()
 
-			passwordId, err := t.facade.StorePassword(context.Background(), username, password)
+			passwordId, err := t.Facade.StorePassword(context.Background(), username, password)
 			if err != nil {
-				t.logger.Error().Err(err).Msg("Failed to add password")
+				t.Logger.Error().Err(err).Msg("Failed to add password")
 
 				return
 			}
 
 			// no meta because password is new!
-			err = t.storage.ProcessPassword(context.Background(), passwordId, map[string]string{})
+			err = t.Storage.ProcessPassword(context.Background(), passwordId, map[string]string{})
 			if err != nil {
-				t.logger.Error().Err(err).Msg("Failed to add password")
+				t.Logger.Error().Err(err).Msg("Failed to add password")
 
 				return
 			}
 
-			t.logger.Info().Msg("Password added successfully")
+			t.Logger.Info().Msg("Password added successfully")
 			t.showPasswordList() // Refresh list
 		}).
 		AddButton("Cancel", func() { t.showPasswordList() })
 
 	form.SetTitle("➕ Add New Password").SetBorder(true)
-	t.app.SetRoot(form, true)
+	t.App.SetRoot(form, true)
 }
 
 // showRemovePasswordForm displays a confirmation dialog before removing a password.
@@ -158,21 +158,21 @@ func (t *TUI) showRemovePasswordForm(pass model.PasswordItem) {
 		AddButtons([]string{"Yes", "No"}).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 			if buttonLabel == "Yes" {
-				ok, err := t.facade.DeletePassword(context.Background(), pass.ID)
+				ok, err := t.Facade.DeletePassword(context.Background(), pass.ID)
 				if !ok || err != nil {
-					t.logger.Error().Err(err).Msg("Failed to remove password")
+					t.Logger.Error().Err(err).Msg("Failed to remove password")
 
 					return
 				}
 
-				t.storage.DeletePassword(pass.ID)
+				t.Storage.DeletePassword(pass.ID)
 
-				t.logger.Info().Msg("Password removed successfully")
+				t.Logger.Info().Msg("Password removed successfully")
 				t.showPasswordList()
 			} else {
 				t.showPasswordDetails(pass)
 			}
 		})
 
-	t.app.SetRoot(confirmation, true)
+	t.App.SetRoot(confirmation, true)
 }

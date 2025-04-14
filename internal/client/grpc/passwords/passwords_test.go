@@ -291,3 +291,13 @@ func TestDeletePassword_NotSuccessful(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, ok)
 }
+
+func TestNewPasswordClient(t *testing.T) {
+
+	tm := new(testutils.MockTokenManager)
+	logger := zerolog.Nop()
+
+	client := passwords.NewPasswordClient(nil, tm, &logger)
+
+	assert.NotNil(t, client)
+}

@@ -20,35 +20,35 @@ func (t *TUI) showAddMetadataForm(storageItem model.StorageItem, backFunc func()
 
 			storageItem.Metadata[key] = value
 
-			ok, err := t.facade.SetMetainfo(context.Background(), storageItem.ID, storageItem.Metadata)
+			ok, err := t.Facade.SetMetainfo(context.Background(), storageItem.ID, storageItem.Metadata)
 			if !ok || err != nil {
-				t.logger.Error().Err(err).Msg("Failed to add metadata")
+				t.Logger.Error().Err(err).Msg("Failed to add metadata")
 
 				return
 			}
 
 			switch storageItem.Type {
 			case model.ItemTypeCard:
-				err = t.storage.ProcessCard(context.Background(), storageItem.ID, storageItem.Metadata)
+				err = t.Storage.ProcessCard(context.Background(), storageItem.ID, storageItem.Metadata)
 			case model.ItemTypeNote:
-				err = t.storage.ProcessNote(context.Background(), storageItem.ID, storageItem.Metadata)
+				err = t.Storage.ProcessNote(context.Background(), storageItem.ID, storageItem.Metadata)
 			case model.ItemTypePassword:
-				err = t.storage.ProcessPassword(context.Background(), storageItem.ID, storageItem.Metadata)
+				err = t.Storage.ProcessPassword(context.Background(), storageItem.ID, storageItem.Metadata)
 			}
 
 			if err != nil {
-				t.logger.Error().Err(err).Msg("Failed to process metadata")
+				t.Logger.Error().Err(err).Msg("Failed to process metadata")
 
 				return
 			}
 
-			t.logger.Info().Msg("Metadata added successfully")
+			t.Logger.Info().Msg("Metadata added successfully")
 			backFunc() // Refresh details
 		}).
 		AddButton("Cancel", backFunc)
 
 	form.SetTitle("➕ Add Metadata").SetBorder(true)
-	t.app.SetRoot(form, true)
+	t.App.SetRoot(form, true)
 }
 
 // showRemoveMetadataForm allows the user to remove metadata from a password.
@@ -59,9 +59,9 @@ func (t *TUI) showRemoveMetadataForm(storageItem model.StorageItem, backFunc fun
 		AddButton("Delete", func() {
 			key := form.GetFormItem(0).(*tview.InputField).GetText()
 
-			ok, err := t.facade.DeleteMetainfo(context.Background(), storageItem.ID, key)
+			ok, err := t.Facade.DeleteMetainfo(context.Background(), storageItem.ID, key)
 			if !ok || err != nil {
-				t.logger.Error().Err(err).Msg("Failed to remove metadata")
+				t.Logger.Error().Err(err).Msg("Failed to remove metadata")
 
 				return
 			}
@@ -70,24 +70,24 @@ func (t *TUI) showRemoveMetadataForm(storageItem model.StorageItem, backFunc fun
 
 			switch storageItem.Type {
 			case model.ItemTypeCard:
-				err = t.storage.ProcessCard(context.Background(), storageItem.ID, storageItem.Metadata)
+				err = t.Storage.ProcessCard(context.Background(), storageItem.ID, storageItem.Metadata)
 			case model.ItemTypeNote:
-				err = t.storage.ProcessNote(context.Background(), storageItem.ID, storageItem.Metadata)
+				err = t.Storage.ProcessNote(context.Background(), storageItem.ID, storageItem.Metadata)
 			case model.ItemTypePassword:
-				err = t.storage.ProcessPassword(context.Background(), storageItem.ID, storageItem.Metadata)
+				err = t.Storage.ProcessPassword(context.Background(), storageItem.ID, storageItem.Metadata)
 			}
 
 			if err != nil {
-				t.logger.Error().Err(err).Msg("Failed to process metadata")
+				t.Logger.Error().Err(err).Msg("Failed to process metadata")
 
 				return
 			}
 
-			t.logger.Info().Msg("Metadata removed successfully")
+			t.Logger.Info().Msg("Metadata removed successfully")
 			backFunc() // Refresh details
 		}).
 		AddButton("Cancel", backFunc)
 
 	form.SetTitle("🗑 Remove Metadata").SetBorder(true)
-	t.app.SetRoot(form, true)
+	t.App.SetRoot(form, true)
 }

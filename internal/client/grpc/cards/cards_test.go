@@ -292,3 +292,13 @@ func TestDeleteCard_NotOk(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, ok)
 }
+
+func TestNewCardsClient(t *testing.T) {
+
+	tm := new(testutils.MockTokenManager)
+	logger := zerolog.Nop()
+
+	client := cards.NewCardClient(nil, tm, &logger)
+
+	assert.NotNil(t, client)
+}

@@ -11,32 +11,33 @@ import (
 	"github.com/npavlov/go-password-manager/internal/client/model"
 )
 
-// showBinaryList displays stored binary files.
-func (t *TUI) showBinaryList() {
+// ShowBinaryList displays stored binary files.
+func (t *TUI) ShowBinaryList() *tview.List {
 	list := tview.NewList()
 
-	for _, file := range t.storage.GetBinaries() {
+	for _, file := range t.Storage.GetBinaries() {
 		binCopy := file
 		filename := file.Filename
 		list.AddItem(filename, "(Press Enter to view details)", 0, func() {
-			t.showBinaryDetails(binCopy)
+			t.SetRoot(t.ShowBinaryDetails(binCopy), true)
 		})
 	}
 
 	list.AddItem("➕ Upload File", "Add a new binary file", 'u', func() {
-		t.showUploadBinaryForm()
+		t.SetRoot(t.ShowUploadBinaryForm(), true)
 	})
 
 	list.AddItem("⬅ Back", "Return to main menu", 'b', func() {
-		t.app.SetRoot(t.mainMenu(), true)
+		t.SetRoot(t.MainMenu(), true)
 	})
 
 	list.SetTitle("📦 Binary Files").SetBorder(true)
-	t.app.SetRoot(list, true)
+
+	return list
 }
 
-// showBinaryDetails displays metadata and allows download.
-func (t *TUI) showBinaryDetails(file model.BinaryItem) {
+// ShowBinaryDetails displays metadata and allows download.
+func (t *TUI) ShowBinaryDetails(file model.BinaryItem) *tview.Flex {
 	flex := tview.NewFlex().SetDirection(tview.FlexRow)
 
 	textView := tview.NewTextView().
@@ -50,46 +51,46 @@ func (t *TUI) showBinaryDetails(file model.BinaryItem) {
 			filePath := filepath.Join("tmp", file.Filename)
 			outFile, err := os.Create(filePath)
 			if err != nil {
-				t.logger.Error().Err(err).Msg("error creating file")
+				t.Logger.Error().Err(err).Msg("error creating file")
 			}
 			defer outFile.Close()
 
-			err = t.facade.DownloadBinary(context.Background(), file.ID, outFile)
+			err = t.Facade.DownloadBinary(context.Background(), file.ID, outFile)
 
 			if err != nil {
-				t.logger.Error().Err(err).Msg("Error writing file")
+				t.Logger.Error().Err(err).Msg("Error writing file")
 			} else {
-				t.logger.Info().Msgf("File saved to: %s", filePath)
+				t.Logger.Info().Msgf("File saved to: %s", filePath)
 
 				textView.SetTitle("File saved to: " + file.Filename)
 			}
 		}).
 		AddItem("🗑 Remove Binary", "Delete this file", 'r', func() {
-			t.showRemoveBinaryForm(file)
+			t.SetRoot(t.ShowRemoveBinaryForm(file), true)
 		}).
 		AddItem("➕ Add Metadata", "Attach metadata to this note", 'm', func() {
 			t.showAddMetadataForm(file.StorageItem, func() {
-				t.showBinaryDetails(file)
+				t.SetRoot(t.ShowBinaryDetails(file), true)
 			})
 		}).
 		AddItem("🗑 Remove Metadata", "Delete metadata entry", 'r', func() {
 			t.showRemoveMetadataForm(file.StorageItem, func() {
-				t.showBinaryDetails(file)
+				t.SetRoot(t.ShowBinaryDetails(file), true)
 			})
 		}).
 		AddItem("⬅ Back", "Return to list", 'b', func() {
-			t.showBinaryList()
+			t.SetRoot(t.ShowBinaryList(), true)
 		})
 
 	menu.SetBorder(true).SetTitle("⚙ Actions")
 	flex.AddItem(textView, 0, 1, false)
 	flex.AddItem(menu, 0, 1, true)
 
-	t.app.SetRoot(flex, true)
+	return flex
 }
 
-// showUploadBinaryForm uploads a new file.
-func (t *TUI) showUploadBinaryForm() {
+// ShowUploadBinaryForm uploads a new file.
+func (t *TUI) ShowUploadBinaryForm() *tview.Form {
 	form := tview.NewForm()
 
 	form.AddInputField("Local file path", "", 40, nil, nil).
@@ -98,7 +99,7 @@ func (t *TUI) showUploadBinaryForm() {
 
 			file, err := os.Open(path)
 			if err != nil {
-				t.logger.Error().Err(err).Msg("Failed to open file")
+				t.Logger.Error().Err(err).Msg("Failed to open file")
 
 				return
 			}
@@ -106,53 +107,55 @@ func (t *TUI) showUploadBinaryForm() {
 
 			filename := filepath.Base(path)
 
-			id, err := t.facade.UploadBinary(context.Background(), filename, file)
+			id, err := t.Facade.UploadBinary(context.Background(), filename, file)
 			if err != nil {
-				t.logger.Error().Err(err).Msg("Failed to store binary")
+				t.Logger.Error().Err(err).Msg("Failed to store binary")
 
 				return
 			}
 
-			err = t.storage.ProcessBinary(context.Background(), id, map[string]string{})
+			err = t.Storage.ProcessBinary(context.Background(), id, map[string]string{})
 			if err != nil {
-				t.logger.Error().Err(err).Msg("Failed to update storage")
+				t.Logger.Error().Err(err).Msg("Failed to update storage")
 
 				return
 			}
 
-			t.logger.Info().Msgf("Binary uploaded: %s", filename)
-			t.showBinaryList()
+			t.Logger.Info().Msgf("Binary uploaded: %s", filename)
+			t.SetRoot(t.ShowBinaryList(), true)
+
 		}).
 		AddButton("Cancel", func() {
-			t.showBinaryList()
+			t.SetRoot(t.ShowBinaryList(), true)
 		})
 
 	form.SetTitle("➕ Upload Binary").SetBorder(true)
-	t.app.SetRoot(form, true)
+
+	return form
 }
 
-// showRemoveBinaryForm prompts for binary deletion.
-func (t *TUI) showRemoveBinaryForm(file model.BinaryItem) {
+// ShowRemoveBinaryForm prompts for binary deletion.
+func (t *TUI) ShowRemoveBinaryForm(file model.BinaryItem) *tview.Modal {
 	confirmation := tview.NewModal().
 		SetText(fmt.Sprintf("Delete '%s'?", file.Filename)).
 		AddButtons([]string{"Yes", "No"}).
 		SetDoneFunc(func(i int, label string) {
 			if label == "Yes" {
-				ok, err := t.facade.DeleteBinary(context.Background(), file.ID)
+				ok, err := t.Facade.DeleteBinary(context.Background(), file.ID)
 				if !ok || err != nil {
-					t.logger.Error().Err(err).Msg("Failed to delete binary")
+					t.Logger.Error().Err(err).Msg("Failed to delete binary")
 
 					return
 				}
 
-				t.storage.DeleteBinary(file.ID)
+				t.Storage.DeleteBinary(file.ID)
 
-				t.logger.Info().Msgf("Binary removed: %s", file.Filename)
-				t.showBinaryList()
+				t.Logger.Info().Msgf("Binary removed: %s", file.Filename)
+				t.SetRoot(t.ShowBinaryList(), true)
 			} else {
-				t.showBinaryDetails(file)
+				t.SetRoot(t.ShowBinaryDetails(file), true)
 			}
 		})
 
-	t.app.SetRoot(confirmation, true)
+	return confirmation
 }

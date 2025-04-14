@@ -60,7 +60,7 @@ func main() {
 	tuiView := tui.NewTUI(app, facadeClient, storageManager, tokenManager, &log)
 	tokenManager.SetAuthFailCallback(tuiView.ResetToLoginScreen)
 	// Start TUI
-	if err := tuiView.Run(); err != nil {
+	if err := tuiView.GetApp().Run(); err != nil {
 		log.Fatal().Err(err).Msg("Failed to run tui")
 	}
 

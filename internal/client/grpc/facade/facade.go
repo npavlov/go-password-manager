@@ -24,7 +24,7 @@ import (
 	tokenMgr "github.com/npavlov/go-password-manager/internal/client/auth"
 )
 
-// Client interfaces for all dependencies
+// AuthClient Client interfaces for all dependencies
 type AuthClient interface {
 	Login(username, password string) error
 	Register(username, password, email string) (string, error)

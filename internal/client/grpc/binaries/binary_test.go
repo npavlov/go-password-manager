@@ -209,3 +209,13 @@ func TestGetFile_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, meta, file)
 }
+
+func TestNewBinaryClient(t *testing.T) {
+
+	tm := new(testutils.MockTokenManager)
+	logger := zerolog.Nop()
+
+	client := binary.NewBinaryClient(nil, tm, &logger)
+
+	assert.NotNil(t, client)
+}

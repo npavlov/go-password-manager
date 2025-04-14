@@ -9,34 +9,35 @@ import (
 	"github.com/npavlov/go-password-manager/internal/client/model"
 )
 
-// showCardList displays stored cards.
-func (t *TUI) showCardList() {
+// ShowCardList displays stored cards.
+func (t *TUI) ShowCardList() *tview.List {
 	list := tview.NewList()
 
-	for _, card := range t.storage.GetCards() {
+	for _, card := range t.Storage.GetCards() {
 		cardCopy := card
 
 		cardNumber := FormatCardNumber(card.CardNumber)
 
 		list.AddItem(cardNumber, "(Press Enter to view details)", 0, func() {
-			t.showCardDetails(cardCopy)
+			t.App.SetRoot(t.ShowCardDetails(cardCopy), true)
 		})
 	}
 
 	list.AddItem("➕ Add Card", "Create a new card entry", 'a', func() {
-		t.showAddCardForm()
+		t.App.SetRoot(t.ShowAddCardForm(), true)
 	})
 
 	list.AddItem("⬅ Back", "Return to main menu", 'b', func() {
-		t.app.SetRoot(t.mainMenu(), true)
+		t.App.SetRoot(t.MainMenu(), true)
 	})
 
 	list.SetTitle("💳 Cards").SetBorder(true)
-	t.app.SetRoot(list, true)
+
+	return list
 }
 
-// showCardDetails displays metadata of a selected card.
-func (t *TUI) showCardDetails(card model.CardItem) {
+// ShowCardDetails displays metadata of a selected card.
+func (t *TUI) ShowCardDetails(card model.CardItem) *tview.TextView {
 	flex := tview.NewFlex().SetDirection(tview.FlexRow)
 
 	textView := tview.NewTextView()
@@ -45,9 +46,9 @@ func (t *TUI) showCardDetails(card model.CardItem) {
 		card.CardNumber, card.ExpiryDate, card.CVV,
 	))
 
-	metainfo, err := t.facade.GetMetainfo(context.Background(), card.ID)
+	metainfo, err := t.Facade.GetMetainfo(context.Background(), card.ID)
 	if err != nil {
-		t.logger.Error().Err(err).Msg("Error getting metainfo")
+		t.Logger.Error().Err(err).Msg("Error getting metainfo")
 		textView.SetText(textView.GetText(false) + "\n❌ Error loading metadata")
 	} else {
 		for key, value := range metainfo {
@@ -59,23 +60,23 @@ func (t *TUI) showCardDetails(card model.CardItem) {
 
 	menu := tview.NewList().
 		AddItem("✏ Edit Card", "Update this card", 'e', func() {
-			t.showEditCardForm(card)
+			t.SetRoot(t.ShowEditCardForm(card), true)
 		}).
 		AddItem("🗑 Remove Card", "Delete this card", 'd', func() {
-			t.showRemoveCardForm(card)
+			t.SetRoot(t.ShowRemoveCardForm(card), true)
 		}).
 		AddItem("➕ Add Metadata", "Attach metadata to this card", 'm', func() {
 			t.showAddMetadataForm(card.StorageItem, func() {
-				t.showCardDetails(card)
+				t.SetRoot(t.ShowCardDetails(card), true)
 			})
 		}).
 		AddItem("🗑 Remove Metadata", "Delete metadata entry", 'r', func() {
 			t.showRemoveMetadataForm(card.StorageItem, func() {
-				t.showCardDetails(card)
+				t.SetRoot(t.ShowCardDetails(card), true)
 			})
 		}).
 		AddItem("⬅ Back", "Return to card list", 'b', func() {
-			t.showCardList()
+			t.SetRoot(t.ShowCardList(), true)
 		})
 
 	menu.SetBorder(true).SetTitle("⚙ Actions")
@@ -83,11 +84,11 @@ func (t *TUI) showCardDetails(card model.CardItem) {
 	flex.AddItem(textView, 0, 1, false)
 	flex.AddItem(menu, 0, 1, true)
 
-	t.app.SetRoot(flex, true)
+	return textView
 }
 
-// showAddCardForm creates a form for new card entry.
-func (t *TUI) showAddCardForm() {
+// ShowAddCardForm creates a form for new card entry.
+func (t *TUI) ShowAddCardForm() *tview.Form {
 	form := tview.NewForm()
 
 	form.AddInputField("Card Number", "", 30, nil, nil).
@@ -100,33 +101,34 @@ func (t *TUI) showAddCardForm() {
 			cvv := form.GetFormItem(2).(*tview.InputField).GetText()
 			cardHolder := form.GetFormItem(3).(*tview.InputField).GetText()
 
-			cardID, err := t.facade.StoreCard(context.Background(), cardNum, expiry, cvv, cardHolder)
+			cardID, err := t.Facade.StoreCard(context.Background(), cardNum, expiry, cvv, cardHolder)
 			if err != nil {
-				t.logger.Error().Err(err).Msg("Failed to add card")
+				t.Logger.Error().Err(err).Msg("Failed to add card")
 
 				return
 			}
 
-			err = t.storage.ProcessCard(context.Background(), cardID, map[string]string{})
+			err = t.Storage.ProcessCard(context.Background(), cardID, map[string]string{})
 			if err != nil {
-				t.logger.Error().Err(err).Msg("Failed to store card")
+				t.Logger.Error().Err(err).Msg("Failed to store card")
 
 				return
 			}
 
-			t.logger.Info().Msg("Card added successfully")
-			t.showCardList()
+			t.Logger.Info().Msg("Card added successfully")
+			t.SetRoot(t.ShowCardList(), true)
 		}).
 		AddButton("Cancel", func() {
-			t.showCardList()
+			t.SetRoot(t.ShowCardList(), true)
 		})
 
 	form.SetTitle("➕ Add New Card").SetBorder(true)
-	t.app.SetRoot(form, true)
+
+	return form
 }
 
-// showEditCardForm lets user update card info.
-func (t *TUI) showEditCardForm(card model.CardItem) {
+// ShowEditCardForm lets user update card info.
+func (t *TUI) ShowEditCardForm(card model.CardItem) *tview.Form {
 	form := tview.NewForm()
 
 	form.AddInputField("Card Number", card.CardNumber, 30, nil, nil).
@@ -139,52 +141,53 @@ func (t *TUI) showEditCardForm(card model.CardItem) {
 			cvv := form.GetFormItem(2).(*tview.InputField).GetText()
 			cardHolder := form.GetFormItem(3).(*tview.InputField).GetText()
 
-			err := t.facade.UpdateCard(context.Background(), card.ID, cardNum, expiry, cvv, cardHolder)
+			err := t.Facade.UpdateCard(context.Background(), card.ID, cardNum, expiry, cvv, cardHolder)
 			if err != nil {
-				t.logger.Error().Err(err).Msg("Failed to update card")
+				t.Logger.Error().Err(err).Msg("Failed to update card")
 
 				return
 			}
 
-			err = t.storage.ProcessCard(context.Background(), card.ID, card.Metadata)
+			err = t.Storage.ProcessCard(context.Background(), card.ID, card.Metadata)
 			if err != nil {
-				t.logger.Error().Err(err).Msg("Failed to update local card")
+				t.Logger.Error().Err(err).Msg("Failed to update local card")
 
 				return
 			}
 
-			t.logger.Info().Msg("Card updated successfully")
-			t.showCardDetails(card)
+			t.Logger.Info().Msg("Card updated successfully")
+			t.App.SetRoot(t.ShowCardDetails(card), true)
 		}).
 		AddButton("Cancel", func() {
-			t.showCardDetails(card)
+			t.SetRoot(t.ShowCardDetails(card), true)
 		})
 
 	form.SetTitle("✏ Edit Card").SetBorder(true)
-	t.app.SetRoot(form, true)
+
+	return form
 }
 
-// showRemoveCardForm confirmation before delete.
-func (t *TUI) showRemoveCardForm(card model.CardItem) {
+// ShowRemoveCardForm confirmation before delete.
+func (t *TUI) ShowRemoveCardForm(card model.CardItem) *tview.Modal {
 	confirmation := tview.NewModal().
 		SetText(fmt.Sprintf("Are you sure you want to delete the card %s?", card.CardNumber)).
 		AddButtons([]string{"Yes", "No"}).
 		SetDoneFunc(func(buttonIndex int, label string) {
 			if label == "Yes" {
-				ok, err := t.facade.DeleteCard(context.Background(), card.ID)
+				ok, err := t.Facade.DeleteCard(context.Background(), card.ID)
 				if !ok || err != nil {
-					t.logger.Error().Err(err).Msg("Failed to delete card")
+					t.Logger.Error().Err(err).Msg("Failed to delete card")
 
 					return
 				}
 
-				t.storage.DeleteCards(card.ID)
-				t.logger.Info().Msg("Card removed successfully")
-				t.showCardList()
+				t.Storage.DeleteCards(card.ID)
+				t.Logger.Info().Msg("Card removed successfully")
+				t.SetRoot(t.ShowCardList(), true)
 			} else {
-				t.showCardDetails(card)
+				t.SetRoot(t.ShowCardDetails(card), true)
 			}
 		})
 
-	t.app.SetRoot(confirmation, true)
+	return confirmation
 }

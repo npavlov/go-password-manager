@@ -4,11 +4,12 @@ import "github.com/stretchr/testify/mock"
 
 type MockTokenManager struct {
 	mock.Mock
+	Authorized bool
 }
 
 func (m *MockTokenManager) GetAccessToken() string {
 	args := m.Called()
-	
+
 	return args.String(0)
 }
 
@@ -33,10 +34,11 @@ func (m *MockTokenManager) UpdateTokens(access, refresh string) error {
 }
 
 func (m *MockTokenManager) IsAuthorized() bool {
-	return m.Called().Bool(0)
+	return m.Authorized
 }
 
 func (m *MockTokenManager) HandleAuthFailure() {
+	m.Authorized = false
 	m.Called()
 }
 

@@ -153,3 +153,13 @@ func TestLogin_TokenUpdateFails(t *testing.T) {
 
 	assert.Error(t, err)
 }
+
+func TestNewBinaryClient(t *testing.T) {
+
+	tm := new(testutils.MockTokenManager)
+	logger := zerolog.Nop()
+
+	client := auth.NewAuthClient(nil, tm, &logger)
+
+	assert.NotNil(t, client)
+}

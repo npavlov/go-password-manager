@@ -225,3 +225,13 @@ func TestDeleteNote_NotSuccessful(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, ok)
 }
+
+func TestNewNoteClient(t *testing.T) {
+
+	tm := new(testutils.MockTokenManager)
+	logger := zerolog.Nop()
+
+	client := notes.NewNoteClient(nil, tm, &logger)
+
+	assert.NotNil(t, client)
+}
