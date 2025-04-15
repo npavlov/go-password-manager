@@ -69,14 +69,20 @@ func (t *TUI) ShowBinaryDetails(file model.BinaryItem) *tview.Flex {
 			t.SetRoot(t.ShowRemoveBinaryForm(file), true)
 		}).
 		AddItem("➕ Add Metadata", "Attach metadata to this note", 'm', func() {
-			t.showAddMetadataForm(file.StorageItem, func() {
-				t.SetRoot(t.ShowBinaryDetails(file), true)
-			})
+			t.SetRoot(
+				t.ShowAddMetadataForm(file.StorageItem, func() {
+					t.SetRoot(t.ShowBinaryDetails(file), true)
+				}),
+				true,
+			)
 		}).
 		AddItem("🗑 Remove Metadata", "Delete metadata entry", 'r', func() {
-			t.showRemoveMetadataForm(file.StorageItem, func() {
-				t.SetRoot(t.ShowBinaryDetails(file), true)
-			})
+			t.SetRoot(
+				t.ShowRemoveMetadataForm(file.StorageItem, func() {
+					t.SetRoot(t.ShowBinaryDetails(file), true)
+				}),
+				true,
+			)
 		}).
 		AddItem("⬅ Back", "Return to list", 'b', func() {
 			t.SetRoot(t.ShowBinaryList(), true)

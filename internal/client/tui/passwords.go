@@ -9,32 +9,33 @@ import (
 	"github.com/npavlov/go-password-manager/internal/client/model"
 )
 
-// showPasswordList displays stored passwords.
-func (t *TUI) showPasswordList() {
+// ShowPasswordList displays stored passwords.
+func (t *TUI) ShowPasswordList() *tview.List {
 	list := tview.NewList()
 
 	// List stored passwords
 	for _, pass := range t.Storage.GetPasswords() {
 		passCopy := pass // Avoid closure issues
 		list.AddItem(pass.Login, "(Press Enter to view details)", 0, func() {
-			t.showPasswordDetails(passCopy)
+			t.SetRoot(t.ShowPasswordDetails(passCopy), true)
 		})
 	}
 
 	// Option to add a new password
 	list.AddItem("➕ Add Password", "Create a new password entry", 'a', func() {
-		t.showAddPasswordForm()
+		t.SetRoot(t.ShowAddPasswordForm(), true)
 	})
 
 	// Back button
 	list.AddItem("⬅ Back", "Return to main menu", 'b', func() { t.App.SetRoot(t.MainMenu(), true) })
 
 	list.SetTitle("🔐 Passwords").SetBorder(true)
-	t.App.SetRoot(list, true)
+
+	return list
 }
 
-// showPasswordDetails displays metadata of a selected password.
-func (t *TUI) showPasswordDetails(pass model.PasswordItem) {
+// ShowPasswordDetails displays metadata of a selected password.
+func (t *TUI) ShowPasswordDetails(pass model.PasswordItem) *tview.Flex {
 	flex := tview.NewFlex().SetDirection(tview.FlexRow)
 
 	// Password details view
@@ -57,22 +58,30 @@ func (t *TUI) showPasswordDetails(pass model.PasswordItem) {
 	// Action menu for metadata
 	menu := tview.NewList().
 		AddItem("✏ Change Password", "Update this password", 'c', func() {
-			t.showChangePasswordForm(pass)
+			t.SetRoot(t.ShowChangePasswordForm(pass), true)
 		}).
 		AddItem("🗑Remove Password", "Remove this password", 'c', func() {
-			t.showRemovePasswordForm(pass)
+			t.SetRoot(t.ShowRemovePasswordForm(pass), true)
 		}).
 		AddItem("➕ Add Metadata", "Attach new metadata to this password", 'm', func() {
-			t.showAddMetadataForm(pass.StorageItem, func() {
-				t.showPasswordDetails(pass)
-			})
+			t.SetRoot(
+				t.ShowAddMetadataForm(pass.StorageItem, func() {
+					t.SetRoot(t.ShowPasswordDetails(pass), true)
+				}),
+				true)
+
 		}).
 		AddItem("🗑 Remove Metadata", "Delete metadata entry", 'r', func() {
-			t.showRemoveMetadataForm(pass.StorageItem, func() {
-				t.showPasswordDetails(pass)
-			})
+			t.SetRoot(
+				t.ShowRemoveMetadataForm(pass.StorageItem, func() {
+					t.SetRoot(t.ShowPasswordDetails(pass), true)
+				}),
+				true,
+			)
 		}).
-		AddItem("⬅ Back", "Return to password list", 'b', func() { t.showPasswordList() })
+		AddItem("⬅ Back", "Return to password list", 'b', func() {
+			t.SetRoot(t.ShowPasswordList(), true)
+		})
 
 	menu.SetBorder(true).SetTitle("⚙ Actions")
 
@@ -80,11 +89,11 @@ func (t *TUI) showPasswordDetails(pass model.PasswordItem) {
 	flex.AddItem(textView, 0, 1, false)
 	flex.AddItem(menu, 0, 1, true)
 
-	t.App.SetRoot(flex, true)
+	return flex
 }
 
-// showChangePasswordForm allows the user to update a password.
-func (t *TUI) showChangePasswordForm(pass model.PasswordItem) {
+// ShowChangePasswordForm allows the user to update a password.
+func (t *TUI) ShowChangePasswordForm(pass model.PasswordItem) *tview.Form {
 	form := tview.NewForm()
 
 	form.AddInputField("New login", pass.Login, 30, nil, nil).
@@ -109,16 +118,17 @@ func (t *TUI) showChangePasswordForm(pass model.PasswordItem) {
 			}
 
 			t.Logger.Info().Msg("Password changed successfully")
-			t.showPasswordDetails(pass) // Refresh details
+			t.SetRoot(t.ShowPasswordDetails(pass), true) // Refresh details
 		}).
-		AddButton("Cancel", func() { t.showPasswordDetails(pass) })
+		AddButton("Cancel", func() { t.SetRoot(t.ShowPasswordDetails(pass), true) })
 
 	form.SetTitle("✏ Change Password").SetBorder(true)
-	t.App.SetRoot(form, true)
+
+	return form
 }
 
-// showAddPasswordForm displays a form to add a new password entry.
-func (t *TUI) showAddPasswordForm() {
+// ShowAddPasswordForm displays a form to add a new password entry.
+func (t *TUI) ShowAddPasswordForm() *tview.Form {
 	form := tview.NewForm()
 
 	form.AddInputField("Username", "", 30, nil, nil).
@@ -143,16 +153,17 @@ func (t *TUI) showAddPasswordForm() {
 			}
 
 			t.Logger.Info().Msg("Password added successfully")
-			t.showPasswordList() // Refresh list
+			t.SetRoot(t.ShowPasswordList(), true) // Refresh list
 		}).
-		AddButton("Cancel", func() { t.showPasswordList() })
+		AddButton("Cancel", func() { t.SetRoot(t.ShowPasswordList(), true) })
 
 	form.SetTitle("➕ Add New Password").SetBorder(true)
-	t.App.SetRoot(form, true)
+
+	return form
 }
 
-// showRemovePasswordForm displays a confirmation dialog before removing a password.
-func (t *TUI) showRemovePasswordForm(pass model.PasswordItem) {
+// ShowRemovePasswordForm displays a confirmation dialog before removing a password.
+func (t *TUI) ShowRemovePasswordForm(pass model.PasswordItem) *tview.Modal {
 	confirmation := tview.NewModal().
 		SetText(fmt.Sprintf("Are you sure you want to delete the password for %s?", pass.Login)).
 		AddButtons([]string{"Yes", "No"}).
@@ -168,11 +179,11 @@ func (t *TUI) showRemovePasswordForm(pass model.PasswordItem) {
 				t.Storage.DeletePassword(pass.ID)
 
 				t.Logger.Info().Msg("Password removed successfully")
-				t.showPasswordList()
+				t.SetRoot(t.ShowPasswordList(), true)
 			} else {
-				t.showPasswordDetails(pass)
+				t.SetRoot(t.ShowPasswordDetails(pass), true)
 			}
 		})
 
-	t.App.SetRoot(confirmation, true)
+	return confirmation
 }

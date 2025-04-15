@@ -66,14 +66,19 @@ func (t *TUI) ShowCardDetails(card model.CardItem) *tview.TextView {
 			t.SetRoot(t.ShowRemoveCardForm(card), true)
 		}).
 		AddItem("➕ Add Metadata", "Attach metadata to this card", 'm', func() {
-			t.showAddMetadataForm(card.StorageItem, func() {
-				t.SetRoot(t.ShowCardDetails(card), true)
-			})
+			t.SetRoot(
+				t.ShowAddMetadataForm(card.StorageItem, func() {
+					t.SetRoot(t.ShowCardDetails(card), true)
+				}),
+				true,
+			)
 		}).
 		AddItem("🗑 Remove Metadata", "Delete metadata entry", 'r', func() {
-			t.showRemoveMetadataForm(card.StorageItem, func() {
-				t.SetRoot(t.ShowCardDetails(card), true)
-			})
+			t.SetRoot(
+				t.ShowRemoveMetadataForm(card.StorageItem, func() {
+					t.SetRoot(t.ShowCardDetails(card), true)
+				}), true,
+			)
 		}).
 		AddItem("⬅ Back", "Return to card list", 'b', func() {
 			t.SetRoot(t.ShowCardList(), true)

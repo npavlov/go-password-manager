@@ -49,8 +49,12 @@ func (t *TUI) MainMenu() *tview.List {
 	menu := tview.NewList()
 
 	if t.TokenMgr.IsAuthorized() {
-		menu.AddItem("Passwords", "View and manage stored passwords", 'p', t.showPasswordList)
-		menu.AddItem("Notes", "View and manage notes", 'n', t.showNoteList)
+		menu.AddItem("Passwords", "View and manage stored passwords", 'p', func() {
+			t.SetRoot(t.ShowPasswordList(), true)
+		})
+		menu.AddItem("Notes", "View and manage notes", 'n', func() {
+			t.SetRoot(t.ShowNoteList(), true)
+		})
 		menu.AddItem("Cards", "View and manage cards", 'c', func() {
 			t.SetRoot(t.ShowCardList(), true)
 		})

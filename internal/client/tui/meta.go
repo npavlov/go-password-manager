@@ -8,8 +8,8 @@ import (
 	"github.com/npavlov/go-password-manager/internal/client/model"
 )
 
-// showAddMetadataForm allows the user to add metadata to an item.
-func (t *TUI) showAddMetadataForm(storageItem model.StorageItem, backFunc func()) {
+// ShowAddMetadataForm allows the user to add metadata to an item.
+func (t *TUI) ShowAddMetadataForm(storageItem model.StorageItem, backFunc func()) *tview.Form {
 	form := tview.NewForm()
 
 	form.AddInputField("Key", "", 20, nil, nil).
@@ -48,11 +48,12 @@ func (t *TUI) showAddMetadataForm(storageItem model.StorageItem, backFunc func()
 		AddButton("Cancel", backFunc)
 
 	form.SetTitle("➕ Add Metadata").SetBorder(true)
-	t.App.SetRoot(form, true)
+
+	return form
 }
 
-// showRemoveMetadataForm allows the user to remove metadata from a password.
-func (t *TUI) showRemoveMetadataForm(storageItem model.StorageItem, backFunc func()) {
+// ShowRemoveMetadataForm allows the user to remove metadata from a password.
+func (t *TUI) ShowRemoveMetadataForm(storageItem model.StorageItem, backFunc func()) *tview.Form {
 	form := tview.NewForm()
 
 	form.AddInputField("Key", "", 20, nil, nil).
@@ -89,5 +90,6 @@ func (t *TUI) showRemoveMetadataForm(storageItem model.StorageItem, backFunc fun
 		AddButton("Cancel", backFunc)
 
 	form.SetTitle("🗑 Remove Metadata").SetBorder(true)
-	t.App.SetRoot(form, true)
+
+	return form
 }

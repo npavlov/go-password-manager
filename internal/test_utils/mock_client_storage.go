@@ -109,6 +109,7 @@ func (m *MockStorageManager) ProcessBinary(ctx context.Context, fileID string, m
 
 func (m *MockStorageManager) StartBackgroundSync(ctx context.Context) {
 	if m.StartBackgroundSyncFunc != nil {
+		m.Called()
 		m.StartBackgroundSyncFunc(ctx)
 	}
 }

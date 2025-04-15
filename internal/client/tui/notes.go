@@ -9,18 +9,18 @@ import (
 	"github.com/npavlov/go-password-manager/internal/client/model"
 )
 
-func (t *TUI) showNoteList() {
+func (t *TUI) ShowNoteList() *tview.List {
 	list := tview.NewList()
 
 	for _, note := range t.Storage.GetNotes() {
 		noteCopy := note
 		list.AddItem(note.Content, "(Press Enter to view details)", 0, func() {
-			t.showNoteDetails(noteCopy)
+			t.SetRoot(t.ShowNoteDetails(noteCopy), true)
 		})
 	}
 
 	list.AddItem("➕ Add Note", "Create a new note", 'a', func() {
-		t.showAddNoteForm()
+		t.App.SetRoot(t.ShowAddNoteForm(), true)
 	})
 
 	list.AddItem("⬅ Back", "Return to main menu", 'b', func() {
@@ -28,10 +28,11 @@ func (t *TUI) showNoteList() {
 	})
 
 	list.SetTitle("📝 Notes").SetBorder(true)
-	t.App.SetRoot(list, true)
+
+	return list
 }
 
-func (t *TUI) showNoteDetails(note model.NoteItem) {
+func (t *TUI) ShowNoteDetails(note model.NoteItem) *tview.Flex {
 	flex := tview.NewFlex().SetDirection(tview.FlexRow)
 
 	textView := tview.NewTextView()
@@ -54,20 +55,26 @@ func (t *TUI) showNoteDetails(note model.NoteItem) {
 
 	menu := tview.NewList().
 		AddItem("🗑 Remove Card", "Delete this note", 'd', func() {
-			t.showRemoveNoteForm(note)
+			t.SetRoot(t.ShowRemoveNoteForm(note), true)
 		}).
 		AddItem("➕ Add Metadata", "Attach metadata to this note", 'm', func() {
-			t.showAddMetadataForm(note.StorageItem, func() {
-				t.showNoteDetails(note)
-			})
+			t.SetRoot(
+				t.ShowAddMetadataForm(note.StorageItem, func() {
+					t.SetRoot(t.ShowNoteDetails(note), true)
+				}),
+				true,
+			)
 		}).
 		AddItem("🗑 Remove Metadata", "Delete metadata entry", 'r', func() {
-			t.showRemoveMetadataForm(note.StorageItem, func() {
-				t.showNoteDetails(note)
-			})
+			t.SetRoot(
+				t.ShowRemoveMetadataForm(note.StorageItem, func() {
+					t.SetRoot(t.ShowNoteDetails(note), true)
+				}),
+				true,
+			)
 		}).
 		AddItem("⬅ Back", "Return to note list", 'b', func() {
-			t.showNoteList()
+			t.SetRoot(t.ShowNoteList(), true)
 		})
 
 	menu.SetBorder(true).SetTitle("⚙ Actions")
@@ -75,10 +82,10 @@ func (t *TUI) showNoteDetails(note model.NoteItem) {
 	flex.AddItem(textView, 0, 1, false)
 	flex.AddItem(menu, 0, 1, true)
 
-	t.App.SetRoot(flex, true)
+	return flex
 }
 
-func (t *TUI) showAddNoteForm() {
+func (t *TUI) ShowAddNoteForm() *tview.Form {
 	form := tview.NewForm()
 
 	form.
@@ -102,18 +109,18 @@ func (t *TUI) showAddNoteForm() {
 			}
 
 			t.Logger.Info().Msg("Note added successfully")
-			t.showNoteList()
+			t.SetRoot(t.ShowNoteList(), true)
 		}).
 		AddButton("Cancel", func() {
-			t.showNoteList()
+			t.SetRoot(t.ShowNoteList(), true)
 		}).
 		SetTitle("➕ Add New Note").
 		SetBorder(true)
 
-	t.App.SetRoot(form, true)
+	return form
 }
 
-func (t *TUI) showRemoveNoteForm(note model.NoteItem) {
+func (t *TUI) ShowRemoveNoteForm(note model.NoteItem) *tview.Modal {
 	confirmation := tview.NewModal().
 		SetText(fmt.Sprintf("Are you sure you want to delete the note titled '%s'?", note.Content)).
 		AddButtons([]string{"Yes", "No"}).
@@ -129,11 +136,11 @@ func (t *TUI) showRemoveNoteForm(note model.NoteItem) {
 				t.Storage.DeleteNotes(note.ID)
 
 				t.Logger.Info().Msg("Note removed successfully")
-				t.showNoteList()
+				t.SetRoot(t.ShowNoteList(), true)
 			} else {
-				t.showNoteDetails(note)
+				t.SetRoot(t.ShowNoteDetails(note), true)
 			}
 		})
 
-	t.App.SetRoot(confirmation, true)
+	return confirmation
 }
