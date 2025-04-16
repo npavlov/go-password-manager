@@ -1,3 +1,4 @@
+//nolint:dupl
 package storage_test
 
 import (
@@ -118,6 +119,8 @@ func TestRegisterUser(t *testing.T) {
 }
 
 func TestGetUser(t *testing.T) {
+	t.Parallel()
+	
 	tests := []struct {
 		name          string
 		username      string
@@ -173,6 +176,8 @@ func TestGetUser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			storage, mock := testutils.SetupDBStorage(t)
 			tt.mock(mock)
 
@@ -258,7 +263,7 @@ func TestGetUserById(t *testing.T) {
 			storage, mock := testutils.SetupDBStorage(t)
 			tt.mock(mock)
 
-			result, err := storage.GetUserById(t.Context(), tt.userId)
+			result, err := storage.GetUserByID(t.Context(), tt.userId)
 
 			if tt.wantErr {
 				require.Error(t, err)

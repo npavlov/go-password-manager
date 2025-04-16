@@ -5,19 +5,19 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/protovalidate-go"
-	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 
 	pb "github.com/npavlov/go-password-manager/gen/proto/metadata"
 	"github.com/npavlov/go-password-manager/internal/server/config"
+	"github.com/npavlov/go-password-manager/internal/server/db"
 )
 
 type Storage interface {
-	AddMeta(ctx context.Context, recordId string, key string, value string) (*db.Metainfo, error)
-	GetMetaInfo(ctx context.Context, recordId string) ([]db.GetMetaInfoByItemIDRow, error)
-	DeleteMetaInfo(ctx context.Context, key string, itemId string) error
+	AddMeta(ctx context.Context, recordID string, key string, value string) (*db.Metainfo, error)
+	GetMetaInfo(ctx context.Context, recordID string) ([]db.GetMetaInfoByItemIDRow, error)
+	DeleteMetaInfo(ctx context.Context, key string, itemID string) error
 }
 
 type Service struct {
@@ -63,7 +63,9 @@ func (ms *Service) AddMetaInfo(ctx context.Context, req *pb.AddMetaInfoRequest) 
 }
 
 // RemoveMetaInfo Remove a metadata key from an item.
-func (ms *Service) RemoveMetaInfo(ctx context.Context, req *pb.RemoveMetaInfoRequest) (*pb.RemoveMetaInfoResponse, error) {
+func (ms *Service) RemoveMetaInfo(ctx context.Context,
+	req *pb.RemoveMetaInfoRequest,
+) (*pb.RemoveMetaInfoResponse, error) {
 	if err := ms.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}

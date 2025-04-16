@@ -1,3 +1,4 @@
+//nolint:wrapcheck,err113
 package metainfo_test
 
 import (
@@ -5,13 +6,15 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/npavlov/go-password-manager/gen/proto/metadata"
-	"github.com/npavlov/go-password-manager/internal/client/grpc/metainfo"
-	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+
+	"github.com/npavlov/go-password-manager/gen/proto/metadata"
+	"github.com/npavlov/go-password-manager/internal/client/grpc/metainfo"
+	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 )
 
 // Mocks
@@ -24,7 +27,7 @@ type MockTokenManager struct {
 	mock.Mock
 }
 
-func (m *MockMetadataServiceClient) GetMetaInfo(ctx context.Context, in *metadata.GetMetaInfoRequest, opts ...grpc.CallOption) (*metadata.GetMetaInfoResponse, error) {
+func (m *MockMetadataServiceClient) GetMetaInfo(ctx context.Context, in *metadata.GetMetaInfoRequest, _ ...grpc.CallOption) (*metadata.GetMetaInfoResponse, error) {
 	args := m.Called(ctx, in)
 
 	// Safely handle nil to avoid type assertion panic
@@ -36,7 +39,7 @@ func (m *MockMetadataServiceClient) GetMetaInfo(ctx context.Context, in *metadat
 	return arg, args.Error(1)
 }
 
-func (m *MockMetadataServiceClient) AddMetaInfo(ctx context.Context, in *metadata.AddMetaInfoRequest, opts ...grpc.CallOption) (*metadata.AddMetaInfoResponse, error) {
+func (m *MockMetadataServiceClient) AddMetaInfo(ctx context.Context, in *metadata.AddMetaInfoRequest, _ ...grpc.CallOption) (*metadata.AddMetaInfoResponse, error) {
 	args := m.Called(ctx, in)
 
 	arg, ok := args.Get(0).(*metadata.AddMetaInfoResponse)
@@ -47,7 +50,7 @@ func (m *MockMetadataServiceClient) AddMetaInfo(ctx context.Context, in *metadat
 	return arg, args.Error(1)
 }
 
-func (m *MockMetadataServiceClient) RemoveMetaInfo(ctx context.Context, in *metadata.RemoveMetaInfoRequest, opts ...grpc.CallOption) (*metadata.RemoveMetaInfoResponse, error) {
+func (m *MockMetadataServiceClient) RemoveMetaInfo(ctx context.Context, in *metadata.RemoveMetaInfoRequest, _ ...grpc.CallOption) (*metadata.RemoveMetaInfoResponse, error) {
 	args := m.Called(ctx, in)
 
 	arg, ok := args.Get(0).(*metadata.RemoveMetaInfoResponse)
@@ -60,10 +63,13 @@ func (m *MockMetadataServiceClient) RemoveMetaInfo(ctx context.Context, in *meta
 
 func (m *MockTokenManager) GetToken() (string, error) {
 	args := m.Called()
+
 	return args.String(0), args.Error(1)
 }
 
 func TestGetMetainfo_Success(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockMetadataServiceClient)
 	logger := zerolog.Nop()
 
@@ -84,12 +90,14 @@ func TestGetMetainfo_Success(t *testing.T) {
 		Log:          &logger,
 	}
 
-	meta, err := client.GetMetainfo(context.Background(), "item123")
-	assert.NoError(t, err)
+	meta, err := client.GetMetainfo(t.Context(), "item123")
+	require.NoError(t, err)
 	assert.Equal(t, expectedMeta, meta)
 }
 
 func TestGetMetainfo_Error(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockMetadataServiceClient)
 	logger := zerolog.Nop()
 
@@ -103,12 +111,14 @@ func TestGetMetainfo_Error(t *testing.T) {
 		Log:          &logger,
 	}
 
-	_, err := client.GetMetainfo(context.Background(), "item123")
-	assert.Error(t, err)
+	_, err := client.GetMetainfo(t.Context(), "item123")
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "error getting metainfo")
 }
 
 func TestSetMetainfo_Success(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockMetadataServiceClient)
 	logger := zerolog.Nop()
 
@@ -130,12 +140,14 @@ func TestSetMetainfo_Success(t *testing.T) {
 		Log:          &logger,
 	}
 
-	success, err := client.SetMetainfo(context.Background(), "item123", meta)
-	assert.NoError(t, err)
+	success, err := client.SetMetainfo(t.Context(), "item123", meta)
+	require.NoError(t, err)
 	assert.True(t, success)
 }
 
 func TestSetMetainfo_Error(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockMetadataServiceClient)
 	logger := zerolog.Nop()
 
@@ -154,12 +166,14 @@ func TestSetMetainfo_Error(t *testing.T) {
 		Log:          &logger,
 	}
 
-	_, err := client.SetMetainfo(context.Background(), "item123", meta)
-	assert.Error(t, err)
+	_, err := client.SetMetainfo(t.Context(), "item123", meta)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "error setting metainfo")
 }
 
 func TestSetMetainfo_NotSuccessful(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockMetadataServiceClient)
 	logger := zerolog.Nop()
 
@@ -180,12 +194,14 @@ func TestSetMetainfo_NotSuccessful(t *testing.T) {
 		Log:          &logger,
 	}
 
-	success, err := client.SetMetainfo(context.Background(), "item123", meta)
-	assert.NoError(t, err)
+	success, err := client.SetMetainfo(t.Context(), "item123", meta)
+	require.NoError(t, err)
 	assert.False(t, success)
 }
 
 func TestDeleteMetainfo_Success(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockMetadataServiceClient)
 	logger := zerolog.Nop()
 
@@ -202,12 +218,14 @@ func TestDeleteMetainfo_Success(t *testing.T) {
 		Log:          &logger,
 	}
 
-	success, err := client.DeleteMetainfo(context.Background(), "item123", "key1")
-	assert.NoError(t, err)
+	success, err := client.DeleteMetainfo(t.Context(), "item123", "key1")
+	require.NoError(t, err)
 	assert.True(t, success)
 }
 
 func TestDeleteMetainfo_Error(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockMetadataServiceClient)
 	logger := zerolog.Nop()
 
@@ -222,12 +240,14 @@ func TestDeleteMetainfo_Error(t *testing.T) {
 		Log:          &logger,
 	}
 
-	_, err := client.DeleteMetainfo(context.Background(), "item123", "key1")
-	assert.Error(t, err)
+	_, err := client.DeleteMetainfo(t.Context(), "item123", "key1")
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "error deleting metainfo")
 }
 
 func TestDeleteMetainfo_NotSuccessful(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockMetadataServiceClient)
 	logger := zerolog.Nop()
 
@@ -244,12 +264,13 @@ func TestDeleteMetainfo_NotSuccessful(t *testing.T) {
 		Log:          &logger,
 	}
 
-	success, err := client.DeleteMetainfo(context.Background(), "item123", "key1")
-	assert.NoError(t, err)
+	success, err := client.DeleteMetainfo(t.Context(), "item123", "key1")
+	require.NoError(t, err)
 	assert.False(t, success)
 }
 
 func TestNewMetaClient(t *testing.T) {
+	t.Parallel()
 
 	tm := new(testutils.MockTokenManager)
 	logger := zerolog.Nop()

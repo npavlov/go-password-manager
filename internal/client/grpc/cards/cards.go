@@ -44,13 +44,13 @@ func (as *Client) GetCard(ctx context.Context, id string) (*pb.CardData, time.Ti
 	return resp.GetCard(), resp.GetLastUpdate().AsTime(), nil
 }
 
-func (as *Client) UpdateCard(ctx context.Context, id, cardNum, expDate, Cvv, cardHolder string) error {
+func (as *Client) UpdateCard(ctx context.Context, id, cardNum, expDate, cvv, cardHolder string) error {
 	_, err := as.Client.UpdateCard(ctx, &pb.UpdateCardRequest{
 		CardId: id,
 		Data: &pb.CardData{
 			CardNumber:     cardNum,
 			ExpiryDate:     expDate,
-			Cvv:            Cvv,
+			Cvv:            cvv,
 			CardholderName: cardHolder,
 		},
 	})
@@ -63,12 +63,12 @@ func (as *Client) UpdateCard(ctx context.Context, id, cardNum, expDate, Cvv, car
 	return nil
 }
 
-func (as *Client) StoreCard(ctx context.Context, cardNum, expDate, Cvv, cardHolder string) (string, error) {
+func (as *Client) StoreCard(ctx context.Context, cardNum, expDate, cvv, cardHolder string) (string, error) {
 	resp, err := as.Client.StoreCard(ctx, &pb.StoreCardRequest{
 		Card: &pb.CardData{
 			CardNumber:     cardNum,
 			ExpiryDate:     expDate,
-			Cvv:            Cvv,
+			Cvv:            cvv,
 			CardholderName: cardHolder,
 		},
 	})

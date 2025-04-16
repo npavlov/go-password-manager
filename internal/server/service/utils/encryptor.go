@@ -1,3 +1,4 @@
+//nolint:wrapcheck
 package utils
 
 import (
@@ -15,8 +16,11 @@ type Encryptor struct {
 	gcm    cipher.AEAD
 }
 
-func NewEncryptor(w io.Writer, base64Key string) (*Encryptor, error) {
+func NewEncryptor(writer io.Writer, base64Key string) (*Encryptor, error) {
 	key, err := base64.StdEncoding.DecodeString(base64Key)
+	if err != nil {
+		return nil, err
+	}
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -28,18 +32,18 @@ func NewEncryptor(w io.Writer, base64Key string) (*Encryptor, error) {
 		return nil, err
 	}
 
-	return &Encryptor{writer: w, block: block, gcm: gcm}, nil
+	return &Encryptor{writer: writer, block: block, gcm: gcm}, nil
 }
 
-func (e *Encryptor) Write(p []byte) (int, error) {
+func (e *Encryptor) Write(bytes []byte) (int, error) {
 	blockSize := 1024
 	offset := 0
 	totalLength := 0
 
-	for offset < len(p) {
+	for offset < len(bytes) {
 		end := offset + blockSize
-		if end > len(p) {
-			end = len(p)
+		if end > len(bytes) {
+			end = len(bytes)
 		}
 
 		nonce := make([]byte, e.gcm.NonceSize())
@@ -47,7 +51,7 @@ func (e *Encryptor) Write(p []byte) (int, error) {
 			return offset, err
 		}
 
-		encrypted := e.gcm.Seal(nil, nonce, p[offset:end], nil)
+		encrypted := e.gcm.Seal(nil, nonce, bytes[offset:end], nil)
 
 		// Write nonce + encrypted block
 		if _, err := e.writer.Write(nonce); err != nil {

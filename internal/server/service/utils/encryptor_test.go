@@ -36,7 +36,7 @@ func TestEncryptor_Write_Success(t *testing.T) {
 	n, err := encryptor.Write(plaintext)
 
 	// Assert
-	assert.NoError(t, err, "Write should not return an error")
+	require.NoError(t, err, "Write should not return an error")
 	assert.Positive(t, n, "Write should write more than 0 bytes")
 	assert.Positive(t, buf.Len(), "Buffer should contain encrypted data")
 	assert.NotEqual(t, plaintext, buf.Bytes(), "Encrypted data should not match plaintext")
@@ -59,7 +59,7 @@ func TestEncryptor_Write_LongInput(t *testing.T) {
 	n, err := encryptor.Write(plaintext)
 
 	// Assert
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Positive(t, n)
 	assert.Positive(t, buf.Len())
 }
@@ -70,10 +70,10 @@ func TestEncryptor_InvalidKey(t *testing.T) {
 
 	// Invalid base64 (not even decodable)
 	_, err := utils.NewEncryptor(&buf, "invalid-base64!")
-	assert.Error(t, err, "NewEncryptor should return error for invalid base64 key")
+	require.Error(t, err, "NewEncryptor should return error for invalid base64 key")
 
 	// Valid base64, but wrong length (e.g., 10 bytes instead of 16, 24, or 32)
 	badKey := base64.StdEncoding.EncodeToString([]byte("short-key"))
 	_, err = utils.NewEncryptor(&buf, badKey)
-	assert.Error(t, err, "NewEncryptor should return error for short key")
+	require.Error(t, err, "NewEncryptor should return error for short key")
 }

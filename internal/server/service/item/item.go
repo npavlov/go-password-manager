@@ -50,7 +50,7 @@ func (is *Service) GetItems(ctx context.Context, req *pb.GetItemsRequest) (*pb.G
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	userUUID, err := utils.GetUserId(ctx)
+	userUUID, err := utils.GetUserID(ctx)
 	if err != nil {
 		is.logger.Error().Err(err).Msg("error getting user id")
 
@@ -68,11 +68,12 @@ func (is *Service) GetItems(ctx context.Context, req *pb.GetItemsRequest) (*pb.G
 		return nil, errors.Wrap(err, "error getting items")
 	}
 
+	//nolint:gosec
 	totalCount := int32(len(data))
 
 	items := make([]*pb.ItemData, totalCount)
-	for i, item := range data {
-		items[i] = &pb.ItemData{
+	for cursor, item := range data {
+		items[cursor] = &pb.ItemData{
 			Id:        item.IDResource.String(),
 			UpdatedAt: timestamppb.New(item.UpdatedAt.Time),
 			CreatedAt: timestamppb.New(item.CreatedAt.Time),
@@ -80,13 +81,13 @@ func (is *Service) GetItems(ctx context.Context, req *pb.GetItemsRequest) (*pb.G
 
 		switch item.Type {
 		case db.ItemTypeCard:
-			items[i].Type = pb.ItemType_ITEM_TYPE_CARD
+			items[cursor].Type = pb.ItemType_ITEM_TYPE_CARD
 		case db.ItemTypeBinary:
-			items[i].Type = pb.ItemType_ITEM_TYPE_BINARY
+			items[cursor].Type = pb.ItemType_ITEM_TYPE_BINARY
 		case db.ItemTypePassword:
-			items[i].Type = pb.ItemType_ITEM_TYPE_PASSWORD
+			items[cursor].Type = pb.ItemType_ITEM_TYPE_PASSWORD
 		case db.ItemTypeText:
-			items[i].Type = pb.ItemType_ITEM_TYPE_NOTE
+			items[cursor].Type = pb.ItemType_ITEM_TYPE_NOTE
 		}
 	}
 

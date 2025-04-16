@@ -1,3 +1,4 @@
+//nolint:err113,wrapcheck
 package notes_test
 
 import (
@@ -6,14 +7,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/npavlov/go-password-manager/gen/proto/note"
-	"github.com/npavlov/go-password-manager/internal/client/grpc/notes"
-	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/npavlov/go-password-manager/gen/proto/note"
+	"github.com/npavlov/go-password-manager/internal/client/grpc/notes"
+	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 )
 
 // Mocks
@@ -68,10 +71,13 @@ func (m *MockNoteServiceClient) DeleteNote(ctx context.Context, in *note.DeleteN
 
 func (m *MockTokenManager) GetToken() (string, error) {
 	args := m.Called()
+
 	return args.String(0), args.Error(1)
 }
 
 func TestGetNote_Success(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockNoteServiceClient)
 	logger := zerolog.Nop()
 
@@ -93,12 +99,14 @@ func TestGetNote_Success(t *testing.T) {
 		Log:          &logger,
 	}
 
-	noteData, _, err := client.GetNote(context.Background(), "note123")
-	assert.NoError(t, err)
+	noteData, _, err := client.GetNote(t.Context(), "note123")
+	require.NoError(t, err)
 	assert.Equal(t, expectedNote, noteData)
 }
 
 func TestGetNote_Error(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockNoteServiceClient)
 	logger := zerolog.Nop()
 
@@ -112,12 +120,14 @@ func TestGetNote_Error(t *testing.T) {
 		Log:          &logger,
 	}
 
-	_, _, err := client.GetNote(context.Background(), "note123")
-	assert.Error(t, err)
+	_, _, err := client.GetNote(t.Context(), "note123")
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "error getting password")
 }
 
 func TestStoreNote_Success(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockNoteServiceClient)
 	logger := zerolog.Nop()
 
@@ -137,12 +147,14 @@ func TestStoreNote_Success(t *testing.T) {
 		Log:          &logger,
 	}
 
-	noteID, err := client.StoreNote(context.Background(), content)
-	assert.NoError(t, err)
+	noteID, err := client.StoreNote(t.Context(), content)
+	require.NoError(t, err)
 	assert.Equal(t, "new-note-123", noteID)
 }
 
 func TestStoreNote_Error(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockNoteServiceClient)
 	logger := zerolog.Nop()
 
@@ -160,8 +172,8 @@ func TestStoreNote_Error(t *testing.T) {
 		Log:          &logger,
 	}
 
-	_, err := client.StoreNote(context.Background(), content)
-	assert.Error(t, err)
+	_, err := client.StoreNote(t.Context(), content)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "error storing note")
 }
 
@@ -181,12 +193,14 @@ func TestDeleteNote_Success(t *testing.T) {
 		Log:          &logger,
 	}
 
-	ok, err := client.DeleteNote(context.Background(), "note123")
-	assert.NoError(t, err)
+	ok, err := client.DeleteNote(t.Context(), "note123")
+	require.NoError(t, err)
 	assert.True(t, ok)
 }
 
 func TestDeleteNote_Error(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockNoteServiceClient)
 	logger := zerolog.Nop()
 
@@ -200,12 +214,14 @@ func TestDeleteNote_Error(t *testing.T) {
 		Log:          &logger,
 	}
 
-	_, err := client.DeleteNote(context.Background(), "note123")
-	assert.Error(t, err)
+	_, err := client.DeleteNote(t.Context(), "note123")
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "error deleting note")
 }
 
 func TestDeleteNote_NotSuccessful(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockNoteServiceClient)
 	logger := zerolog.Nop()
 
@@ -221,12 +237,13 @@ func TestDeleteNote_NotSuccessful(t *testing.T) {
 		Log:          &logger,
 	}
 
-	ok, err := client.DeleteNote(context.Background(), "note123")
-	assert.NoError(t, err)
+	ok, err := client.DeleteNote(t.Context(), "note123")
+	require.NoError(t, err)
 	assert.False(t, ok)
 }
 
 func TestNewNoteClient(t *testing.T) {
+	t.Parallel()
 
 	tm := new(testutils.MockTokenManager)
 	logger := zerolog.Nop()

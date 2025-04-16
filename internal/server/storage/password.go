@@ -1,3 +1,4 @@
+//nolint:dupl
 package storage
 
 import (
@@ -11,7 +12,10 @@ import (
 )
 
 // StorePassword creates new password record.
-func (ds *DBStorage) StorePassword(ctx context.Context, createPassword db.CreatePasswordEntryParams) (*db.Password, error) {
+func (ds *DBStorage) StorePassword(
+	ctx context.Context,
+	createPassword db.CreatePasswordEntryParams,
+) (*db.Password, error) {
 	password, err := ds.Queries.CreatePasswordEntry(ctx, createPassword)
 	if err != nil {
 		ds.log.Error().Err(err).Msg("failed to store password")
@@ -24,7 +28,7 @@ func (ds *DBStorage) StorePassword(ctx context.Context, createPassword db.Create
 
 // GetPassword retrieves password record.
 func (ds *DBStorage) GetPassword(ctx context.Context, passwordId string, userId pgtype.UUID) (*db.Password, error) {
-	uuid := utils.GetIdFromString(passwordId)
+	uuid := utils.GetIDFromString(passwordId)
 
 	password, err := ds.Queries.GetPasswordEntryByID(ctx, db.GetPasswordEntryByIDParams{
 		ID:     uuid,
@@ -41,7 +45,7 @@ func (ds *DBStorage) GetPassword(ctx context.Context, passwordId string, userId 
 
 // GetPasswords retrieves password record.
 func (ds *DBStorage) GetPasswords(ctx context.Context, userId string) ([]db.Password, error) {
-	uuid := utils.GetIdFromString(userId)
+	uuid := utils.GetIDFromString(userId)
 
 	passwords, err := ds.Queries.GetPasswordEntriesByUserID(ctx, uuid)
 	if err != nil {
@@ -54,7 +58,7 @@ func (ds *DBStorage) GetPasswords(ctx context.Context, userId string) ([]db.Pass
 }
 
 func (ds *DBStorage) DeletePassword(ctx context.Context, passwordId string, userId pgtype.UUID) error {
-	uuid := utils.GetIdFromString(passwordId)
+	uuid := utils.GetIDFromString(passwordId)
 
 	err := ds.Queries.DeletePasswordEntry(ctx, db.DeletePasswordEntryParams{
 		ID:     uuid,
@@ -70,7 +74,10 @@ func (ds *DBStorage) DeletePassword(ctx context.Context, passwordId string, user
 }
 
 // UpdatePassword updates password record.
-func (ds *DBStorage) UpdatePassword(ctx context.Context, updatePassword db.UpdatePasswordEntryParams) (*db.Password, error) {
+func (ds *DBStorage) UpdatePassword(
+	ctx context.Context,
+	updatePassword db.UpdatePasswordEntryParams,
+) (*db.Password, error) {
 	password, err := ds.Queries.UpdatePasswordEntry(ctx, updatePassword)
 	if err != nil {
 		ds.log.Error().Err(err).Msg("failed to update password")

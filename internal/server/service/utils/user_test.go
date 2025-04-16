@@ -1,15 +1,15 @@
 package utils_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/stretchr/testify/require"
+
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/server/service/utils"
 	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
-	"github.com/stretchr/testify/require"
 )
 
 func TestGetDecryptionKey_Success(t *testing.T) {
@@ -31,7 +31,7 @@ func TestGetDecryptionKey_Success(t *testing.T) {
 	mockStorage := testutils.SetupMockUserStorage(masterKey)
 	mockStorage.AddTestUser(testUser)
 	// Inject user ID and encryption key into context
-	ctx := testutils.InjectUserToContext(context.Background(), testUser.ID.String())
+	ctx := testutils.InjectUserToContext(t.Context(), testUser.ID.String())
 
 	userUUID, decryptedKey, err := utils.GetDecryptionKey(ctx, mockStorage, masterKey)
 
@@ -47,7 +47,7 @@ func TestGetDecryptionKey_MissingUserID(t *testing.T) {
 	mockStorage := testutils.SetupMockUserStorage(masterKey)
 
 	// Use empty context – no user injected
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, _, err := utils.GetDecryptionKey(ctx, mockStorage, masterKey)
 	require.Error(t, err)
@@ -72,7 +72,7 @@ func TestGetDecryptionKey_InvalidMasterKey(t *testing.T) {
 	mockStorage := testutils.SetupMockUserStorage(masterKey)
 	mockStorage.AddTestUser(testUser)
 
-	ctx := testutils.InjectUserToContext(context.Background(), testUser.ID.String())
+	ctx := testutils.InjectUserToContext(t.Context(), testUser.ID.String())
 
 	// Use wrong master key for decryption
 	badMasterKey := "wrong-master-key"

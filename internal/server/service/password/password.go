@@ -22,7 +22,7 @@ type Storage interface {
 	GetPassword(ctx context.Context, passwordId string, userId pgtype.UUID) (*db.Password, error)
 	UpdatePassword(ctx context.Context, updatePassword db.UpdatePasswordEntryParams) (*db.Password, error)
 	DeletePassword(ctx context.Context, passwordId string, userId pgtype.UUID) error
-	GetUserById(ctx context.Context, id pgtype.UUID) (*db.User, error)
+	GetUserByID(ctx context.Context, id pgtype.UUID) (*db.User, error)
 }
 
 type Service struct {
@@ -58,7 +58,7 @@ func (ps *Service) StorePassword(ctx context.Context, req *pb.StorePasswordReque
 
 	userUUID, decryptedUserKey, err := utils.GetDecryptionKey(ctx, ps.storage, ps.cfg.SecuredMasterKey.Get())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "error getting decrypted user UUID")
 	}
 
 	encryptedPassword, err := utils.Encrypt(req.GetPassword().GetPassword(), decryptedUserKey)
@@ -91,7 +91,7 @@ func (ps *Service) GetPassword(ctx context.Context, req *pb.GetPasswordRequest) 
 
 	userUUID, decryptedUserKey, err := utils.GetDecryptionKey(ctx, ps.storage, ps.cfg.SecuredMasterKey.Get())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "error getting decrypted user UUID")
 	}
 
 	password, err := ps.storage.GetPassword(ctx, req.GetPasswordId(), userUUID)
@@ -125,14 +125,17 @@ func (ps *Service) GetPasswords(ctx context.Context, req *pb.GetPasswordsRequest
 	return &pb.GetPasswordsResponse{}, nil
 }
 
-func (ps *Service) UpdatePassword(ctx context.Context, req *pb.UpdatePasswordRequest) (*pb.UpdatePasswordResponse, error) {
+func (ps *Service) UpdatePassword(
+	ctx context.Context,
+	req *pb.UpdatePasswordRequest,
+) (*pb.UpdatePasswordResponse, error) {
 	if err := ps.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
 	_, decryptedUserKey, err := utils.GetDecryptionKey(ctx, ps.storage, ps.cfg.SecuredMasterKey.Get())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "error getting decrypted user UUID")
 	}
 
 	encryptedPassword, err := utils.Encrypt(req.GetData().GetPassword(), decryptedUserKey)
@@ -143,7 +146,7 @@ func (ps *Service) UpdatePassword(ctx context.Context, req *pb.UpdatePasswordReq
 	}
 
 	password, err := ps.storage.UpdatePassword(ctx, db.UpdatePasswordEntryParams{
-		ID:       gu.GetIdFromString(req.GetPasswordId()),
+		ID:       gu.GetIDFromString(req.GetPasswordId()),
 		Login:    req.GetData().GetLogin(),
 		Password: encryptedPassword,
 	})
@@ -158,12 +161,15 @@ func (ps *Service) UpdatePassword(ctx context.Context, req *pb.UpdatePasswordReq
 	}, nil
 }
 
-func (ps *Service) DeletePassword(ctx context.Context, req *pb.DeletePasswordRequest) (*pb.DeletePasswordResponse, error) {
+func (ps *Service) DeletePassword(
+	ctx context.Context,
+	req *pb.DeletePasswordRequest,
+) (*pb.DeletePasswordResponse, error) {
 	if err := ps.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	userUUID, err := utils.GetUserId(ctx)
+	userUUID, err := utils.GetUserID(ctx)
 	if err != nil {
 		ps.logger.Error().Err(err).Msg("error getting user id")
 

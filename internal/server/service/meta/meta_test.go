@@ -6,14 +6,15 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/rs/zerolog"
+	"github.com/stretchr/testify/require"
+
 	pb "github.com/npavlov/go-password-manager/gen/proto/metadata"
 	"github.com/npavlov/go-password-manager/internal/server/config"
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/server/service/meta"
 	"github.com/npavlov/go-password-manager/internal/server/service/utils"
 	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
-	"github.com/rs/zerolog"
-	"github.com/stretchr/testify/require"
 )
 
 func setupMetadataService(t *testing.T) (*meta.Service, *testutils.MockDBStorage, context.Context) {
@@ -32,7 +33,7 @@ func setupMetadataService(t *testing.T) (*meta.Service, *testutils.MockDBStorage
 	}
 	storage.AddTestUser(testUser)
 	// Inject user ID into context
-	ctx := testutils.InjectUserToContext(context.Background(), userID.String())
+	ctx := testutils.InjectUserToContext(t.Context(), userID.String())
 
 	return meta.NewMetadataService(&logger, storage, cfg), storage, ctx
 }
@@ -59,12 +60,12 @@ func TestAddMetaInfo_Success(t *testing.T) {
 		},
 	}
 
-	resp, err := svc.AddMetaInfo(context.Background(), req)
+	resp, err := svc.AddMetaInfo(t.Context(), req)
 	require.NoError(t, err)
-	require.True(t, resp.Success)
+	require.True(t, resp.GetSuccess())
 
 	// Verify metadata was stored
-	metaInfo, err := mockStorage.GetMetaInfo(context.Background(), newItem.ID.String())
+	metaInfo, err := mockStorage.GetMetaInfo(t.Context(), newItem.ID.String())
 	require.NoError(t, err)
 	require.Len(t, metaInfo, 2)
 	require.Equal(t, "finance", metaInfo[0].Value)
@@ -105,7 +106,7 @@ func TestRemoveMetaInfo_Success(t *testing.T) {
 
 	resp, err := svc.RemoveMetaInfo(ctx, req)
 	require.NoError(t, err)
-	require.True(t, resp.Success)
+	require.True(t, resp.GetSuccess())
 
 	// Verify metadata was removed
 	metaInfo, err := mockStorage.GetMetaInfo(ctx, itemID)
@@ -144,11 +145,11 @@ func TestGetMetaInfo_Success(t *testing.T) {
 		ItemId: itemID,
 	}
 
-	resp, err := svc.GetMetaInfo(context.Background(), req)
+	resp, err := svc.GetMetaInfo(t.Context(), req)
 	require.NoError(t, err)
-	require.Len(t, resp.Metadata, 2)
-	require.Equal(t, "finance", resp.Metadata["category"])
-	require.Equal(t, "high", resp.Metadata["priority"])
+	require.Len(t, resp.GetMetadata(), 2)
+	require.Equal(t, "finance", resp.GetMetadata()["category"])
+	require.Equal(t, "high", resp.GetMetadata()["priority"])
 }
 
 func TestGetMetaInfo_Empty(t *testing.T) {
@@ -171,5 +172,5 @@ func TestGetMetaInfo_Empty(t *testing.T) {
 
 	resp, err := svc.GetMetaInfo(ctx, req)
 	require.NoError(t, err)
-	require.Empty(t, resp.Metadata)
+	require.Empty(t, resp.GetMetadata())
 }

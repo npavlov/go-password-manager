@@ -16,7 +16,7 @@ import (
 )
 
 // TokenInterceptor extracts a token from metadata and injects it into the context.
-func TokenInterceptor(logger *zerolog.Logger, jwtSecret string, memStorage redis.MemStorage) grpc.UnaryServerInterceptor {
+func TokenInterceptor(log *zerolog.Logger, jwtSecret string, memSt redis.MemStorage) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req interface{},
@@ -32,21 +32,21 @@ func TokenInterceptor(logger *zerolog.Logger, jwtSecret string, memStorage redis
 
 		// Skip authentication for specified methods
 		if skipMethods[info.FullMethod] {
-			logger.Info().Str("method", info.FullMethod).Msg("skipping authentication for public method")
+			log.Info().Str("method", info.FullMethod).Msg("skipping authentication for public method")
 
 			return handler(ctx, req)
 		}
 
-		userId, err := AuthenticateToken(ctx, jwtSecret, memStorage)
+		userID, err := AuthenticateToken(ctx, jwtSecret, memSt)
 		if err != nil {
-			logger.Info().Str("method", info.FullMethod).Msg("authentication failed")
+			log.Info().Str("method", info.FullMethod).Msg("authentication failed")
 
 			return nil, errors.Wrap(err, "authenticating token")
 		}
 
-		ctx = context.WithValue(ctx, "user_id", userId)
+		ctx = context.WithValue(ctx, "user_id", userID)
 
-		logger.Info().Str("method", info.FullMethod).Msg("user_id extracted and added to context")
+		log.Info().Str("method", info.FullMethod).Msg("user_id extracted and added to context")
 
 		return handler(ctx, req)
 	}
@@ -54,6 +54,7 @@ func TokenInterceptor(logger *zerolog.Logger, jwtSecret string, memStorage redis
 
 type wrappedStream struct {
 	grpc.ServerStream
+	//nolint:containedctx
 	ctx context.Context
 }
 
@@ -62,7 +63,10 @@ func (w *wrappedStream) Context() context.Context {
 	return w.ctx
 }
 
-func StreamTokenInterceptor(logger *zerolog.Logger, jwtSecret string, memStorage redis.MemStorage) grpc.StreamServerInterceptor {
+func StreamTokenInterceptor(logger *zerolog.Logger,
+	jwtSecret string,
+	memStorage redis.MemStorage,
+) grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		// Skip token authentication if the request is for reflection
 		if info.FullMethod == "/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo" {

@@ -25,7 +25,7 @@ const (
 
 type Storage interface {
 	GetUser(ctx context.Context, username string) (*db.User, error)
-	GetUserById(ctx context.Context, userId pgtype.UUID) (*db.User, error)
+	GetUserByID(ctx context.Context, userID pgtype.UUID) (*db.User, error)
 	RegisterUser(ctx context.Context, createUser db.CreateUserParams) (*db.User, error)
 	GetToken(ctx context.Context, token string) (db.GetRefreshTokenRow, error)
 	StoreToken(ctx context.Context, userID pgtype.UUID, refreshToken string, expiresAt time.Time) error
@@ -73,12 +73,12 @@ func (as *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.R
 	// Generate a unique encryption key for this user
 	userKey, err := utils.GenerateRandomKey()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "error generating random key")
 	}
 	// Encrypt the user key using the master key
 	encryptedKey, err := utils.Encrypt(userKey, as.cfg.SecuredMasterKey.Get())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "error encrypting password")
 	}
 
 	user, err := as.Storage.RegisterUser(ctx, db.CreateUserParams{

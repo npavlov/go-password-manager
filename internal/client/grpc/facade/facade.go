@@ -5,13 +5,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/npavlov/go-password-manager/internal/client/grpc/auth"
-	binary "github.com/npavlov/go-password-manager/internal/client/grpc/binaries"
-	"github.com/npavlov/go-password-manager/internal/client/grpc/cards"
-	"github.com/npavlov/go-password-manager/internal/client/grpc/items"
-	"github.com/npavlov/go-password-manager/internal/client/grpc/metainfo"
-	"github.com/npavlov/go-password-manager/internal/client/grpc/notes"
-	"github.com/npavlov/go-password-manager/internal/client/grpc/passwords"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
@@ -22,9 +15,16 @@ import (
 	pb_note "github.com/npavlov/go-password-manager/gen/proto/note"
 	pb_password "github.com/npavlov/go-password-manager/gen/proto/password"
 	tokenMgr "github.com/npavlov/go-password-manager/internal/client/auth"
+	"github.com/npavlov/go-password-manager/internal/client/grpc/auth"
+	binary "github.com/npavlov/go-password-manager/internal/client/grpc/binaries"
+	"github.com/npavlov/go-password-manager/internal/client/grpc/cards"
+	"github.com/npavlov/go-password-manager/internal/client/grpc/items"
+	"github.com/npavlov/go-password-manager/internal/client/grpc/metainfo"
+	"github.com/npavlov/go-password-manager/internal/client/grpc/notes"
+	"github.com/npavlov/go-password-manager/internal/client/grpc/passwords"
 )
 
-// AuthClient Client interfaces for all dependencies
+// AuthClient Client interfaces for all dependencies.
 type AuthClient interface {
 	Login(username, password string) error
 	Register(username, password, email string) (string, error)
@@ -67,7 +67,7 @@ type BinaryClient interface {
 	DeleteFile(ctx context.Context, fileID string) (bool, error)
 }
 
-// Facade implementation
+// Facade implementation.
 type Facade struct {
 	authClient     AuthClient
 	itemsClient    ItemsClient
@@ -78,11 +78,11 @@ type Facade struct {
 	binariesClient BinaryClient
 }
 
-// Verify Facade implements IFacade
+// Verify Facade implements IFacade.
 var _ IFacade = (*Facade)(nil)
 
-// FacadeOptions contains all dependencies for the Facade
-type FacadeOptions struct {
+// Options  contains all dependencies for the Facade.
+type Options struct {
 	AuthClient     AuthClient
 	ItemsClient    ItemsClient
 	PasswordClient PasswordClient
@@ -92,8 +92,8 @@ type FacadeOptions struct {
 	BinaryClient   BinaryClient
 }
 
-// NewFacadeWithOptions creates a new Facade with explicit dependencies
-func NewFacadeWithOptions(opts FacadeOptions) *Facade {
+// NewFacadeWithOptions creates a new Facade with explicit dependencies.
+func NewFacadeWithOptions(opts Options) *Facade {
 	return &Facade{
 		authClient:     opts.AuthClient,
 		itemsClient:    opts.ItemsClient,
@@ -105,9 +105,9 @@ func NewFacadeWithOptions(opts FacadeOptions) *Facade {
 	}
 }
 
-// NewFacade creates a new Facade with default gRPC implementations
+// NewFacade creates a new Facade with default gRPC implementations.
 func NewFacade(conn *grpc.ClientConn, tokenManager *tokenMgr.TokenManager, log *zerolog.Logger) *Facade {
-	opts := FacadeOptions{
+	opts := Options{
 		AuthClient:     auth.NewAuthClient(conn, tokenManager, log),
 		ItemsClient:    items.NewItemsClient(conn, tokenManager, log),
 		PasswordClient: passwords.NewPasswordClient(conn, tokenManager, log),
@@ -116,11 +116,14 @@ func NewFacade(conn *grpc.ClientConn, tokenManager *tokenMgr.TokenManager, log *
 		CardClient:     cards.NewCardClient(conn, tokenManager, log),
 		BinaryClient:   binary.NewBinaryClient(conn, tokenManager, log),
 	}
+
 	return NewFacadeWithOptions(opts)
 }
 
 func (fa *Facade) Login(username, password string) error {
-	return fa.authClient.Login(username, password)
+	err := fa.authClient.Login(username, password)
+
+	return errors.Wrap(err, "failed to login")
 }
 
 func (fa *Facade) Register(username, password, email string) (string, error) {
@@ -136,9 +139,9 @@ func (fa *Facade) GetItems(ctx context.Context, page, pageSize int32) ([]*pb.Ite
 }
 
 func (fa *Facade) StorePassword(ctx context.Context, login string, password string) (string, error) {
-	passwordId, err := fa.passwordClient.StorePassword(ctx, login, password)
+	passwordID, err := fa.passwordClient.StorePassword(ctx, login, password)
 
-	return passwordId, errors.Wrap(err, "error storing password")
+	return passwordID, errors.Wrap(err, "error storing password")
 }
 
 func (fa *Facade) GetPassword(ctx context.Context, id string) (*pb_password.PasswordData, time.Time, error) {
@@ -202,14 +205,14 @@ func (fa *Facade) DeleteNote(ctx context.Context, id string) (bool, error) {
 	return result, errors.Wrap(err, "error deleting note")
 }
 
-func (fa *Facade) StoreCard(ctx context.Context, cardNum, expDate, Cvv, cardHolder string) (string, error) {
-	cardId, err := fa.cardsClient.StoreCard(ctx, cardNum, expDate, Cvv, cardHolder)
+func (fa *Facade) StoreCard(ctx context.Context, cardNum, expDate, cvv, cardHolder string) (string, error) {
+	cardID, err := fa.cardsClient.StoreCard(ctx, cardNum, expDate, cvv, cardHolder)
 
-	return cardId, errors.Wrap(err, "error storing card")
+	return cardID, errors.Wrap(err, "error storing card")
 }
 
-func (fa *Facade) UpdateCard(ctx context.Context, id, cardNum, expDate, Cvv, cardHolder string) error {
-	err := fa.cardsClient.UpdateCard(ctx, id, cardNum, expDate, Cvv, cardHolder)
+func (fa *Facade) UpdateCard(ctx context.Context, id, cardNum, expDate, cvv, cardHolder string) error {
+	err := fa.cardsClient.UpdateCard(ctx, id, cardNum, expDate, cvv, cardHolder)
 
 	return errors.Wrap(err, "error updating card")
 }

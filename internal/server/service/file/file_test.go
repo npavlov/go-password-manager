@@ -1,3 +1,4 @@
+//nolint:wrapcheck,lll,err113,dogsled
 package file_test
 
 import (
@@ -57,7 +58,7 @@ func setupFileService(t *testing.T) (*file.Service, *testutils.MockDBStorage, *M
 	storage.AddTestUser(testUser)
 
 	// Inject user ID and encryption key into context
-	ctx := testutils.InjectUserToContext(context.Background(), testUser.ID.String())
+	ctx := testutils.InjectUserToContext(t.Context(), testUser.ID.String())
 
 	return svc, storage, mockS3, ctx, masterKey
 }
@@ -72,6 +73,7 @@ func (m *MockS3Storage) PutObject(ctx context.Context, bucketName string, object
 	if m.PutObjectFunc != nil {
 		return m.PutObjectFunc(ctx, bucketName, objectName, reader, objectSize, opts)
 	}
+
 	return minio.UploadInfo{}, nil
 }
 
@@ -79,6 +81,7 @@ func (m *MockS3Storage) GetObject(ctx context.Context, bucketName string, object
 	if m.GetObjectFunc != nil {
 		return m.GetObjectFunc(ctx, bucketName, objectName, opts)
 	}
+
 	return &minio.Object{}, nil
 }
 
@@ -86,6 +89,7 @@ func (m *MockS3Storage) RemoveObject(ctx context.Context, bucketName string, obj
 	if m.RemoveObjectFunc != nil {
 		return m.RemoveObjectFunc(ctx, bucketName, objectName, opts)
 	}
+
 	return nil
 }
 
@@ -96,27 +100,22 @@ type MockUploadStream struct {
 }
 
 func (m *MockUploadStream) SetHeader(md metadata.MD) error {
-	//TODO implement me
 	panic("implement me")
 }
 
 func (m *MockUploadStream) SendHeader(md metadata.MD) error {
-	//TODO implement me
 	panic("implement me")
 }
 
 func (m *MockUploadStream) SetTrailer(md metadata.MD) {
-	//TODO implement me
 	panic("implement me")
 }
 
 func (m *MockUploadStream) SendMsg(m2 any) error {
-	//TODO implement me
 	panic("implement me")
 }
 
 func (m *MockUploadStream) RecvMsg(m1 any) error {
-	//TODO implement me
 	panic("implement me")
 }
 
@@ -124,6 +123,7 @@ func (m *MockUploadStream) Recv() (*pb.UploadFileRequest, error) {
 	if m.RecvFunc != nil {
 		return m.RecvFunc()
 	}
+
 	return nil, io.EOF
 }
 
@@ -131,6 +131,7 @@ func (m *MockUploadStream) SendAndClose(resp *pb.UploadFileResponse) error {
 	if m.SendAndCloseFunc != nil {
 		return m.SendAndCloseFunc(resp)
 	}
+
 	return nil
 }
 
@@ -138,23 +139,29 @@ func (m *MockUploadStream) Context() context.Context {
 	if m.ContextFunc != nil {
 		return m.ContextFunc()
 	}
+
 	return context.Background()
 }
 
 func TestUploadFile_Success(t *testing.T) {
+	t.Parallel()
+
 	svc, storage, mockS3, ctx, _ := setupFileService(t)
 
 	mockStream := &MockUploadStream{
 		RecvFunc: func() func() (*pb.UploadFileRequest, error) {
 			calls := 0
+
 			return func() (*pb.UploadFileRequest, error) {
 				if calls == 0 {
 					calls++
+
 					return &pb.UploadFileRequest{
 						Filename: "test.txt",
 						Data:     []byte("test data"),
 					}, nil
 				}
+
 				return nil, io.EOF
 			}
 		}(),
@@ -175,13 +182,15 @@ func TestUploadFile_Success(t *testing.T) {
 
 	// Verify the binary was stored
 	userID := testutils.GetUserIDFromContext(ctx)
-	binaries, err := storage.GetBinaries(context.Background(), userID)
+	binaries, err := storage.GetBinaries(t.Context(), userID)
 	require.NoError(t, err)
 	require.Len(t, binaries, 1)
 	require.Equal(t, "test.txt", binaries[0].FileName)
 }
 
 func TestUploadFile_InvalidMetadata(t *testing.T) {
+	t.Parallel()
+
 	svc, _, _, ctx, _ := setupFileService(t)
 
 	mockStream := &MockUploadStream{
@@ -198,6 +207,8 @@ func TestUploadFile_InvalidMetadata(t *testing.T) {
 }
 
 func TestUploadFile_S3UploadFailure(t *testing.T) {
+	t.Parallel()
+
 	svc, _, mockS3, ctx, _ := setupFileService(t)
 
 	mockStream := &MockUploadStream{
@@ -221,6 +232,8 @@ func TestUploadFile_S3UploadFailure(t *testing.T) {
 }
 
 func TestDownloadFile_Success(t *testing.T) {
+	t.Parallel()
+
 	svc, storage, mockS3, ctx, masterKey := setupFileService(t)
 
 	// First store a file to download
@@ -233,15 +246,16 @@ func TestDownloadFile_Success(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	user, err := storage.GetUserById(ctx, pgtype.UUID{Bytes: uuid.MustParse(userID), Valid: true})
+	user, err := storage.GetUserByID(ctx, pgtype.UUID{Bytes: uuid.MustParse(userID), Valid: true})
 	require.NoError(t, err)
 
 	userKey, err := utils.Decrypt(user.EncryptionKey, masterKey)
 	require.NoError(t, err)
 
 	// Generate test data - 3 blocks of 1024 random bytes each
+	//nolint:prealloc
 	var plaintextBlocks [][]byte
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		block := make([]byte, 1024)
 		_, err := rand.Read(block)
 		require.NoError(t, err)
@@ -263,6 +277,7 @@ func TestDownloadFile_Success(t *testing.T) {
 			_, err := encryptor.Write(block)
 			if err != nil {
 				pw.CloseWithError(err)
+
 				return
 			}
 		}
@@ -287,7 +302,8 @@ func TestDownloadFile_Success(t *testing.T) {
 	mockStream := &MockDownloadStream{
 		SendFunc: func(resp *pb.DownloadFileResponse) error {
 			sendCount++
-			receivedData = append(receivedData, resp.Data...)
+			receivedData = append(receivedData, resp.GetData()...)
+
 			return nil
 		},
 		ContextFunc: func() context.Context {
@@ -299,7 +315,7 @@ func TestDownloadFile_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify the data was sent correctly
-	require.Greater(t, sendCount, 0, "Send should be called at least once")
+	require.Positive(t, sendCount, "Send should be called at least once")
 
 	// Verify we received the decrypted original data
 	var decryptedReceived []byte
@@ -310,6 +326,8 @@ func TestDownloadFile_Success(t *testing.T) {
 }
 
 func TestDownloadFile_NotFound(t *testing.T) {
+	t.Parallel()
+
 	svc, _, _, ctx, _ := setupFileService(t)
 
 	mockStream := &MockDownloadStream{
@@ -324,6 +342,8 @@ func TestDownloadFile_NotFound(t *testing.T) {
 }
 
 func TestDeleteFile_Success(t *testing.T) {
+	t.Parallel()
+
 	svc, storage, mockS3, ctx, _ := setupFileService(t)
 
 	// First store a file to delete
@@ -342,7 +362,7 @@ func TestDeleteFile_Success(t *testing.T) {
 
 	resp, err := svc.DeleteFile(ctx, &pb.DeleteFileRequest{FileId: binary.ID.String()})
 	require.NoError(t, err)
-	require.True(t, resp.Ok)
+	require.True(t, resp.GetOk())
 
 	// Verify file was deleted
 	_, err = storage.GetBinary(ctx, binary.ID.String(), pgtype.UUID{Bytes: uuid.MustParse(userID), Valid: true})
@@ -350,6 +370,8 @@ func TestDeleteFile_Success(t *testing.T) {
 }
 
 func TestGetFile_Success(t *testing.T) {
+	t.Parallel()
+
 	svc, storage, _, ctx, _ := setupFileService(t)
 
 	// First store a file to get
@@ -364,13 +386,15 @@ func TestGetFile_Success(t *testing.T) {
 
 	resp, err := svc.GetFile(ctx, &pb.GetFileRequest{FileId: binary.ID.String()})
 	require.NoError(t, err)
-	require.Equal(t, binary.ID.String(), resp.File.Id)
-	require.Equal(t, "test.txt", resp.File.FileName)
-	require.Equal(t, int64(123), resp.File.FileSize)
-	require.Equal(t, userID+"-test.txt", resp.File.FileUrl)
+	require.Equal(t, binary.ID.String(), resp.GetFile().GetId())
+	require.Equal(t, "test.txt", resp.GetFile().GetFileName())
+	require.Equal(t, int64(123), resp.GetFile().GetFileSize())
+	require.Equal(t, userID+"-test.txt", resp.GetFile().GetFileUrl())
 }
 
 func TestGetFiles_Success(t *testing.T) {
+	t.Parallel()
+
 	svc, storage, _, ctx, _ := setupFileService(t)
 
 	// First store some files
@@ -396,6 +420,8 @@ func TestGetFiles_Success(t *testing.T) {
 }
 
 func TestUploadFile_EmptyFile(t *testing.T) {
+	t.Parallel()
+
 	svc, _, mockS3, ctx, _ := setupFileService(t)
 
 	mockStream := &MockUploadStream{
@@ -419,6 +445,8 @@ func TestUploadFile_EmptyFile(t *testing.T) {
 }
 
 func TestUploadFile_LargeFile(t *testing.T) {
+	t.Parallel()
+
 	svc, _, mockS3, ctx, _ := setupFileService(t)
 
 	// Use a channel to safely communicate the received size
@@ -432,6 +460,7 @@ func TestUploadFile_LargeFile(t *testing.T) {
 		RecvFunc: func() (*pb.UploadFileRequest, error) {
 			if chunkCount == 0 {
 				chunkCount++
+
 				return &pb.UploadFileRequest{
 					Filename: "large.bin",
 				}, nil
@@ -439,10 +468,12 @@ func TestUploadFile_LargeFile(t *testing.T) {
 			if chunkCount < 50 { // 50 chunks of 100KB each = 5MB
 				chunkCount++
 				data := make([]byte, 100*1024) // 100KB chunk
+
 				return &pb.UploadFileRequest{
 					Data: data,
 				}, nil
 			}
+
 			return nil, io.EOF
 		},
 		ContextFunc: func() context.Context {
@@ -452,12 +483,14 @@ func TestUploadFile_LargeFile(t *testing.T) {
 
 	mockS3.PutObjectFunc = func(ctx context.Context, bucketName string, objectName string, reader io.Reader, objectSize int64, opts minio.PutObjectOptions) (minio.UploadInfo, error) {
 		defer wg.Done()
-		n, err := io.Copy(io.Discard, reader)
+		cursor, err := io.Copy(io.Discard, reader)
 		if err != nil {
 			sizeChan <- 0
+
 			return minio.UploadInfo{}, err
 		}
-		sizeChan <- n
+		sizeChan <- cursor
+
 		return minio.UploadInfo{}, nil
 	}
 
@@ -469,10 +502,12 @@ func TestUploadFile_LargeFile(t *testing.T) {
 	close(sizeChan)
 
 	receivedSize := <-sizeChan
-	assert.Greater(t, receivedSize, int64(0))
+	assert.Positive(t, receivedSize)
 }
 
 func TestUploadFile_StorageFailureAfterS3Upload(t *testing.T) {
+	t.Parallel()
+
 	svc, storage, _, ctx, _ := setupFileService(t)
 
 	// Make storage fail after S3 upload succeeds
@@ -495,6 +530,8 @@ func TestUploadFile_StorageFailureAfterS3Upload(t *testing.T) {
 }
 
 func TestUploadFile_EncryptionError(t *testing.T) {
+	t.Parallel()
+
 	svc, storage, _, ctx, _ := setupFileService(t)
 
 	// Corrupt the user's encryption key
@@ -525,6 +562,8 @@ func TestUploadFile_EncryptionError(t *testing.T) {
 }
 
 func TestDownloadFile_DecryptionError(t *testing.T) {
+	t.Parallel()
+
 	svc, storage, mockS3, ctx, _ := setupFileService(t)
 
 	// Store a file with invalid encryption
@@ -539,7 +578,7 @@ func TestDownloadFile_DecryptionError(t *testing.T) {
 
 	// Generate test data - 3 blocks of 1024 random bytes each
 	var plaintextBlocks []byte
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		block := make([]byte, 1024)
 		_, err := rand.Read(block)
 		require.NoError(t, err)
@@ -561,7 +600,8 @@ func TestDownloadFile_DecryptionError(t *testing.T) {
 	mockStream := &MockDownloadStream{
 		SendFunc: func(resp *pb.DownloadFileResponse) error {
 			sendCount++
-			receivedData = append(receivedData, resp.Data...)
+			receivedData = append(receivedData, resp.GetData()...)
+
 			return nil
 		},
 		ContextFunc: func() context.Context {
@@ -575,11 +615,13 @@ func TestDownloadFile_DecryptionError(t *testing.T) {
 }
 
 func TestDownloadFile_UnauthorizedAccess(t *testing.T) {
+	t.Parallel()
+
 	svc, storage, _, ctx, _ := setupFileService(t)
 
 	// Store a file with a different user
 	otherUserID := uuid.New()
-	binary, err := storage.StoreBinary(context.Background(), db.StoreBinaryEntryParams{
+	binary, err := storage.StoreBinary(t.Context(), db.StoreBinaryEntryParams{
 		UserID:   pgtype.UUID{Bytes: otherUserID, Valid: true},
 		FileName: "test.txt",
 		FileSize: 123,
@@ -598,6 +640,8 @@ func TestDownloadFile_UnauthorizedAccess(t *testing.T) {
 }
 
 func TestDeleteFile_NotFound(t *testing.T) {
+	t.Parallel()
+
 	svc, _, _, ctx, _ := setupFileService(t)
 
 	resp, err := svc.DeleteFile(ctx, &pb.DeleteFileRequest{FileId: uuid.NewString()})
@@ -606,11 +650,13 @@ func TestDeleteFile_NotFound(t *testing.T) {
 }
 
 func TestDeleteFile_Unauthorized(t *testing.T) {
+	t.Parallel()
+
 	svc, storage, _, ctx, _ := setupFileService(t)
 
 	// Store a file with a different user
 	otherUserID := uuid.New()
-	binary, err := storage.StoreBinary(context.Background(), db.StoreBinaryEntryParams{
+	binary, err := storage.StoreBinary(t.Context(), db.StoreBinaryEntryParams{
 		UserID:   pgtype.UUID{Bytes: otherUserID, Valid: true},
 		FileName: "test.txt",
 		FileSize: 123,
@@ -624,6 +670,8 @@ func TestDeleteFile_Unauthorized(t *testing.T) {
 }
 
 func TestDeleteFile_S3DeleteFailure(t *testing.T) {
+	t.Parallel()
+
 	svc, storage, _, ctx, _ := setupFileService(t)
 
 	// First store a file to delete
@@ -644,6 +692,8 @@ func TestDeleteFile_S3DeleteFailure(t *testing.T) {
 }
 
 func TestGetFile_NotFound(t *testing.T) {
+	t.Parallel()
+
 	svc, _, _, ctx, _ := setupFileService(t)
 
 	resp, err := svc.GetFile(ctx, &pb.GetFileRequest{FileId: uuid.NewString()})
@@ -652,11 +702,13 @@ func TestGetFile_NotFound(t *testing.T) {
 }
 
 func TestGetFile_Unauthorized(t *testing.T) {
+	t.Parallel()
+
 	svc, storage, _, ctx, _ := setupFileService(t)
 
 	// Store a file with a different user
 	otherUserID := uuid.New()
-	binary, err := storage.StoreBinary(context.Background(), db.StoreBinaryEntryParams{
+	binary, err := storage.StoreBinary(t.Context(), db.StoreBinaryEntryParams{
 		UserID:   pgtype.UUID{Bytes: otherUserID, Valid: true},
 		FileName: "test.txt",
 		FileSize: 123,
@@ -670,6 +722,8 @@ func TestGetFile_Unauthorized(t *testing.T) {
 }
 
 func TestGetFiles_EmptyResult(t *testing.T) {
+	t.Parallel()
+
 	svc, _, _, ctx, _ := setupFileService(t)
 
 	resp, err := svc.GetFiles(ctx, &pb.GetFilesRequest{})
@@ -678,11 +732,13 @@ func TestGetFiles_EmptyResult(t *testing.T) {
 }
 
 func TestGetFiles_WithPagination(t *testing.T) {
+	t.Parallel()
+
 	svc, storage, _, ctx, _ := setupFileService(t)
 
 	// Store multiple files
 	userID := testutils.GetUserIDFromContext(ctx)
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		_, err := storage.StoreBinary(ctx, db.StoreBinaryEntryParams{
 			UserID:   pgtype.UUID{Bytes: uuid.MustParse(userID), Valid: true},
 			FileName: "test.txt",
@@ -706,6 +762,7 @@ func (m *MockDownloadStream) Send(resp *pb.DownloadFileResponse) error {
 	if m.SendFunc != nil {
 		return m.SendFunc(resp)
 	}
+
 	return nil
 }
 
@@ -713,10 +770,11 @@ func (m *MockDownloadStream) Context() context.Context {
 	if m.ContextFunc != nil {
 		return m.ContextFunc()
 	}
+
 	return context.Background()
 }
 
-// The following are required by the gRPC stream interface but not used in your test
+// The following are required by the gRPC stream interface but not used in your test.
 func (m *MockDownloadStream) SetHeader(md metadata.MD) error {
 	panic("implement me")
 }

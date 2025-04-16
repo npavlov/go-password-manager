@@ -34,7 +34,7 @@ func NewGRPCManager(cfg *config.Config, logger *zerolog.Logger, memStorage redis
 		interceptors.TokenInterceptor(logger, cfg.JwtSecret, memStorage),
 	),
 		grpc.ChainStreamInterceptor(
-			interceptors.StreamTokenInterceptor(logger, cfg.JwtSecret, memStorage), // NEW Stream Interceptor
+			interceptors.StreamTokenInterceptor(logger, cfg.JwtSecret, memStorage),
 		), grpc.Creds(creds))
 	reflection.Register(grpcServer)
 

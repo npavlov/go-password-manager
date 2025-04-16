@@ -1,11 +1,17 @@
+//nolint:err113
 package storage_test
 
 import (
 	"context"
 	"errors"
-	"io"
 	"testing"
 	"time"
+
+	"github.com/rs/zerolog"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/npavlov/go-password-manager/gen/proto/card"
 	"github.com/npavlov/go-password-manager/gen/proto/file"
@@ -14,136 +20,15 @@ import (
 	"github.com/npavlov/go-password-manager/gen/proto/password"
 	"github.com/npavlov/go-password-manager/internal/client/storage"
 	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
-	"github.com/rs/zerolog"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // Mocks
 
-type MockFacade struct {
-	mock.Mock
-}
-
-func (m *MockFacade) Login(username, password string) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *MockFacade) Register(username, password, email string) (string, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *MockFacade) StorePassword(ctx context.Context, login string, password string) (string, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *MockFacade) UpdatePassword(ctx context.Context, id, login, password string) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *MockFacade) DeletePassword(ctx context.Context, id string) (bool, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *MockFacade) SetMetainfo(ctx context.Context, id string, meta map[string]string) (bool, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *MockFacade) DeleteMetainfo(ctx context.Context, id, key string) (bool, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *MockFacade) StoreNote(ctx context.Context, content string) (string, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *MockFacade) DeleteNote(ctx context.Context, id string) (bool, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *MockFacade) StoreCard(ctx context.Context, cardNum, expDate, Cvv, cardHolder string) (string, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *MockFacade) UpdateCard(ctx context.Context, id, cardNum, expDate, Cvv, cardHolder string) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *MockFacade) DeleteCard(ctx context.Context, id string) (bool, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *MockFacade) UploadBinary(ctx context.Context, filename string, reader io.Reader) (string, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *MockFacade) DownloadBinary(ctx context.Context, fileID string, writer io.Writer) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *MockFacade) DeleteBinary(ctx context.Context, fileID string) (bool, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *MockFacade) GetItems(ctx context.Context, page, pageSize int32) ([]*item.ItemData, int32, error) {
-	args := m.Called(ctx, page, pageSize)
-	return args.Get(0).([]*item.ItemData), args.Get(1).(int32), args.Error(2)
-}
-
-func (m *MockFacade) GetMetainfo(ctx context.Context, id string) (map[string]string, error) {
-	args := m.Called(ctx, id)
-
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-
-	return args.Get(0).(map[string]string), args.Error(1)
-}
-
-func (m *MockFacade) GetPassword(ctx context.Context, id string) (*password.PasswordData, time.Time, error) {
-	args := m.Called(ctx, id)
-
-	if args.Get(0) == nil {
-		return nil, time.Now(), args.Error(2)
-	}
-
-	return args.Get(0).(*password.PasswordData), args.Get(1).(time.Time), args.Error(2)
-}
-
-func (m *MockFacade) GetNote(ctx context.Context, id string) (*note.NoteData, time.Time, error) {
-	args := m.Called(ctx, id)
-	return args.Get(0).(*note.NoteData), args.Get(1).(time.Time), args.Error(2)
-}
-
-func (m *MockFacade) GetCard(ctx context.Context, id string) (*card.CardData, time.Time, error) {
-	args := m.Called(ctx, id)
-	return args.Get(0).(*card.CardData), args.Get(1).(time.Time), args.Error(2)
-}
-
-func (m *MockFacade) GetFile(ctx context.Context, id string) (*file.FileMeta, error) {
-	args := m.Called(ctx, id)
-	return args.Get(0).(*file.FileMeta), args.Error(1)
-}
-
 func TestNewStorageManager(t *testing.T) {
+	t.Parallel()
+
 	logger := zerolog.Nop()
-	f := new(MockFacade)
+	f := new(testutils.MockFacade)
 	tm := new(testutils.MockTokenManager)
 
 	sm := storage.NewStorageManager(f, tm, &logger)
@@ -156,86 +41,105 @@ func TestNewStorageManager(t *testing.T) {
 }
 
 func TestFetchItems_Success(t *testing.T) {
-	logger := zerolog.Nop()
-	f := new(MockFacade)
-	tm := new(testutils.MockTokenManager)
+	t.Parallel()
 
+	logger := zerolog.Nop()
 	// Mock two pages of results
 	itemsPage1 := []*item.ItemData{
 		{Id: "1", Type: item.ItemType_ITEM_TYPE_PASSWORD, UpdatedAt: timestamppb.Now()},
 		{Id: "2", Type: item.ItemType_ITEM_TYPE_NOTE, UpdatedAt: timestamppb.Now()},
 	}
+	facade := new(testutils.MockFacade)
+	facade.GetItemsFunc = func(ctx context.Context, page, pageSize int32) ([]*item.ItemData, int32, error) {
+		return itemsPage1, 0, nil
+	}
+	tm := new(testutils.MockTokenManager)
 
-	f.On("GetItems", mock.Anything, int32(1), int32(10)).Return(itemsPage1, int32(2), nil)
+	facade.On("GetItems", mock.Anything, int32(1), int32(10)).Return(itemsPage1, int32(2), nil)
 
-	sm := storage.NewStorageManager(f, tm, &logger)
-	items, err := sm.FetchItems(context.Background())
-	assert.NoError(t, err)
+	sm := storage.NewStorageManager(facade, tm, &logger)
+	items, err := sm.FetchItems(t.Context())
+	require.NoError(t, err)
 	assert.Len(t, items, 2)
-	f.AssertExpectations(t)
+	facade.AssertExpectations(t)
 }
 
 func TestFetchItems_Error(t *testing.T) {
+	t.Parallel()
+
 	logger := zerolog.Nop()
-	f := new(MockFacade)
+	facade := new(testutils.MockFacade)
 	tm := new(testutils.MockTokenManager)
 
-	f.On("GetItems", mock.Anything, int32(1), int32(10)).Return([]*item.ItemData{}, int32(0), errors.New("fetch error"))
+	facade.GetItemsFunc = func(ctx context.Context, page, pageSize int32) ([]*item.ItemData, int32, error) {
+		return []*item.ItemData{}, 0, errors.New("error")
+	}
+	facade.On("GetItems", mock.Anything, int32(1), int32(10)).
+		Return([]*item.ItemData{}, int32(0), errors.New("fetch error"))
 
-	sm := storage.NewStorageManager(f, tm, &logger)
-	_, err := sm.FetchItems(context.Background())
+	sm := storage.NewStorageManager(facade, tm, &logger)
+	_, err := sm.FetchItems(t.Context())
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "error getting items")
-	f.AssertExpectations(t)
+	facade.AssertExpectations(t)
 }
 
 func TestProcessItem_NotUpdated(t *testing.T) {
+	t.Parallel()
+
 	logger := zerolog.Nop()
-	f := new(MockFacade)
+	f := new(testutils.MockFacade)
 	tm := new(testutils.MockTokenManager)
 
 	sm := storage.NewStorageManager(f, tm, &logger)
 	sm.LastSyncAt = time.Now().Add(time.Hour) // Set future time
 
-	item := &item.ItemData{
+	itemData := &item.ItemData{
 		Id:        "1",
 		Type:      item.ItemType_ITEM_TYPE_PASSWORD,
 		UpdatedAt: timestamppb.Now(),
 	}
 
-	processed := sm.ProcessItem(context.Background(), item)
+	processed := sm.ProcessItem(t.Context(), itemData)
 	assert.False(t, processed)
 }
 
 func TestProcessPassword_Success(t *testing.T) {
-	logger := zerolog.Nop()
-	f := new(MockFacade)
-	tm := new(testutils.MockTokenManager)
+	t.Parallel()
 
-	passwordID := "pass123"
-	meta := map[string]string{"key": "value"}
+	logger := zerolog.Nop()
+	facade := new(testutils.MockFacade)
 	passwordData := &password.PasswordData{
 		Login:    "user",
 		Password: "pass",
 	}
+	facade.GetPasswordFunc = func(ctx context.Context, id string) (*password.PasswordData, time.Time, error) {
+		return passwordData, time.Time{}, nil
+	}
+	passwordID := "pass123"
+	tm := new(testutils.MockTokenManager)
+
+	meta := map[string]string{"key": "value"}
 	lastUpdate := time.Now()
 
-	f.On("GetPassword", mock.Anything, passwordID).Return(passwordData, lastUpdate, nil)
+	facade.On("GetPassword", mock.Anything, passwordID).Return(passwordData, lastUpdate, nil)
 
-	sm := storage.NewStorageManager(f, tm, &logger)
-	err := sm.ProcessPassword(context.Background(), passwordID, meta)
+	sm := storage.NewStorageManager(facade, tm, &logger)
+	err := sm.ProcessPassword(t.Context(), passwordID, meta)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, sm.Password, passwordID)
 	assert.Equal(t, "user", sm.Password[passwordID].Login)
 	assert.Equal(t, "pass", sm.Password[passwordID].Password)
-	f.AssertExpectations(t)
+	facade.AssertExpectations(t)
 }
 
 func TestProcessNote_Success(t *testing.T) {
+	t.Parallel()
+
 	logger := zerolog.Nop()
-	f := new(MockFacade)
+	fClient := new(testutils.MockFacade)
 	tm := new(testutils.MockTokenManager)
 
 	noteID := "note123"
@@ -244,21 +148,25 @@ func TestProcessNote_Success(t *testing.T) {
 		Content: "test content",
 	}
 	lastUpdate := time.Now()
+	fClient.GetNoteFunc = func(ctx context.Context, id string) (*note.NoteData, time.Time, error) {
+		return noteData, time.Time{}, nil
+	}
+	fClient.On("GetNote", mock.Anything, noteID).Return(noteData, lastUpdate, nil)
 
-	f.On("GetNote", mock.Anything, noteID).Return(noteData, lastUpdate, nil)
+	sm := storage.NewStorageManager(fClient, tm, &logger)
+	err := sm.ProcessNote(t.Context(), noteID, meta)
 
-	sm := storage.NewStorageManager(f, tm, &logger)
-	err := sm.ProcessNote(context.Background(), noteID, meta)
-
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, sm.Notes, noteID)
 	assert.Equal(t, "test content", sm.Notes[noteID].Content)
-	f.AssertExpectations(t)
+	fClient.AssertExpectations(t)
 }
 
 func TestProcessCard_Success(t *testing.T) {
+	t.Parallel()
+
 	logger := zerolog.Nop()
-	f := new(MockFacade)
+	facade := new(testutils.MockFacade)
 	tm := new(testutils.MockTokenManager)
 
 	cardID := "card123"
@@ -270,21 +178,25 @@ func TestProcessCard_Success(t *testing.T) {
 		CardholderName: "John Doe",
 	}
 	lastUpdate := time.Now()
+	facade.GetCardFunc = func(ctx context.Context, id string) (*card.CardData, time.Time, error) {
+		return cardData, time.Time{}, nil
+	}
+	facade.On("GetCard", mock.Anything, cardID).Return(cardData, lastUpdate, nil)
 
-	f.On("GetCard", mock.Anything, cardID).Return(cardData, lastUpdate, nil)
+	sm := storage.NewStorageManager(facade, tm, &logger)
+	err := sm.ProcessCard(t.Context(), cardID, meta)
 
-	sm := storage.NewStorageManager(f, tm, &logger)
-	err := sm.ProcessCard(context.Background(), cardID, meta)
-
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, sm.Cards, cardID)
 	assert.Equal(t, "4111111111111111", sm.Cards[cardID].CardNumber)
-	f.AssertExpectations(t)
+	facade.AssertExpectations(t)
 }
 
 func TestProcessBinary_Success(t *testing.T) {
+	t.Parallel()
+
 	logger := zerolog.Nop()
-	f := new(MockFacade)
+	facade := new(testutils.MockFacade)
 	tm := new(testutils.MockTokenManager)
 
 	fileID := "file123"
@@ -294,33 +206,40 @@ func TestProcessBinary_Success(t *testing.T) {
 		FileSize: 1024,
 	}
 
-	f.On("GetFile", mock.Anything, fileID).Return(fileMeta, nil)
+	facade.GetFileFunc = func(ctx context.Context, fileID string) (*file.FileMeta, error) {
+		return fileMeta, nil
+	}
+	facade.On("GetFile", mock.Anything, fileID).Return(fileMeta, nil)
 
-	sm := storage.NewStorageManager(f, tm, &logger)
-	err := sm.ProcessBinary(context.Background(), fileID, meta)
+	sm := storage.NewStorageManager(facade, tm, &logger)
+	err := sm.ProcessBinary(t.Context(), fileID, meta)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, sm.Binaries, fileID)
 	assert.Equal(t, "test.txt", sm.Binaries[fileID].Filename)
-	f.AssertExpectations(t)
+	facade.AssertExpectations(t)
 }
 
 func TestSyncItems_NotAuthorized(t *testing.T) {
+	t.Parallel()
+
 	logger := zerolog.Nop()
-	f := new(MockFacade)
+	f := new(testutils.MockFacade)
 	tm := new(testutils.MockTokenManager)
 	tm.On("IsAuthorized").Return(false)
 
 	sm := storage.NewStorageManager(f, tm, &logger)
-	err := sm.SyncItems(context.Background())
+	err := sm.SyncItems(t.Context())
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not authorized")
 }
 
 func TestSyncItems_AlreadySyncing(t *testing.T) {
+	t.Parallel()
+
 	logger := zerolog.Nop()
-	f := new(MockFacade)
+	f := new(testutils.MockFacade)
 	tm := new(testutils.MockTokenManager)
 
 	tm.On("IsAuthorized").Return(true)
@@ -328,21 +247,23 @@ func TestSyncItems_AlreadySyncing(t *testing.T) {
 	sm := storage.NewStorageManager(f, tm, &logger)
 	sm.Syncing = 1 // Simulate ongoing sync
 
-	err := sm.SyncItems(context.Background())
-	assert.NoError(t, err) // Should return nil when already syncing
+	err := sm.SyncItems(t.Context())
+	require.NoError(t, err) // Should return nil when already syncing
 }
 
 func TestStartBackgroundSync(t *testing.T) {
+	t.Parallel()
+
 	logger := zerolog.Nop()
-	f := new(MockFacade)
+	facade := new(testutils.MockFacade)
 	tm := new(testutils.MockTokenManager)
 
 	// Setup mocks for initial sync
 	tm.On("IsAuthorized").Return(true)
-	f.On("GetItems", mock.Anything, int32(1), int32(10)).Return([]*item.ItemData{}, int32(0), nil)
+	facade.On("GetItems", mock.Anything, int32(1), int32(10)).Return([]*item.ItemData{}, int32(0), nil)
 
-	sm := storage.NewStorageManager(f, tm, &logger)
-	ctx, cancel := context.WithCancel(context.Background())
+	sm := storage.NewStorageManager(facade, tm, &logger)
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	// Start sync in separate goroutine
@@ -353,78 +274,98 @@ func TestStartBackgroundSync(t *testing.T) {
 
 	// Stop the sync
 	sm.StopSync()
-
 }
 
 func TestProcessItem_Success(t *testing.T) {
-	logger := zerolog.Nop()
-	f := new(MockFacade)
-	tm := new(testutils.MockTokenManager)
-
-	sm := storage.NewStorageManager(f, tm, &logger)
-	sm.LastSyncAt = time.Now().Add(-time.Hour) // Set past time
+	t.Parallel()
 
 	testCases := []struct {
 		name     string
 		itemType item.ItemType
-		mockFunc func()
+		mockFunc func(facade *testutils.MockFacade)
 	}{
 		{
 			name:     "Password",
 			itemType: item.ItemType_ITEM_TYPE_PASSWORD,
-			mockFunc: func() {
-				f.On("GetMetainfo", mock.Anything, "item1").Return(map[string]string{}, nil)
-				f.On("GetPassword", mock.Anything, "item1").Return(&password.PasswordData{}, time.Now(), nil)
+			mockFunc: func(facade *testutils.MockFacade) {
+				facade.On("GetMetainfo", mock.Anything, "item1").Return(map[string]string{}, nil)
+				facade.On("GetPassword", mock.Anything, "item1").Return(&password.PasswordData{}, time.Now(), nil)
 			},
 		},
 		{
 			name:     "Note",
 			itemType: item.ItemType_ITEM_TYPE_NOTE,
-			mockFunc: func() {
-				f.On("GetMetainfo", mock.Anything, "item1").Return(map[string]string{}, nil)
-				f.On("GetNote", mock.Anything, "item1").Return(&note.NoteData{}, time.Now(), nil)
+			mockFunc: func(facade *testutils.MockFacade) {
+				facade.On("GetMetainfo", mock.Anything, "item1").Return(map[string]string{}, nil)
+				facade.On("GetNote", mock.Anything, "item1").Return(&note.NoteData{}, time.Now(), nil)
 			},
 		},
 		{
 			name:     "Card",
 			itemType: item.ItemType_ITEM_TYPE_CARD,
-			mockFunc: func() {
-				f.On("GetMetainfo", mock.Anything, "item1").Return(map[string]string{}, nil)
-				f.On("GetCard", mock.Anything, "item1").Return(&card.CardData{}, time.Now(), nil)
+			mockFunc: func(facade *testutils.MockFacade) {
+				facade.On("GetMetainfo", mock.Anything, "item1").Return(map[string]string{}, nil)
+				facade.On("GetCard", mock.Anything, "item1").Return(&card.CardData{}, time.Now(), nil)
 			},
 		},
 		{
 			name:     "Binary",
 			itemType: item.ItemType_ITEM_TYPE_BINARY,
-			mockFunc: func() {
-				f.On("GetMetainfo", mock.Anything, "item1").Return(map[string]string{}, nil)
-				f.On("GetFile", mock.Anything, "item1").Return(&file.FileMeta{}, nil)
+			mockFunc: func(facade *testutils.MockFacade) {
+				facade.On("GetMetainfo", mock.Anything, "item1").Return(map[string]string{}, nil)
+				facade.On("GetFile", mock.Anything, "item1").Return(&file.FileMeta{}, nil)
 			},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.mockFunc()
+			t.Parallel()
+
+			logger := zerolog.Nop()
+			facade := new(testutils.MockFacade)
+			facade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
+				return map[string]string{}, nil
+			}
+			facade.GetNoteFunc = func(ctx context.Context, id string) (*note.NoteData, time.Time, error) {
+				return &note.NoteData{}, time.Time{}, nil
+			}
+			facade.GetPasswordFunc = func(ctx context.Context, id string) (*password.PasswordData, time.Time, error) {
+				return &password.PasswordData{}, time.Time{}, nil
+			}
+			facade.GetCardFunc = func(ctx context.Context, id string) (*card.CardData, time.Time, error) {
+				return &card.CardData{}, time.Time{}, nil
+			}
+			facade.GetFileFunc = func(ctx context.Context, fileID string) (*file.FileMeta, error) {
+				return &file.FileMeta{}, nil
+			}
+			tm := new(testutils.MockTokenManager)
+
+			sm := storage.NewStorageManager(facade, tm, &logger)
+			sm.LastSyncAt = time.Now().Add(-time.Hour) // Set past time
+
+			tc.mockFunc(facade)
 			item := &item.ItemData{
 				Id:        "item1",
 				Type:      tc.itemType,
 				UpdatedAt: timestamppb.Now(),
 			}
 
-			processed := sm.ProcessItem(context.Background(), item)
+			processed := sm.ProcessItem(t.Context(), item)
 			assert.True(t, processed)
-			f.AssertExpectations(t)
+			facade.AssertExpectations(t)
 		})
 	}
 }
 
 func TestProcessItem_MetaError(t *testing.T) {
+	t.Parallel()
+
 	logger := zerolog.Nop()
-	f := new(MockFacade)
+	fClient := new(testutils.MockFacade)
 	tm := new(testutils.MockTokenManager)
 
-	sm := storage.NewStorageManager(f, tm, &logger)
+	sm := storage.NewStorageManager(fClient, tm, &logger)
 	sm.LastSyncAt = time.Now().Add(-time.Hour)
 
 	item := &item.ItemData{
@@ -433,38 +374,52 @@ func TestProcessItem_MetaError(t *testing.T) {
 		UpdatedAt: timestamppb.Now(),
 	}
 
-	f.On("GetMetainfo", mock.Anything, "item1").Return(nil, errors.New("meta error"))
+	fClient.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
+		return map[string]string{}, nil
+	}
+	fClient.On("GetMetainfo", mock.Anything, "item1").Return(nil, errors.New("meta error"))
 
-	processed := sm.ProcessItem(context.Background(), item)
+	processed := sm.ProcessItem(t.Context(), item)
 	assert.False(t, processed)
-	f.AssertExpectations(t)
+	fClient.AssertExpectations(t)
 }
 
 func TestProcessItem_ProcessingError(t *testing.T) {
+	t.Parallel()
+
 	logger := zerolog.Nop()
-	f := new(MockFacade)
+	facade := new(testutils.MockFacade)
 	tm := new(testutils.MockTokenManager)
 
-	sm := storage.NewStorageManager(f, tm, &logger)
+	sm := storage.NewStorageManager(facade, tm, &logger)
 	sm.LastSyncAt = time.Now().Add(-time.Hour)
 
-	item := &item.ItemData{
+	newItem := &item.ItemData{
 		Id:        "item1",
 		Type:      item.ItemType_ITEM_TYPE_PASSWORD,
 		UpdatedAt: timestamppb.Now(),
 	}
 
-	f.On("GetMetainfo", mock.Anything, "item1").Return(map[string]string{}, nil)
-	f.On("GetPassword", mock.Anything, "item1").Return(nil, time.Time{}, errors.New("password error"))
+	facade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
+		return map[string]string{}, nil
+	}
+	facade.GetPasswordFunc = func(ctx context.Context, id string) (*password.PasswordData, time.Time, error) {
+		return &password.PasswordData{}, time.Time{}, errors.New("password error")
+	}
 
-	processed := sm.ProcessItem(context.Background(), item)
+	facade.On("GetMetainfo", mock.Anything, "item1").Return(map[string]string{}, nil)
+	facade.On("GetPassword", mock.Anything, "item1").Return(nil, time.Time{}, errors.New("password error"))
+
+	processed := sm.ProcessItem(t.Context(), newItem)
 	assert.False(t, processed)
-	f.AssertExpectations(t)
+	facade.AssertExpectations(t)
 }
 
 func TestSyncItems_Logging(t *testing.T) {
+	t.Parallel()
+
 	logger := testutils.GetTLogger()
-	f := new(MockFacade)
+	facade := new(testutils.MockFacade)
 	tm := new(testutils.MockTokenManager)
 	tm.Authorized = true
 
@@ -484,15 +439,17 @@ func TestSyncItems_Logging(t *testing.T) {
 
 	// Setup mocks
 	tm.On("IsAuthorized").Return(true)
-	f.On("GetItems", mock.Anything, int32(1), int32(10)).Return(items, int32(2), nil)
-	f.On("GetMetainfo", mock.Anything, "item1").Return(map[string]string{}, nil)
-	f.On("GetPassword", mock.Anything, "item1").Return(&password.PasswordData{}, time.Now(), nil)
-	f.On("GetMetainfo", mock.Anything, "item2").Return(map[string]string{}, nil)
-	f.On("GetNote", mock.Anything, "item2").Return(&note.NoteData{}, time.Now(), nil)
+	facade.On("GetItems", mock.Anything, int32(1), int32(10)).Return(items, int32(2), 2)
+	facade.On("GetMetainfo", mock.Anything, "item1").Return(map[string]string{}, nil)
+	facade.On("GetPassword", mock.Anything, "item1").Return(&password.PasswordData{}, time.Now(), nil)
+	facade.On("GetMetainfo", mock.Anything, "item2").Return(map[string]string{}, nil)
+	facade.On("GetNote", mock.Anything, "item2").Return(&note.NoteData{}, time.Now(), nil)
+	facade.GetItemsFunc = func(ctx context.Context, page, pageSize int32) ([]*item.ItemData, int32, error) {
+		return items, 2, nil
+	}
 
-	sm := storage.NewStorageManager(f, tm, logger)
-	err := sm.SyncItems(context.Background())
+	sm := storage.NewStorageManager(facade, tm, logger)
+	err := sm.SyncItems(t.Context())
 
-	assert.NoError(t, err)
-
+	require.NoError(t, err)
 }

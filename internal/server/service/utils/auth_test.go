@@ -20,7 +20,7 @@ type mockStorage struct {
 	mock.Mock
 }
 
-func (m *mockStorage) GetUserById(ctx context.Context, id pgtype.UUID) (*db.User, error) {
+func (m *mockStorage) GetUserByID(ctx context.Context, id pgtype.UUID) (*db.User, error) {
 	args := m.Called(ctx, id)
 
 	return args.Get(0).(*db.User), args.Error(1)
@@ -29,6 +29,8 @@ func (m *mockStorage) GetUserById(ctx context.Context, id pgtype.UUID) (*db.User
 // ---- TESTS ----
 
 func TestGenerateAndValidateJWT(t *testing.T) {
+	t.Parallel()
+
 	userID := "test-user-id"
 	secret := "my-secret"
 	exp := time.Now().Add(time.Hour).Unix()
@@ -44,11 +46,15 @@ func TestGenerateAndValidateJWT(t *testing.T) {
 }
 
 func TestValidateJWT_InvalidToken(t *testing.T) {
+	t.Parallel()
+
 	_, err := utils.ValidateJWT("bad-token", "my-secret")
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestValidateJWT_InvalidSecret(t *testing.T) {
+	t.Parallel()
+
 	secret := "correct-secret"
 	wrongSecret := "wrong-secret"
 
@@ -56,13 +62,15 @@ func TestValidateJWT_InvalidSecret(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = utils.ValidateJWT(token, wrongSecret)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestGetUserId_Success(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.WithValue(t.Context(), "user_id", "550e8400-e29b-41d4-a716-446655440000")
 
-	uuid, err := utils.GetUserId(ctx)
+	uuid, err := utils.GetUserID(ctx)
 	require.NoError(t, err)
 
 	// Just check if status is valid (UUID in pgtype is not nil)
@@ -70,18 +78,24 @@ func TestGetUserId_Success(t *testing.T) {
 }
 
 func TestGetUserId_Missing(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
-	_, err := utils.GetUserId(ctx)
-	assert.Error(t, err)
+	_, err := utils.GetUserID(ctx)
+	require.Error(t, err)
 }
 
 func TestGetUserId_Invalid(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.WithValue(t.Context(), "user_id", "not-a-uuid")
-	_, err := utils.GetUserId(ctx)
-	assert.Error(t, err)
+	_, err := utils.GetUserID(ctx)
+	require.Error(t, err)
 }
 
 func TestGetUserKey_Success(t *testing.T) {
+	t.Parallel()
+
 	// Arrange
 	ctx := t.Context()
 	userUUID := pgtype.UUID{}
@@ -97,7 +111,7 @@ func TestGetUserKey_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	mockedUser := &db.User{EncryptionKey: encryptedKey}
-	mockedStorage.On("GetUserById", mock.Anything, userUUID).Return(mockedUser, nil)
+	mockedStorage.On("GetUserByID", mock.Anything, userUUID).Return(mockedUser, nil)
 
 	// Act
 	decryptedKey, err := utils.GetUserKey(ctx, mockedStorage, userUUID, masterKey)
@@ -105,10 +119,12 @@ func TestGetUserKey_Success(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	assert.Equal(t, plainUserKey, decryptedKey)
-	mockedStorage.AssertCalled(t, "GetUserById", ctx, userUUID)
+	mockedStorage.AssertCalled(t, "GetUserByID", ctx, userUUID)
 }
 
 func TestGetUserKey_Failure(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 	userUUID := pgtype.UUID{}
 	err := userUUID.Scan("550e8400-e29b-41d4-a716-446655440000")
@@ -116,8 +132,8 @@ func TestGetUserKey_Failure(t *testing.T) {
 
 	mockedStorage := new(mockStorage)
 	mockedUser := &db.User{}
-	mockedStorage.On("GetUserById", mock.Anything, userUUID).Return(mockedUser, assert.AnError)
+	mockedStorage.On("GetUserByID", mock.Anything, userUUID).Return(mockedUser, assert.AnError)
 
 	_, err = utils.GetUserKey(ctx, mockedStorage, userUUID, "some-master-key")
-	assert.Error(t, err)
+	require.Error(t, err)
 }

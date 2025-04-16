@@ -1,7 +1,7 @@
+//nolint:err113,goconst
 package redis_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 	"time"
@@ -27,6 +27,8 @@ func TestNewRStorage(t *testing.T) {
 }
 
 func TestPing_Success(t *testing.T) {
+	t.Parallel()
+
 	// Setup miniredis for testing
 	mr, err := miniredis.Run()
 	require.NoError(t, err)
@@ -38,32 +40,37 @@ func TestPing_Success(t *testing.T) {
 	}
 
 	storage := redis.NewRStorage(cfg, &logger)
-	err = storage.Ping(context.Background())
+	err = storage.Ping(t.Context())
 	require.NoError(t, err)
 }
 
 func TestPing_Failure(t *testing.T) {
+	t.Parallel()
+
 	logger := zerolog.New(nil)
 	cfg := config.Config{
 		Redis: "invalid-address:6379",
 	}
 
 	storage := redis.NewRStorage(cfg, &logger)
-	err := storage.Ping(context.Background())
+	err := storage.Ping(t.Context())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "redis ping")
 }
 
 func TestGet_Success(t *testing.T) {
+	t.Parallel()
+
 	// Setup miniredis for testing
 	mr, err := miniredis.Run()
 	require.NoError(t, err)
 	defer mr.Close()
 
 	// Set test data
-	testKey := "test-key"
-	testValue := "test-value"
-	mr.Set(testKey, testValue)
+	testKey := "test-key1"
+	testValue := "test-value1"
+	err = mr.Set(testKey, testValue)
+	require.NoError(t, err)
 
 	logger := zerolog.New(nil)
 	cfg := config.Config{
@@ -71,12 +78,14 @@ func TestGet_Success(t *testing.T) {
 	}
 
 	storage := redis.NewRStorage(cfg, &logger)
-	value, err := storage.Get(context.Background(), testKey)
+	value, err := storage.Get(t.Context(), testKey)
 	require.NoError(t, err)
 	assert.Equal(t, testValue, value)
 }
 
 func TestGet_NotFound(t *testing.T) {
+	t.Parallel()
+
 	// Setup miniredis for testing
 	mr, err := miniredis.Run()
 	require.NoError(t, err)
@@ -88,12 +97,14 @@ func TestGet_NotFound(t *testing.T) {
 	}
 
 	storage := redis.NewRStorage(cfg, &logger)
-	_, err = storage.Get(context.Background(), "nonexistent-key")
+	_, err = storage.Get(t.Context(), "nonexistent-key")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to get value")
 }
 
 func TestSet_Success(t *testing.T) {
+	t.Parallel()
+
 	// Setup miniredis for testing
 	mr, err := miniredis.Run()
 	require.NoError(t, err)
@@ -109,7 +120,7 @@ func TestSet_Success(t *testing.T) {
 	}
 
 	storage := redis.NewRStorage(cfg, &logger)
-	err = storage.Set(context.Background(), testKey, testValue, expiration)
+	err = storage.Set(t.Context(), testKey, testValue, expiration)
 	require.NoError(t, err)
 
 	// Verify the value was set
@@ -123,6 +134,7 @@ func TestSet_Success(t *testing.T) {
 }
 
 func TestSet_Failure(t *testing.T) {
+	t.Parallel()
 	// Using redismock to simulate failure
 	db, mock := redismock.NewClientMock()
 	logger := zerolog.New(nil)
@@ -138,12 +150,13 @@ func TestSet_Failure(t *testing.T) {
 	// Mock the Set command to fail
 	mock.ExpectSet(testKey, testValue, expiration).SetErr(errors.New("redis error"))
 
-	err := storage.Set(context.Background(), testKey, testValue, expiration)
+	err := storage.Set(t.Context(), testKey, testValue, expiration)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to set value")
 }
 
 func TestSet_ZeroExpiration(t *testing.T) {
+	t.Parallel()
 	// Setup miniredis for testing
 	mr, err := miniredis.Run()
 	require.NoError(t, err)
@@ -158,7 +171,7 @@ func TestSet_ZeroExpiration(t *testing.T) {
 	}
 
 	storage := redis.NewRStorage(cfg, &logger)
-	err = storage.Set(context.Background(), testKey, testValue, 0)
+	err = storage.Set(t.Context(), testKey, testValue, 0)
 	require.NoError(t, err)
 
 	// Verify the value was set with no expiration

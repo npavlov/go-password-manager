@@ -5,13 +5,13 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/npavlov/go-password-manager/internal/server/service/utils"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
 	pb "github.com/npavlov/go-password-manager/gen/proto/auth"
 	"github.com/npavlov/go-password-manager/internal/server/config"
 	"github.com/npavlov/go-password-manager/internal/server/service/auth"
+	"github.com/npavlov/go-password-manager/internal/server/service/utils"
 	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 	generalutils "github.com/npavlov/go-password-manager/internal/utils"
 )

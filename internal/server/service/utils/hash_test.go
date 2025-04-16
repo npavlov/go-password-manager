@@ -33,6 +33,7 @@ func TestHashCardNumber(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			// Expected SHA-256 hash as hex string
 			hash := sha256.Sum256([]byte(tt.input))
 			expectedHash := hex.EncodeToString(hash[:])

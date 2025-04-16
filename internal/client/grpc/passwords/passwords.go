@@ -50,6 +50,7 @@ func (as *Client) UpdatePassword(ctx context.Context, id, login, password string
 		Data: &pb.PasswordData{
 			Login:    login,
 			Password: password,
+			Metadata: make(map[string]string),
 		},
 	})
 	if err != nil {
@@ -66,6 +67,7 @@ func (as *Client) StorePassword(ctx context.Context, login, password string) (st
 		Password: &pb.PasswordData{
 			Login:    login,
 			Password: password,
+			Metadata: make(map[string]string),
 		},
 	})
 	if err != nil {

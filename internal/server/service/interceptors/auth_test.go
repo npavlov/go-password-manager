@@ -1,3 +1,4 @@
+//nolint:wrapcheck
 package interceptors_test
 
 import (
@@ -5,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/npavlov/go-password-manager/internal/server/service/interceptors"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/mock"
@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	pb "github.com/npavlov/go-password-manager/gen/proto/auth"
+	"github.com/npavlov/go-password-manager/internal/server/service/interceptors"
 	"github.com/npavlov/go-password-manager/internal/server/service/utils"
 )
 
@@ -25,17 +26,21 @@ type MockMemStorage struct {
 
 func (m *MockMemStorage) Get(ctx context.Context, key string) (string, error) {
 	args := m.Called(ctx, key)
+
 	return args.String(0), args.Error(1)
 }
 
 func (m *MockMemStorage) Set(ctx context.Context, key string, value string, expiration time.Duration) error {
 	args := m.Called(ctx, key, value, expiration)
+
 	return args.Error(0)
 }
 
 func TestTokenInterceptor(t *testing.T) {
+	t.Parallel()
+
 	logger := zerolog.New(nil)
-	jwtSecret := "test-secret"
+	jwtSecret := "test-secret1"
 	validUserID := "user-123"
 	validToken, _ := utils.GenerateJWT("user-123", jwtSecret, time.Now().Add(time.Hour).Unix())
 	invalidToken := "invalid.token"
@@ -86,13 +91,15 @@ func TestTokenInterceptor(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			mockStorage := &MockMemStorage{}
 			tt.mockSetup(mockStorage)
 
 			interceptor := interceptors.TokenInterceptor(&logger, jwtSecret, mockStorage)
 
 			// Create test context with or without token
-			ctx := context.Background()
+			ctx := t.Context()
 			if tt.token != "" {
 				md := metadata.New(map[string]string{"authorization": tt.token})
 				ctx = metadata.NewIncomingContext(ctx, md)
@@ -102,6 +109,8 @@ func TestTokenInterceptor(t *testing.T) {
 			handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 				if tt.expectedError {
 					t.Error("Handler should not be called for error cases")
+
+					//nolint:nilnil
 					return nil, nil
 				}
 
@@ -178,13 +187,15 @@ func TestStreamTokenInterceptor(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			mockStorage := &MockMemStorage{}
 			tt.mockSetup(mockStorage)
 
 			interceptor := interceptors.StreamTokenInterceptor(&logger, jwtSecret, mockStorage)
 
 			// Create test context with or without token
-			ctx := context.Background()
+			ctx := t.Context()
 			if tt.token != "" {
 				md := metadata.New(map[string]string{"authorization": tt.token})
 				ctx = metadata.NewIncomingContext(ctx, md)
@@ -197,6 +208,7 @@ func TestStreamTokenInterceptor(t *testing.T) {
 			handler := func(srv interface{}, stream grpc.ServerStream) error {
 				if tt.expectedError {
 					t.Error("Handler should not be called for error cases")
+
 					return nil
 				}
 
@@ -205,6 +217,7 @@ func TestStreamTokenInterceptor(t *testing.T) {
 					userID := stream.Context().Value("user_id")
 					require.Equal(t, validUserID, userID)
 				}
+
 				return nil
 			}
 
@@ -230,6 +243,7 @@ func TestStreamTokenInterceptor(t *testing.T) {
 	}
 }
 
+//nolint:containedctx
 type mockServerStream struct {
 	grpc.ServerStream
 	ctx context.Context
@@ -240,10 +254,10 @@ func (m *mockServerStream) Context() context.Context {
 }
 
 func TestAuthenticateToken(t *testing.T) {
+	t.Parallel()
+
 	jwtSecret := "test-secret"
 	validToken, _ := utils.GenerateJWT("user-123", jwtSecret, time.Now().Add(time.Hour).Unix())
-
-	mockStorage := &MockMemStorage{}
 
 	tests := []struct {
 		name          string
@@ -296,12 +310,16 @@ func TestAuthenticateToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			mockStorage := &MockMemStorage{}
+
 			mockStorage.ExpectedCalls = nil
 			mockStorage.Calls = nil
 			tt.mockSetup(mockStorage)
 
 			// Create context with or without token
-			ctx := context.Background()
+			ctx := t.Context()
 			if tt.token != "" {
 				md := metadata.New(map[string]string{"authorization": tt.token})
 				ctx = metadata.NewIncomingContext(ctx, md)

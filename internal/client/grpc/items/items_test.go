@@ -1,3 +1,4 @@
+//nolint:wrapcheck,err113
 package items_test
 
 import (
@@ -5,13 +6,15 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/npavlov/go-password-manager/gen/proto/item"
-	"github.com/npavlov/go-password-manager/internal/client/grpc/items"
-	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+
+	"github.com/npavlov/go-password-manager/gen/proto/item"
+	"github.com/npavlov/go-password-manager/internal/client/grpc/items"
+	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 )
 
 // Mocks
@@ -38,10 +41,13 @@ func (m *MockItemServiceClient) GetItems(ctx context.Context, in *item.GetItemsR
 
 func (m *MockTokenManager) GetToken() (string, error) {
 	args := m.Called()
+
 	return args.String(0), args.Error(1)
 }
 
 func TestGetItems_Success(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockItemServiceClient)
 	logger := zerolog.Nop()
 
@@ -71,13 +77,15 @@ func TestGetItems_Success(t *testing.T) {
 		Log:          &logger,
 	}
 
-	items, total, err := client.GetItems(context.Background(), 1, 10)
-	assert.NoError(t, err)
+	items, total, err := client.GetItems(t.Context(), 1, 10)
+	require.NoError(t, err)
 	assert.Equal(t, expectedItems, items)
 	assert.Equal(t, expectedTotal, total)
 }
 
 func TestGetItems_EmptyResult(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockItemServiceClient)
 	logger := zerolog.Nop()
 
@@ -95,13 +103,15 @@ func TestGetItems_EmptyResult(t *testing.T) {
 		Log:          &logger,
 	}
 
-	items, total, err := client.GetItems(context.Background(), 2, 20)
-	assert.NoError(t, err)
+	items, total, err := client.GetItems(t.Context(), 2, 20)
+	require.NoError(t, err)
 	assert.Empty(t, items)
 	assert.Equal(t, int32(0), total)
 }
 
 func TestGetItems_Error(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockItemServiceClient)
 	logger := zerolog.Nop()
 
@@ -116,8 +126,8 @@ func TestGetItems_Error(t *testing.T) {
 		Log:          &logger,
 	}
 
-	items, total, err := client.GetItems(context.Background(), 1, 10)
-	assert.Error(t, err)
+	items, total, err := client.GetItems(t.Context(), 1, 10)
+	require.Error(t, err)
 	assert.Nil(t, items)
 	assert.Equal(t, int32(0), total)
 	assert.Contains(t, err.Error(), "GetItems failed")
@@ -126,6 +136,8 @@ func TestGetItems_Error(t *testing.T) {
 }
 
 func TestGetItems_InvalidPageParams(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockItemServiceClient)
 	logger := zerolog.Nop()
 
@@ -144,8 +156,8 @@ func TestGetItems_InvalidPageParams(t *testing.T) {
 		Log:          &logger,
 	}
 
-	_, _, err := client.GetItems(context.Background(), 1, 0)
-	assert.NoError(t, err) // The client doesn't validate parameters
+	_, _, err := client.GetItems(t.Context(), 1, 0)
+	require.NoError(t, err) // The client doesn't validate parameters
 
 	// Test with negative page number (should still make the call)
 	mockClient.On("GetItems", mock.Anything, &item.GetItemsRequest{
@@ -156,11 +168,12 @@ func TestGetItems_InvalidPageParams(t *testing.T) {
 		TotalCount: 0,
 	}, nil)
 
-	_, _, err = client.GetItems(context.Background(), -1, 10)
-	assert.NoError(t, err) // The client doesn't validate parameters
+	_, _, err = client.GetItems(t.Context(), -1, 10)
+	require.NoError(t, err) // The client doesn't validate parameters
 }
 
 func TestNewItemsClient(t *testing.T) {
+	t.Parallel()
 
 	tm := new(testutils.MockTokenManager)
 	logger := zerolog.Nop()

@@ -1,3 +1,4 @@
+//nolint:mnd,forcetypeassert
 package tui
 
 import (

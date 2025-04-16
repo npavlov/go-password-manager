@@ -12,6 +12,8 @@ import (
 )
 
 func TestGManager_StartAndShutdown(t *testing.T) {
+	t.Parallel()
+
 	// Arrange
 	logger := testutils.GetTLogger()
 

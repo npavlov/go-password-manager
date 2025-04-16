@@ -1,3 +1,4 @@
+//nolint:ireturn,exhaustruct
 package utils
 
 import (
@@ -12,13 +13,13 @@ const KEY int = 54343
 type ISecureString interface {
 	Apply() ISecureString
 	AddWatcher(obs obs.Observer)
-	SetKey(int)
-	Set(string) ISecureString
+	SetKey(key int)
+	Set(str string) ISecureString
 	Get() string
 	GetSelf() *SecureString
 	Decrypt() []rune
 	RandomizeKey()
-	IsEquals(ISecureString) bool
+	IsEquals(secureString ISecureString) bool
 }
 
 type SecureString struct {
@@ -31,7 +32,7 @@ type SecureString struct {
 }
 
 func NewString(value string) ISecureString {
-	s := &SecureString{
+	sec := &SecureString{
 		Key:           KEY,
 		RealValue:     []rune(value),
 		FakeValue:     value,
@@ -39,9 +40,9 @@ func NewString(value string) ISecureString {
 		HackDetecting: false,
 	}
 
-	s.Apply()
+	sec.Apply()
 
-	return s
+	return sec
 }
 
 func (i *SecureString) Apply() ISecureString {
@@ -79,6 +80,7 @@ func (i *SecureString) XOR(value []rune, key int) []rune {
 	res := make([]rune, len(value))
 
 	for i, v := range value {
+		//nolint:gosec
 		res[i] = v ^ int32(key)
 	}
 

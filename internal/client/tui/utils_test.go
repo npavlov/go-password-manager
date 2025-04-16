@@ -3,8 +3,9 @@ package tui_test
 import (
 	"testing"
 
-	"github.com/npavlov/go-password-manager/internal/client/tui"
 	"github.com/stretchr/testify/require"
+
+	"github.com/npavlov/go-password-manager/internal/client/tui"
 )
 
 func TestFormatCardNumber(t *testing.T) {

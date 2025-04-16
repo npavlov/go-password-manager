@@ -6,6 +6,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/rs/zerolog"
+	"github.com/stretchr/testify/require"
+
 	pb "github.com/npavlov/go-password-manager/gen/proto/card"
 	"github.com/npavlov/go-password-manager/internal/server/config"
 	"github.com/npavlov/go-password-manager/internal/server/db"
@@ -13,11 +16,9 @@ import (
 	"github.com/npavlov/go-password-manager/internal/server/service/utils"
 	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 	generalutils "github.com/npavlov/go-password-manager/internal/utils"
-	"github.com/rs/zerolog"
-	"github.com/stretchr/testify/require"
 )
 
-func setupCardService(t *testing.T) (*card.Service, *testutils.MockDBStorage, context.Context) {
+func setupCardService(t *testing.T) (*card.Service, context.Context) {
 	t.Helper()
 
 	logger := zerolog.New(nil)
@@ -44,15 +45,15 @@ func setupCardService(t *testing.T) (*card.Service, *testutils.MockDBStorage, co
 	storage.AddTestUser(testUser)
 
 	// Inject user ID and encryption key into context
-	ctx := testutils.InjectUserToContext(context.Background(), testUser.ID.String())
+	ctx := testutils.InjectUserToContext(t.Context(), testUser.ID.String())
 
-	return svc, storage, ctx
+	return svc, ctx
 }
 
 func TestStoreCard_Success(t *testing.T) {
 	t.Parallel()
 
-	svc, _, ctx := setupCardService(t)
+	svc, ctx := setupCardService(t)
 
 	req := &pb.StoreCardRequest{
 		Card: &pb.CardData{
@@ -65,13 +66,13 @@ func TestStoreCard_Success(t *testing.T) {
 
 	resp, err := svc.StoreCard(ctx, req)
 	require.NoError(t, err)
-	require.NotEmpty(t, resp.CardId)
+	require.NotEmpty(t, resp.GetCardId())
 }
 
 func TestStoreCard_InvalidInput(t *testing.T) {
 	t.Parallel()
 
-	svc, _, ctx := setupCardService(t)
+	svc, ctx := setupCardService(t)
 
 	req := &pb.StoreCardRequest{
 		Card: &pb.CardData{}, // Missing required fields
@@ -84,7 +85,7 @@ func TestStoreCard_InvalidInput(t *testing.T) {
 func TestGetCard_Success(t *testing.T) {
 	t.Parallel()
 
-	svc, _, ctx := setupCardService(t)
+	svc, ctx := setupCardService(t)
 
 	card, err := svc.StoreCard(ctx, &pb.StoreCardRequest{
 		Card: &pb.CardData{
@@ -97,21 +98,21 @@ func TestGetCard_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	req := &pb.GetCardRequest{
-		CardId: card.CardId,
+		CardId: card.GetCardId(),
 	}
 
 	resp, err := svc.GetCard(ctx, req)
 	require.NoError(t, err)
-	require.Equal(t, "4111111111111111", resp.Card.CardNumber)
-	require.Equal(t, "123", resp.Card.Cvv)
-	require.Equal(t, "12/30", resp.Card.ExpiryDate)
-	require.Equal(t, "John Doe", resp.Card.CardholderName)
+	require.Equal(t, "4111111111111111", resp.GetCard().GetCardNumber())
+	require.Equal(t, "123", resp.GetCard().GetCvv())
+	require.Equal(t, "12/30", resp.GetCard().GetExpiryDate())
+	require.Equal(t, "John Doe", resp.GetCard().GetCardholderName())
 }
 
 func TestDeleteCard_Success(t *testing.T) {
 	t.Parallel()
 
-	svc, _, ctx := setupCardService(t)
+	svc, ctx := setupCardService(t)
 
 	created, err := svc.StoreCard(ctx, &pb.StoreCardRequest{
 		Card: &pb.CardData{
@@ -123,16 +124,16 @@ func TestDeleteCard_Success(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	req := &pb.DeleteCardRequest{CardId: created.CardId}
+	req := &pb.DeleteCardRequest{CardId: created.GetCardId()}
 	resp, err := svc.DeleteCard(ctx, req)
 	require.NoError(t, err)
-	require.True(t, resp.Ok)
+	require.True(t, resp.GetOk())
 }
 
 func TestUpdateCard_Success(t *testing.T) {
 	t.Parallel()
 
-	svc, _, ctx := setupCardService(t)
+	svc, ctx := setupCardService(t)
 
 	created, err := svc.StoreCard(ctx, &pb.StoreCardRequest{
 		Card: &pb.CardData{
@@ -145,7 +146,7 @@ func TestUpdateCard_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	updateReq := &pb.UpdateCardRequest{
-		CardId: created.CardId,
+		CardId: created.GetCardId(),
 		Data: &pb.CardData{
 			CardNumber:     "4000000000000002",
 			Cvv:            "999",
@@ -156,21 +157,21 @@ func TestUpdateCard_Success(t *testing.T) {
 
 	resp, err := svc.UpdateCard(ctx, updateReq)
 	require.NoError(t, err)
-	require.Equal(t, created.CardId, resp.CardId)
+	require.Equal(t, created.GetCardId(), resp.GetCardId())
 
 	// Optionally verify updated data
-	card, err := svc.GetCard(ctx, &pb.GetCardRequest{CardId: created.CardId})
+	card, err := svc.GetCard(ctx, &pb.GetCardRequest{CardId: created.GetCardId()})
 	require.NoError(t, err)
-	require.Equal(t, "4000000000000002", card.Card.CardNumber)
-	require.Equal(t, "999", card.Card.Cvv)
-	require.Equal(t, "01/31", card.Card.ExpiryDate)
-	require.Equal(t, "Jane Smith", card.Card.CardholderName)
+	require.Equal(t, "4000000000000002", card.GetCard().GetCardNumber())
+	require.Equal(t, "999", card.GetCard().GetCvv())
+	require.Equal(t, "01/31", card.GetCard().GetExpiryDate())
+	require.Equal(t, "Jane Smith", card.GetCard().GetCardholderName())
 }
 
 func TestUpdateCard_Invalid(t *testing.T) {
 	t.Parallel()
 
-	svc, _, ctx := setupCardService(t)
+	svc, ctx := setupCardService(t)
 
 	req := &pb.UpdateCardRequest{
 		CardId: "invalid-uuid",
@@ -184,7 +185,7 @@ func TestUpdateCard_Invalid(t *testing.T) {
 func TestGetCards_Empty(t *testing.T) {
 	t.Parallel()
 
-	svc, _, ctx := setupCardService(t)
+	svc, ctx := setupCardService(t)
 
 	req := &pb.GetCardsRequest{}
 	resp, err := svc.GetCards(ctx, req)
@@ -195,7 +196,7 @@ func TestGetCards_Empty(t *testing.T) {
 func TestStoreCard_MissingContext(t *testing.T) {
 	t.Parallel()
 
-	svc, _, _ := setupCardService(t)
+	svc, _ := setupCardService(t)
 
 	req := &pb.StoreCardRequest{
 		Card: &pb.CardData{
@@ -206,14 +207,14 @@ func TestStoreCard_MissingContext(t *testing.T) {
 		},
 	}
 
-	_, err := svc.StoreCard(context.Background(), req) // no user context
+	_, err := svc.StoreCard(t.Context(), req) // no user context
 	require.Error(t, err)
 }
 
 func TestDeleteCard_InvalidId(t *testing.T) {
 	t.Parallel()
 
-	svc, _, ctx := setupCardService(t)
+	svc, ctx := setupCardService(t)
 
 	req := &pb.DeleteCardRequest{CardId: "invalid-id"}
 	_, err := svc.DeleteCard(ctx, req)
@@ -223,7 +224,7 @@ func TestDeleteCard_InvalidId(t *testing.T) {
 func TestUpdateCard_GetUserIdFailure(t *testing.T) {
 	t.Parallel()
 
-	svc, _, _ := setupCardService(t)
+	svc, _ := setupCardService(t)
 
 	req := &pb.UpdateCardRequest{
 		CardId: uuid.NewString(),
@@ -235,26 +236,26 @@ func TestUpdateCard_GetUserIdFailure(t *testing.T) {
 		},
 	}
 
-	_, err := svc.UpdateCard(context.Background(), req) // no user context
+	_, err := svc.UpdateCard(t.Context(), req) // no user context
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "error encrypting card")
+	require.Contains(t, err.Error(), "error getting decrypted user UUID")
 }
 
 func TestGetCards_ValidEmpty(t *testing.T) {
 	t.Parallel()
 
-	svc, _, ctx := setupCardService(t)
+	svc, ctx := setupCardService(t)
 
 	resp, err := svc.GetCards(ctx, &pb.GetCardsRequest{})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
-	require.Len(t, resp.Cards, 0)
+	require.Empty(t, resp.GetCards())
 }
 
 func TestDeleteCard_InvalidUUID(t *testing.T) {
 	t.Parallel()
 
-	svc, _, ctx := setupCardService(t)
+	svc, ctx := setupCardService(t)
 
 	_, err := svc.DeleteCard(ctx, &pb.DeleteCardRequest{
 		CardId: "not-a-uuid",
@@ -265,7 +266,7 @@ func TestDeleteCard_InvalidUUID(t *testing.T) {
 func TestEncryptCard_Success(t *testing.T) {
 	t.Parallel()
 
-	svc, _, _ := setupCardService(t)
+	svc, _ := setupCardService(t)
 
 	encryptionKey, err := utils.GenerateRandomKey()
 

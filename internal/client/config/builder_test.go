@@ -5,9 +5,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/npavlov/go-password-manager/internal/client/config"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/npavlov/go-password-manager/internal/client/config"
 )
 
 func TestNewConfigBuilder(t *testing.T) {
@@ -15,7 +16,6 @@ func TestNewConfigBuilder(t *testing.T) {
 	builder := config.NewConfigBuilder(&logger)
 
 	assert.NotNil(t, builder)
-
 }
 
 func TestFromEnv(t *testing.T) {
@@ -55,8 +55,7 @@ func TestFromEnv(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set environment variables
 			for k, v := range tt.envVars {
-				os.Setenv(k, v)
-				defer os.Unsetenv(k)
+				t.Setenv(k, v)
 			}
 
 			logger := zerolog.Nop()
@@ -130,6 +129,8 @@ func TestFromFlags(t *testing.T) {
 }
 
 func TestFromObj(t *testing.T) {
+	t.Parallel()
+
 	inputCfg := &config.Config{
 		Address:     "localhost:8080",
 		MasterKey:   "testkey",
@@ -176,8 +177,7 @@ func TestBuild(t *testing.T) {
 			builder := config.NewConfigBuilder(&logger)
 
 			if tt.masterKey != "" {
-				os.Setenv("MASTER_KEY", tt.masterKey)
-				defer os.Unsetenv("MASTER_KEY")
+				t.Setenv("MASTER_KEY", tt.masterKey)
 			}
 
 			cfg := builder.Build()

@@ -16,7 +16,10 @@ import (
 	"github.com/npavlov/go-password-manager/internal/client/model"
 )
 
-var pageLimit int32 = 10
+const (
+	syncTime        = 5 * time.Minute
+	pageLimit int32 = 10
+)
 
 // StManager manages client-side storage and background syncing.
 type StManager struct {
@@ -35,6 +38,7 @@ type StManager struct {
 
 // NewStorageManager creates a new StorageManager with background sync.
 func NewStorageManager(facade facade.IFacade, tokenMgr auth.ITokenManager, logger *zerolog.Logger) *StManager {
+	//nolint:exhaustruct
 	sm := &StManager{
 		facade:   facade,
 		stopChan: make(chan struct{}),
@@ -55,10 +59,10 @@ func (sm *StManager) FetchItems(ctx context.Context) ([]*pb.ItemData, error) {
 	defer sm.mutex.Unlock()
 
 	total := 0
-	var i int32 = 1
+	var itr int32 = 1
 	allItems := make([]*pb.ItemData, 0)
 	for {
-		items, count, err := sm.facade.GetItems(ctx, i, pageLimit)
+		items, count, err := sm.facade.GetItems(ctx, itr, pageLimit)
 		if err != nil {
 			sm.logger.Error().Err(err).Msg("error getting items")
 
@@ -67,10 +71,10 @@ func (sm *StManager) FetchItems(ctx context.Context) ([]*pb.ItemData, error) {
 
 		allItems = append(allItems, items...)
 
-		total = total + int(count)
+		total += int(count)
 
 		// next page
-		i++
+		itr++
 
 		if count < pageLimit {
 			break
@@ -105,12 +109,11 @@ func (sm *StManager) ProcessItem(ctx context.Context, item *pb.ItemData) bool {
 		err = sm.ProcessCard(ctx, itemId, meta)
 	case pb.ItemType_ITEM_TYPE_BINARY:
 		err = sm.ProcessBinary(ctx, itemId, meta)
-	}
-	if err != nil {
+	case pb.ItemType_ITEM_TYPE_UNSPECIFIED:
 		return false
 	}
 
-	return true
+	return err == nil
 }
 
 func (sm *StManager) ProcessPassword(ctx context.Context, passwordId string, meta map[string]string) error {
@@ -207,7 +210,7 @@ func (sm *StManager) ProcessBinary(ctx context.Context, fileID string, meta map[
 
 // StartBackgroundSync runs a goroutine that checks for updates every minute.
 func (sm *StManager) StartBackgroundSync(ctx context.Context) {
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(syncTime)
 	defer ticker.Stop()
 
 	sm.logger.Info().Msg("starting background sync")

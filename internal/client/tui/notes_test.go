@@ -1,3 +1,4 @@
+//nolint:dupl,err113
 package tui_test
 
 import (
@@ -8,12 +9,15 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/npavlov/go-password-manager/internal/client/model"
 	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 )
 
 func TestShowNoteList(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 
 	// Test empty list
@@ -45,6 +49,8 @@ func TestShowNoteList(t *testing.T) {
 }
 
 func TestShowNoteDetails(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	note := model.NoteItem{
 		StorageItem: model.StorageItem{ID: "123"},
@@ -56,7 +62,7 @@ func TestShowNoteDetails(t *testing.T) {
 	mockFacade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
 		return map[string]string{"key": "value"}, nil
 	}
-	mockFacade.On("GetMetainfo", context.Background(), "123").Return(map[string]string{"key": "value"}, nil)
+	mockFacade.On("GetMetainfo", mock.Anything, "123").Return(map[string]string{"key": "value"}, nil)
 
 	flex := ui.ShowNoteDetails(note)
 	assert.NotNil(t, flex)
@@ -73,6 +79,8 @@ func TestShowNoteDetails(t *testing.T) {
 }
 
 func TestShowNoteDetails_MetaError(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	note := model.NoteItem{
 		StorageItem: model.StorageItem{ID: "123"},
@@ -84,7 +92,7 @@ func TestShowNoteDetails_MetaError(t *testing.T) {
 	mockFacade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
 		return nil, errors.New("meta error")
 	}
-	mockFacade.On("GetMetainfo", context.Background(), "123").Return(nil, errors.New("meta error"))
+	mockFacade.On("GetMetainfo", mock.Anything, "123").Return(nil, errors.New("meta error"))
 
 	flex := ui.ShowNoteDetails(note)
 	textView := flex.GetItem(0).(*tview.TextView)
@@ -92,6 +100,8 @@ func TestShowNoteDetails_MetaError(t *testing.T) {
 }
 
 func TestShowAddNoteForm_Success(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 
 	// Setup mocks
@@ -99,11 +109,12 @@ func TestShowAddNoteForm_Success(t *testing.T) {
 	mockFacade.StoreNoteFunc = func(ctx context.Context, content string) (string, error) {
 		return "new-id", nil
 	}
-	mockFacade.On("StoreNote", context.Background(), "test content").Return("new-id", nil)
+	mockFacade.On("StoreNote", t.Context(), "test content").Return("new-id", nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
 	mockStorage.ProcessNoteFunc = func(ctx context.Context, noteID string, meta map[string]string) error {
 		assert.Equal(t, "new-id", noteID)
+
 		return nil
 	}
 
@@ -118,10 +129,11 @@ func TestShowAddNoteForm_Success(t *testing.T) {
 	// Simulate save button click
 	event := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
 	form.GetButton(0).InputHandler()(event, nil)
-
 }
 
 func TestShowAddNoteForm_Error(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 
 	// Setup mock to return error
@@ -129,7 +141,7 @@ func TestShowAddNoteForm_Error(t *testing.T) {
 	mockFacade.StoreNoteFunc = func(ctx context.Context, content string) (string, error) {
 		return "", errors.New("store failed")
 	}
-	mockFacade.On("StoreNote", context.Background(), "test content").Return("", errors.New("store failed"))
+	mockFacade.On("StoreNote", t.Context(), "test content").Return("", errors.New("store failed"))
 
 	form := ui.ShowAddNoteForm()
 
@@ -140,7 +152,6 @@ func TestShowAddNoteForm_Error(t *testing.T) {
 	// Simulate save button click
 	event := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
 	form.GetButton(0).InputHandler()(event, nil)
-
 }
 
 func TestShowAddNoteForm_Cancel(t *testing.T) {
@@ -151,10 +162,11 @@ func TestShowAddNoteForm_Cancel(t *testing.T) {
 	// Simulate cancel button click
 	event := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
 	form.GetButton(1).InputHandler()(event, nil)
-
 }
 
 func TestShowRemoveNoteForm_Confirm(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	note := model.NoteItem{
 		StorageItem: model.StorageItem{ID: "123"},
@@ -166,7 +178,7 @@ func TestShowRemoveNoteForm_Confirm(t *testing.T) {
 	mockFacade.DeleteNoteFunc = func(ctx context.Context, noteID string) (bool, error) {
 		return true, nil
 	}
-	mockFacade.On("DeleteNote", context.Background(), "123").Return(true, nil)
+	mockFacade.On("DeleteNote", t.Context(), "123").Return(true, nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
 	mockStorage.DeleteNotesFunc = func(Id string) {
@@ -179,7 +191,6 @@ func TestShowRemoveNoteForm_Confirm(t *testing.T) {
 	// Simulate "Yes" selection
 	modal.SetFocus(0) // Focus "Yes" button
 	modal.InputHandler()(tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone), nil)
-
 }
 
 func TestShowRemoveNoteForm_Cancel(t *testing.T) {
@@ -194,10 +205,11 @@ func TestShowRemoveNoteForm_Cancel(t *testing.T) {
 	// Simulate "No" selection
 	modal.SetFocus(1) // Focus "No" button
 	modal.InputHandler()(tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone), nil)
-
 }
 
 func TestShowNoteDetails_Actions(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	note := model.NoteItem{
 		StorageItem: model.StorageItem{
@@ -211,10 +223,10 @@ func TestShowNoteDetails_Actions(t *testing.T) {
 
 	// Setup mock facade
 	mockFacade := ui.Facade.(*testutils.MockFacade)
+	mockFacade.On("GetMetainfo", mock.Anything, "123").Return(note.Metadata, nil)
 	mockFacade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
 		return note.Metadata, nil
 	}
-	mockFacade.On("GetMetainfo", context.Background(), "123").Return(note.Metadata, nil)
 
 	flex := ui.ShowNoteDetails(note)
 	actions := flex.GetItem(1).(*tview.List)

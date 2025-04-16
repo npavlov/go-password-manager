@@ -8,11 +8,11 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/npavlov/go-password-manager/internal/server/adapter"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
 	"github.com/npavlov/go-password-manager/internal/pkg/logger"
+	"github.com/npavlov/go-password-manager/internal/server/adapter"
 	"github.com/npavlov/go-password-manager/internal/server/buildinfo"
 	"github.com/npavlov/go-password-manager/internal/server/config"
 	"github.com/npavlov/go-password-manager/internal/server/dbmanager"
@@ -72,9 +72,16 @@ func loadConfig(log *zerolog.Logger) *config.Config {
 	return cfg
 }
 
-func starServer(ctx context.Context, cfg *config.Config, log *zerolog.Logger, wg *sync.WaitGroup, dbM *dbmanager.DBManager) {
+func starServer(
+	ctx context.Context,
+	cfg *config.Config,
+	log *zerolog.Logger,
+	wg *sync.WaitGroup,
+	dbM *dbmanager.DBManager,
+) {
 	dbStorage, memStorage := setupStorage(ctx, cfg, dbM, log)
 
+	//nolint:contextcheck
 	grpcManager := service.NewGRPCManager(cfg, log, memStorage)
 	grpcServer := grpcManager.GetServer()
 

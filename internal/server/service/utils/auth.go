@@ -40,15 +40,15 @@ func ValidateJWT(tokenString string, jwtSecret string) (string, error) {
 	return userID, nil
 }
 
-func GetUserId(ctx context.Context) (pgtype.UUID, error) {
+func GetUserID(ctx context.Context) (pgtype.UUID, error) {
 	var uuid pgtype.UUID
 
-	userId, ok := ctx.Value("user_id").(string)
-	if !ok || userId == "" {
+	userID, ok := ctx.Value("user_id").(string)
+	if !ok || userID == "" {
 		return uuid, errors.New("Error getting user id")
 	}
 
-	if err := uuid.Scan(userId); err != nil {
+	if err := uuid.Scan(userID); err != nil {
 		return uuid, errors.Wrap(err, "Error getting user id")
 	}
 
@@ -56,11 +56,11 @@ func GetUserId(ctx context.Context) (pgtype.UUID, error) {
 }
 
 type UserGetter interface {
-	GetUserById(ctx context.Context, id pgtype.UUID) (*db.User, error)
+	GetUserByID(ctx context.Context, id pgtype.UUID) (*db.User, error)
 }
 
 func GetUserKey(ctx context.Context, storage UserGetter, userUUID pgtype.UUID, masterKey string) (string, error) {
-	user, err := storage.GetUserById(ctx, userUUID)
+	user, err := storage.GetUserByID(ctx, userUUID)
 	if err != nil {
 		return "", errors.Wrap(err, "Error getting user id")
 	}

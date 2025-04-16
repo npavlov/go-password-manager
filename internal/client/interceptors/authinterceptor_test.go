@@ -1,3 +1,4 @@
+//nolint:wrapcheck,lll,err113
 package interceptors_test
 
 import (
@@ -6,15 +7,17 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/npavlov/go-password-manager/gen/proto/auth"
 	"github.com/npavlov/go-password-manager/internal/client/config"
 	"github.com/npavlov/go-password-manager/internal/client/interceptors"
 	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // Mocks
@@ -43,6 +46,7 @@ type MockStreamer struct {
 
 func (m *MockUnaryInvoker) Invoke(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
 	args := m.Called(ctx, method, req, reply, cc, opts)
+
 	return args.Error(0)
 }
 
@@ -57,6 +61,8 @@ func (m *MockStreamer) Stream(ctx context.Context, desc *grpc.StreamDesc, cc *gr
 }
 
 func TestNewAuthInterceptor(t *testing.T) {
+	t.Parallel()
+
 	cfg := config.Config{}
 	tm := new(testutils.MockTokenManager)
 
@@ -66,6 +72,8 @@ func TestNewAuthInterceptor(t *testing.T) {
 }
 
 func TestSetAuthClient(t *testing.T) {
+	t.Parallel()
+
 	cfg := config.Config{}
 	tm := new(testutils.MockTokenManager)
 	interceptor := interceptors.NewAuthInterceptor(cfg, tm)
@@ -94,9 +102,9 @@ func TestUnaryInterceptor_SkipAuthMethods(t *testing.T) {
 			invoker.On("Invoke", mock.Anything, tt.method, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 				Return(nil)
 
-			err := interceptor.UnaryInterceptor(context.Background(), tt.method, nil, nil, nil, invoker.Invoke)
+			err := interceptor.UnaryInterceptor(t.Context(), tt.method, nil, nil, nil, invoker.Invoke)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			invoker.AssertExpectations(t)
 		})
 	}
@@ -111,14 +119,16 @@ func TestUnaryInterceptor_Success(t *testing.T) {
 	invoker.On("Invoke", mock.Anything, "some.method", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(nil)
 
-	err := interceptor.UnaryInterceptor(context.Background(), "some.method", nil, nil, nil, invoker.Invoke)
+	err := interceptor.UnaryInterceptor(t.Context(), "some.method", nil, nil, nil, invoker.Invoke)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	tm.AssertExpectations(t)
 	invoker.AssertExpectations(t)
 }
 
 func TestUnaryInterceptor_UnauthenticatedError(t *testing.T) {
+	t.Parallel()
+
 	cfg := config.Config{}
 	tm := new(testutils.MockTokenManager)
 	tm.On("GetRefreshToken").Return("valid_refresh").Once()
@@ -141,15 +151,17 @@ func TestUnaryInterceptor_UnauthenticatedError(t *testing.T) {
 	invoker.On("Invoke", mock.Anything, "some.method", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(nil).Once()
 
-	err := interceptor.UnaryInterceptor(context.Background(), "some.method", nil, nil, nil, invoker.Invoke)
+	err := interceptor.UnaryInterceptor(t.Context(), "some.method", nil, nil, nil, invoker.Invoke)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	tm.AssertExpectations(t)
 	invoker.AssertExpectations(t)
 	mockAuthClient.AssertExpectations(t)
 }
 
 func TestUnaryInterceptor_RefreshTokenFailure(t *testing.T) {
+	t.Parallel()
+
 	cfg := config.Config{}
 	tm := new(testutils.MockTokenManager)
 	tm.On("GetAccessToken").Return("expired_token")
@@ -167,9 +179,9 @@ func TestUnaryInterceptor_RefreshTokenFailure(t *testing.T) {
 	invoker.On("Invoke", mock.Anything, "some.method", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(status.Error(codes.Unauthenticated, "invalid token"))
 
-	err := interceptor.UnaryInterceptor(context.Background(), "some.method", nil, nil, nil, invoker.Invoke)
+	err := interceptor.UnaryInterceptor(t.Context(), "some.method", nil, nil, nil, invoker.Invoke)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to refresh access token")
 	tm.AssertExpectations(t)
 	invoker.AssertExpectations(t)
@@ -177,6 +189,8 @@ func TestUnaryInterceptor_RefreshTokenFailure(t *testing.T) {
 }
 
 func TestUnaryInterceptor_OtherError(t *testing.T) {
+	t.Parallel()
+
 	cfg := config.Config{}
 	tm := new(testutils.MockTokenManager)
 	tm.On("GetAccessToken").Return("valid_token")
@@ -186,39 +200,45 @@ func TestUnaryInterceptor_OtherError(t *testing.T) {
 	invoker.On("Invoke", mock.Anything, "some.method", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(status.Error(codes.Internal, "server error"))
 
-	err := interceptor.UnaryInterceptor(context.Background(), "some.method", nil, nil, nil, invoker.Invoke)
+	err := interceptor.UnaryInterceptor(t.Context(), "some.method", nil, nil, nil, invoker.Invoke)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, codes.Internal, status.Code(err))
 	tm.AssertExpectations(t)
 	invoker.AssertExpectations(t)
 }
 
 func TestStreamInterceptor_NoTokenManager(t *testing.T) {
+	t.Parallel()
+
 	interceptor := interceptors.NewAuthInterceptor(config.Config{}, nil)
 	streamer := new(MockStreamer)
 	streamer.On("Stream", mock.Anything, mock.Anything, mock.Anything, "some.method", mock.Anything).
 		Return(nil, nil)
 
-	_, err := interceptor.StreamInterceptor(context.Background(), nil, nil, "some.method", streamer.Stream)
+	_, err := interceptor.StreamInterceptor(t.Context(), nil, nil, "some.method", streamer.Stream)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	streamer.AssertExpectations(t)
 }
 
 func TestStreamInterceptor_NoToken(t *testing.T) {
+	t.Parallel()
+
 	tm := new(testutils.MockTokenManager)
 	tm.On("GetAccessToken").Return("")
 
 	interceptor := interceptors.NewAuthInterceptor(config.Config{}, tm)
-	_, err := interceptor.StreamInterceptor(context.Background(), nil, nil, "some.method", nil)
+	_, err := interceptor.StreamInterceptor(t.Context(), nil, nil, "some.method", nil)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, codes.Unauthenticated, status.Code(err))
 	tm.AssertExpectations(t)
 }
 
 func TestStreamInterceptor_Success(t *testing.T) {
+	t.Parallel()
+
 	tm := new(testutils.MockTokenManager)
 	tm.On("GetAccessToken").Return("valid_token")
 
@@ -227,16 +247,17 @@ func TestStreamInterceptor_Success(t *testing.T) {
 	streamer.On("Stream", mock.Anything, mock.Anything, mock.Anything, "some.method", mock.Anything).
 		Return(nil, nil)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	_, err := interceptor.StreamInterceptor(ctx, nil, nil, "some.method", streamer.Stream)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	streamer.AssertExpectations(t)
 	tm.AssertExpectations(t)
-
 }
 
 func TestConcurrentAccess(t *testing.T) {
+	t.Parallel()
+
 	cfg := config.Config{}
 	tm := new(testutils.MockTokenManager)
 	tm.On("GetRefreshToken").Return("refresh").Once()
@@ -266,13 +287,13 @@ func TestConcurrentAccess(t *testing.T) {
 
 	go func() {
 		defer wg.Done()
-		err := interceptor.UnaryInterceptor(context.Background(), "method1", nil, nil, nil, invoker.Invoke)
+		err := interceptor.UnaryInterceptor(t.Context(), "method1", nil, nil, nil, invoker.Invoke)
 		assert.NoError(t, err)
 	}()
 
 	go func() {
 		defer wg.Done()
-		err := interceptor.UnaryInterceptor(context.Background(), "method2", nil, nil, nil, invoker.Invoke)
+		err := interceptor.UnaryInterceptor(t.Context(), "method2", nil, nil, nil, invoker.Invoke)
 		assert.NoError(t, err)
 	}()
 

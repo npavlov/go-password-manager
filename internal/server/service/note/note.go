@@ -19,7 +19,7 @@ import (
 type Storage interface {
 	StoreNote(ctx context.Context, createNote db.CreateNoteEntryParams) (*db.Note, error)
 	GetNote(ctx context.Context, noteId string, userId pgtype.UUID) (*db.Note, error)
-	GetUserById(ctx context.Context, id pgtype.UUID) (*db.User, error)
+	GetUserByID(ctx context.Context, id pgtype.UUID) (*db.User, error)
 	DeleteNote(ctx context.Context, noteID string, userID pgtype.UUID) error
 }
 
@@ -56,7 +56,7 @@ func (ns *Service) StoreNote(ctx context.Context, req *pb.StoreNoteRequest) (*pb
 
 	userUUID, decryptedUserKey, err := utils.GetDecryptionKey(ctx, ns.storage, ns.cfg.SecuredMasterKey.Get())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "error getting decrypted user key")
 	}
 
 	encryptedNote, err := utils.Encrypt(req.GetNote().GetContent(), decryptedUserKey)
@@ -87,6 +87,9 @@ func (ns *Service) GetNote(ctx context.Context, req *pb.GetNoteRequest) (*pb.Get
 	}
 
 	userUUID, decryptedUserKey, err := utils.GetDecryptionKey(ctx, ns.storage, ns.cfg.SecuredMasterKey.Get())
+	if err != nil {
+		return nil, errors.Wrap(err, "error getting decrypted user key")
+	}
 
 	note, err := ns.storage.GetNote(ctx, req.GetNoteId(), userUUID)
 	if err != nil {
@@ -110,12 +113,14 @@ func (ns *Service) GetNote(ctx context.Context, req *pb.GetNoteRequest) (*pb.Get
 	}, nil
 }
 
-func (ns *Service) GetNotes(ctx context.Context, req *pb.GetNotesRequest) (*pb.GetNotesResponse, error) {
+func (ns *Service) GetNotes(_ context.Context, req *pb.GetNotesRequest) (*pb.GetNotesResponse, error) {
 	if err := ns.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	return &pb.GetNotesResponse{}, nil
+	return &pb.GetNotesResponse{
+		Notes: make([]*pb.NoteData, 0),
+	}, nil
 }
 
 func (ns *Service) DeleteNote(ctx context.Context, req *pb.DeleteNoteRequest) (*pb.DeleteNoteResponse, error) {
@@ -123,7 +128,7 @@ func (ns *Service) DeleteNote(ctx context.Context, req *pb.DeleteNoteRequest) (*
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	userUUID, err := utils.GetUserId(ctx)
+	userUUID, err := utils.GetUserID(ctx)
 	if err != nil {
 		ns.logger.Error().Err(err).Msg("error getting user id")
 

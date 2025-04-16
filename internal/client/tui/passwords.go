@@ -1,3 +1,4 @@
+//nolint:mnd,forcetypeassert
 package tui
 
 import (
@@ -69,7 +70,6 @@ func (t *TUI) ShowPasswordDetails(pass model.PasswordItem) *tview.Flex {
 					t.SetRoot(t.ShowPasswordDetails(pass), true)
 				}),
 				true)
-
 		}).
 		AddItem("🗑 Remove Metadata", "Delete metadata entry", 'r', func() {
 			t.SetRoot(

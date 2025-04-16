@@ -12,6 +12,10 @@ import (
 	"github.com/npavlov/go-password-manager/internal/client/auth"
 )
 
+const (
+	chunkSize = 1024
+)
+
 // Client handles file (binary) operations over gRPC.
 type Client struct {
 	conn         *grpc.ClientConn
@@ -31,6 +35,8 @@ func NewBinaryClient(conn *grpc.ClientConn, tokenManager auth.ITokenManager, log
 }
 
 // UploadFile streams file data to the server.
+//
+//nolint:cyclop
 func (c *Client) UploadFile(ctx context.Context, filename string, reader io.Reader) (string, error) {
 	stream, err := c.Client.UploadFile(ctx)
 	if err != nil {
@@ -47,19 +53,19 @@ func (c *Client) UploadFile(ctx context.Context, filename string, reader io.Read
 	}
 
 	// Send file chunks
-	buf := make([]byte, 1024)
+	buf := make([]byte, chunkSize)
 	for {
-		n, err := reader.Read(buf)
+		cursor, err := reader.Read(buf)
 		if err != nil && err != io.EOF {
 			return "", errors.Wrap(err, "failed to read from input")
 		}
 
-		if n > 0 {
+		if cursor > 0 {
 			err := stream.Send(&pb.UploadFileRequest{
 				Filename: filename,
-				Data:     buf[:n],
+				Data:     buf[:cursor],
 			})
-			if err != nil && err != io.EOF {
+			if err != nil && !errors.Is(err, io.EOF) {
 				return "", errors.Wrap(err, "failed to send file chunk")
 			}
 		}
@@ -90,7 +96,7 @@ func (c *Client) DownloadFile(ctx context.Context, fileID string, writer io.Writ
 
 	for {
 		chunk, err := stream.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

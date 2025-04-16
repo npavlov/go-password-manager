@@ -10,18 +10,22 @@ import (
 )
 
 func TestGetIdFromString_ValidUUID(t *testing.T) {
+	t.Parallel()
+
 	str := uuid.New().String()
 
-	result := utils.GetIdFromString(str)
+	result := utils.GetIDFromString(str)
 
 	assert.True(t, result.Valid)
 	assert.Equal(t, str, result.String())
 }
 
 func TestGetIdFromString_InvalidUUID(t *testing.T) {
+	t.Parallel()
+
 	str := "not-a-uuid"
 
-	result := utils.GetIdFromString(str)
+	result := utils.GetIDFromString(str)
 
 	assert.False(t, result.Valid)
 }

@@ -1,3 +1,4 @@
+//nolint:mnd,forcetypeassert
 package tui
 
 import (
@@ -12,18 +13,21 @@ import (
 )
 
 type TUI struct {
-	App        *tview.Application
-	Facade     facade.IFacade
-	Storage    storage.IStorageManager
-	Logger     *zerolog.Logger
-	TokenMgr   auth.ITokenManager
-	OnLogin    func()
-	OnRegister func()
-	stopApp    func()
-	SetRoot    func(p tview.Primitive, fullscreen bool) *tview.Application
+	App      *tview.Application
+	Facade   facade.IFacade
+	Storage  storage.IStorageManager
+	Logger   *zerolog.Logger
+	TokenMgr auth.ITokenManager
+	stopApp  func()
+	SetRoot  func(p tview.Primitive, fullscreen bool) *tview.Application
 }
 
-func NewTUI(app *tview.Application, facade facade.IFacade, storage storage.IStorageManager, tokenMgr auth.ITokenManager, log *zerolog.Logger) *TUI {
+func NewTUI(app *tview.Application,
+	facade facade.IFacade,
+	storage storage.IStorageManager,
+	tokenMgr auth.ITokenManager,
+	log *zerolog.Logger,
+) *TUI {
 	return &TUI{
 		App:      app,
 		Facade:   facade,
@@ -102,6 +106,7 @@ func (t *TUI) ShowLoginForm() *tview.Form {
 		AddButton("Back", func() { t.SetRoot(t.MainMenu(), true) })
 
 	form.SetTitle("Login").SetBorder(true)
+
 	return form
 }
 
@@ -115,14 +120,11 @@ func (t *TUI) HandleRegister(form *tview.Form) {
 	userID, err := t.Facade.Register(username, password, email)
 	if err != nil {
 		t.Logger.Error().Err(err).Msg("Registration failed")
+
 		return
 	}
 
 	t.Logger.Info().Str("userID", userID).Msg("Registration successful")
-
-	if t.OnRegister != nil {
-		t.OnRegister()
-	}
 
 	t.SetRoot(t.MainMenu(), true)
 }
@@ -134,6 +136,7 @@ func (t *TUI) HandleLogin(form *tview.Form) {
 	err := t.Facade.Login(username, password)
 	if err != nil {
 		t.Logger.Error().Err(err).Msg("Login failed")
+
 		return
 	}
 
@@ -141,10 +144,6 @@ func (t *TUI) HandleLogin(form *tview.Form) {
 		t.Logger.Error().Err(err).Msg("SyncItems failed")
 	} else {
 		t.Logger.Info().Msg("SyncItems successful")
-	}
-
-	if t.OnLogin != nil {
-		t.OnLogin()
 	}
 
 	t.SetRoot(t.MainMenu(), true)

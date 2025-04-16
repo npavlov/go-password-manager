@@ -9,6 +9,8 @@ import (
 )
 
 func TestDBStorage(t *testing.T) {
+	t.Parallel()
+	
 	storage, logger := testutils.SetupDBStorage(t)
 
 	assert.NotNil(t, storage)

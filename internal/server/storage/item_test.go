@@ -170,6 +170,8 @@ func TestGetItemsWithPagination(t *testing.T) {
 }
 
 func TestGetItemsEmptyResult(t *testing.T) {
+	t.Parallel()
+
 	storage, mock := testutils.SetupDBStorage(t)
 
 	userID := pgtype.UUID{Bytes: uuid.New(), Valid: true}

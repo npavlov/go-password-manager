@@ -1,3 +1,4 @@
+//nolint:wrapcheck
 package interceptors
 
 import (
@@ -107,6 +108,8 @@ func (ai *AuthInterceptor) refreshAccessToken(ctx context.Context) (string, stri
 }
 
 // StreamInterceptor attaches the token to streaming RPCs.
+//
+
 func (ai *AuthInterceptor) StreamInterceptor(
 	ctx context.Context,
 	desc *grpc.StreamDesc,

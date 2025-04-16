@@ -17,12 +17,12 @@ import (
 func TestAddMeta(t *testing.T) {
 	t.Parallel()
 
-	recordId := uuid.New()
-	uuid := pgtype.UUID{Bytes: recordId, Valid: true}
+	recordID := uuid.New()
+	uuid := pgtype.UUID{Bytes: recordID, Valid: true}
 
 	tests := []struct {
 		name     string
-		recordId string
+		recordID string
 		key      string
 		value    string
 		mock     func(mock pgxmock.PgxPoolIface)
@@ -31,7 +31,7 @@ func TestAddMeta(t *testing.T) {
 	}{
 		{
 			name:     "successful meta addition",
-			recordId: recordId.String(),
+			recordID: recordID.String(),
 			key:      "test_key",
 			value:    "test_value",
 			mock: func(mock pgxmock.PgxPoolIface) {
@@ -51,7 +51,7 @@ func TestAddMeta(t *testing.T) {
 		},
 		{
 			name:     "database error",
-			recordId: recordId.String(),
+			recordID: recordID.String(),
 			key:      "test_key",
 			value:    "test_value",
 			mock: func(mock pgxmock.PgxPoolIface) {
@@ -71,7 +71,7 @@ func TestAddMeta(t *testing.T) {
 			storage, mock := testutils.SetupDBStorage(t)
 			tt.mock(mock)
 
-			result, err := storage.AddMeta(t.Context(), tt.recordId, tt.key, tt.value)
+			result, err := storage.AddMeta(t.Context(), tt.recordID, tt.key, tt.value)
 
 			if tt.wantErr {
 				require.Error(t, err)
@@ -207,6 +207,8 @@ func TestDeleteMetaInfo(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			storage, mock := testutils.SetupDBStorage(t)
 			tt.mock(mock)
 

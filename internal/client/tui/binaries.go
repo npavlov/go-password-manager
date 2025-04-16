@@ -1,3 +1,4 @@
+//nolint:mnd,forcetypeassert,goconst
 package tui
 
 import (
@@ -129,7 +130,6 @@ func (t *TUI) ShowUploadBinaryForm() *tview.Form {
 
 			t.Logger.Info().Msgf("Binary uploaded: %s", filename)
 			t.SetRoot(t.ShowBinaryList(), true)
-
 		}).
 		AddButton("Cancel", func() {
 			t.SetRoot(t.ShowBinaryList(), true)

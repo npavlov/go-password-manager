@@ -11,7 +11,11 @@ import (
 )
 
 // StoreToken stores refresh token.
-func (ds *DBStorage) StoreToken(ctx context.Context, userID pgtype.UUID, refreshToken string, expiresAt time.Time) error {
+func (ds *DBStorage) StoreToken(ctx context.Context,
+	userID pgtype.UUID,
+	refreshToken string,
+	expiresAt time.Time,
+) error {
 	var pgExpiresAt pgtype.Timestamp
 	err := pgExpiresAt.Scan(expiresAt)
 	if err != nil {
@@ -29,7 +33,7 @@ func (ds *DBStorage) StoreToken(ctx context.Context, userID pgtype.UUID, refresh
 
 // GetToken gets refresh token.
 func (ds *DBStorage) GetToken(ctx context.Context, token string) (db.GetRefreshTokenRow, error) {
-	tokenDb, err := ds.Queries.GetRefreshToken(ctx, token)
+	tokenDB, err := ds.Queries.GetRefreshToken(ctx, token)
 
-	return tokenDb, errors.Wrap(err, "error getting refresh token")
+	return tokenDB, errors.Wrap(err, "error getting refresh token")
 }

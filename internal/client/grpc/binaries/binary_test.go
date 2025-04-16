@@ -1,3 +1,4 @@
+//nolint:wrapcheck,err113
 package binary_test
 
 import (
@@ -7,13 +8,15 @@ import (
 	"io"
 	"testing"
 
-	pb "github.com/npavlov/go-password-manager/gen/proto/file"
-	binary "github.com/npavlov/go-password-manager/internal/client/grpc/binaries"
-	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+
+	pb "github.com/npavlov/go-password-manager/gen/proto/file"
+	binary "github.com/npavlov/go-password-manager/internal/client/grpc/binaries"
+	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 )
 
 // Mocks
@@ -36,8 +39,9 @@ type MockTokenManager struct {
 	mock.Mock
 }
 
-func (m *MockFileServiceClient) GetFiles(ctx context.Context, in *pb.GetFilesRequest, opts ...grpc.CallOption) (*pb.GetFilesResponse, error) {
+func (m *MockFileServiceClient) GetFiles(ctx context.Context, _ *pb.GetFilesRequest, _ ...grpc.CallOption) (*pb.GetFilesResponse, error) {
 	args := m.Called(ctx)
+
 	return args.Get(0).(*pb.GetFilesResponse), args.Error(1)
 }
 
@@ -55,26 +59,31 @@ func (m *MockFileServiceClient) UploadFile(ctx context.Context, opts ...grpc.Cal
 
 func (m *MockFileServiceClient) DownloadFile(ctx context.Context, req *pb.DownloadFileRequest, opts ...grpc.CallOption) (pb.FileService_DownloadFileClient, error) {
 	args := m.Called(ctx, req)
+
 	return args.Get(0).(pb.FileService_DownloadFileClient), args.Error(1)
 }
 
 func (m *MockFileServiceClient) DeleteFile(ctx context.Context, req *pb.DeleteFileRequest, opts ...grpc.CallOption) (*pb.DeleteFileResponse, error) {
 	args := m.Called(ctx, req)
+
 	return args.Get(0).(*pb.DeleteFileResponse), args.Error(1)
 }
 
 func (m *MockFileServiceClient) GetFile(ctx context.Context, req *pb.GetFileRequest, opts ...grpc.CallOption) (*pb.GetFileResponse, error) {
 	args := m.Called(ctx, req)
+
 	return args.Get(0).(*pb.GetFileResponse), args.Error(1)
 }
 
 func (s *MockUploadStream) Send(req *pb.UploadFileRequest) error {
 	args := s.Called(req)
+
 	return args.Error(0)
 }
 
 func (s *MockUploadStream) CloseAndRecv() (*pb.UploadFileResponse, error) {
 	args := s.Called()
+
 	return args.Get(0).(*pb.UploadFileResponse), args.Error(1)
 }
 
@@ -91,6 +100,8 @@ func (s *MockDownloadStream) Recv() (*pb.DownloadFileResponse, error) {
 }
 
 func TestUploadFile_Success(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockFileServiceClient)
 	mockStream := new(MockUploadStream)
 	logger := zerolog.Nop()
@@ -98,7 +109,7 @@ func TestUploadFile_Success(t *testing.T) {
 	reader := bytes.NewReader([]byte("hello world"))
 
 	mockClient.On("UploadFile", mock.Anything).Return(mockStream, nil)
-	mockStream.On("Send", mock.MatchedBy(func(req *pb.UploadFileRequest) bool {
+	mockStream.On("Send", mock.MatchedBy(func(_ *pb.UploadFileRequest) bool {
 		return true
 	})).Return(nil).Times(2)
 	mockStream.On("CloseAndRecv").Return(&pb.UploadFileResponse{FileId: "file123"}, nil)
@@ -109,12 +120,14 @@ func TestUploadFile_Success(t *testing.T) {
 		Log:          &logger,
 	}
 
-	fileID, err := client.UploadFile(context.Background(), "hello.txt", reader)
-	assert.NoError(t, err)
+	fileID, err := client.UploadFile(t.Context(), "hello.txt", reader)
+	require.NoError(t, err)
 	assert.Equal(t, "file123", fileID)
 }
 
 func TestUploadFile_StreamError(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockFileServiceClient)
 	logger := zerolog.Nop()
 
@@ -127,11 +140,13 @@ func TestUploadFile_StreamError(t *testing.T) {
 		Log:          &logger,
 	}
 
-	_, err := client.UploadFile(context.Background(), "file.txt", bytes.NewReader([]byte("data")))
-	assert.Error(t, err)
+	_, err := client.UploadFile(t.Context(), "file.txt", bytes.NewReader([]byte("data")))
+	require.Error(t, err)
 }
 
 func TestDownloadFile_Success(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockFileServiceClient)
 	mockStream := new(MockDownloadStream)
 	writer := new(bytes.Buffer)
@@ -140,7 +155,7 @@ func TestDownloadFile_Success(t *testing.T) {
 	mockClient.On("DownloadFile", mock.Anything, &pb.DownloadFileRequest{FileId: "file123"}).Return(mockStream, nil)
 	mockStream.On("Recv").Return(&pb.DownloadFileResponse{Data: []byte("chunk1")}, nil).Once()
 
-	var nilResp *pb.DownloadFileResponse = nil
+	var nilResp *pb.DownloadFileResponse
 	mockStream.On("Recv").Return(nilResp, io.EOF).Once()
 
 	client := &binary.Client{
@@ -149,12 +164,14 @@ func TestDownloadFile_Success(t *testing.T) {
 		Log:          &logger,
 	}
 
-	err := client.DownloadFile(context.Background(), "file123", writer)
-	assert.NoError(t, err)
+	err := client.DownloadFile(t.Context(), "file123", writer)
+	require.NoError(t, err)
 	assert.Equal(t, "chunk1", writer.String())
 }
 
 func TestDownloadFile_RecvError(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockFileServiceClient)
 	mockStream := new(MockDownloadStream)
 	logger := zerolog.Nop()
@@ -168,11 +185,13 @@ func TestDownloadFile_RecvError(t *testing.T) {
 		Log:          &logger,
 	}
 
-	err := client.DownloadFile(context.Background(), "file123", new(bytes.Buffer))
-	assert.Error(t, err)
+	err := client.DownloadFile(t.Context(), "file123", new(bytes.Buffer))
+	require.Error(t, err)
 }
 
 func TestDeleteFile_Success(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockFileServiceClient)
 	logger := zerolog.Nop()
 
@@ -185,12 +204,14 @@ func TestDeleteFile_Success(t *testing.T) {
 		Log:          &logger,
 	}
 
-	ok, err := client.DeleteFile(context.Background(), "file123")
-	assert.NoError(t, err)
+	ok, err := client.DeleteFile(t.Context(), "file123")
+	require.NoError(t, err)
 	assert.True(t, ok)
 }
 
 func TestGetFile_Success(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockFileServiceClient)
 	logger := zerolog.Nop()
 
@@ -205,12 +226,13 @@ func TestGetFile_Success(t *testing.T) {
 		Log:          &logger,
 	}
 
-	file, err := client.GetFile(context.Background(), "file123")
-	assert.NoError(t, err)
+	file, err := client.GetFile(t.Context(), "file123")
+	require.NoError(t, err)
 	assert.Equal(t, meta, file)
 }
 
 func TestNewBinaryClient(t *testing.T) {
+	t.Parallel()
 
 	tm := new(testutils.MockTokenManager)
 	logger := zerolog.Nop()

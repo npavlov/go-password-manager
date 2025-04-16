@@ -1,3 +1,4 @@
+//nolint:dupl,err113
 package tui_test
 
 import (
@@ -8,12 +9,15 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/npavlov/go-password-manager/internal/client/model"
 	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 )
 
 func TestShowCardList(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 
 	// Test empty list
@@ -45,6 +49,8 @@ func TestShowCardList(t *testing.T) {
 }
 
 func TestShowCardDetails(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	card := model.CardItem{
 		StorageItem: model.StorageItem{ID: "123"},
@@ -58,7 +64,7 @@ func TestShowCardDetails(t *testing.T) {
 	mockFacade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
 		return map[string]string{"key": "value"}, nil
 	}
-	mockFacade.On("GetMetainfo", context.Background(), "123").Return(map[string]string{"key": "value"}, nil)
+	mockFacade.On("GetMetainfo", mock.Anything, "123").Return(map[string]string{"key": "value"}, nil)
 
 	textView := ui.ShowCardDetails(card)
 	assert.NotNil(t, textView)
@@ -70,6 +76,8 @@ func TestShowCardDetails(t *testing.T) {
 }
 
 func TestShowCardDetails_MetaError(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	card := model.CardItem{
 		StorageItem: model.StorageItem{ID: "123"},
@@ -81,13 +89,15 @@ func TestShowCardDetails_MetaError(t *testing.T) {
 	mockFacade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
 		return nil, errors.New("meta error")
 	}
-	mockFacade.On("GetMetainfo", context.Background(), "123").Return(nil, errors.New("meta error"))
+	mockFacade.On("GetMetainfo", mock.Anything, "123").Return(nil, errors.New("meta error"))
 
 	textView := ui.ShowCardDetails(card)
 	assert.Contains(t, textView.GetText(true), "❌ Error loading metadata")
 }
 
 func TestShowAddCardForm_Success(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 
 	// Setup mocks
@@ -95,11 +105,12 @@ func TestShowAddCardForm_Success(t *testing.T) {
 	mockFacade.StoreCardFunc = func(ctx context.Context, cardNum, expDate, cvv, cardHolder string) (string, error) {
 		return "new-id", nil
 	}
-	mockFacade.On("StoreCard", context.Background(), "1111222233334444", "12/25", "123", "John Doe").Return("new-id", nil)
+	mockFacade.On("StoreCard", t.Context(), "1111222233334444", "12/25", "123", "John Doe").Return("new-id", nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
 	mockStorage.ProcessCardFunc = func(ctx context.Context, cardID string, meta map[string]string) error {
 		assert.Equal(t, "new-id", cardID)
+
 		return nil
 	}
 
@@ -116,10 +127,11 @@ func TestShowAddCardForm_Success(t *testing.T) {
 	// Simulate save button click
 	event := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
 	form.GetButton(0).InputHandler()(event, nil)
-
 }
 
 func TestShowAddCardForm_Error(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 
 	// Setup mock to return error
@@ -127,7 +139,8 @@ func TestShowAddCardForm_Error(t *testing.T) {
 	mockFacade.StoreCardFunc = func(ctx context.Context, cardNum, expDate, cvv, cardHolder string) (string, error) {
 		return "", errors.New("store failed")
 	}
-	mockFacade.On("StoreCard", context.Background(), "1111222233334444", "12/25", "123", "John Doe").Return("", errors.New("store failed"))
+	mockFacade.On("StoreCard", t.Context(), "1111222233334444", "12/25", "123", "John Doe").
+		Return("", errors.New("store failed"))
 
 	form := ui.ShowAddCardForm()
 
@@ -140,7 +153,6 @@ func TestShowAddCardForm_Error(t *testing.T) {
 	// Simulate save button click
 	event := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
 	form.GetButton(0).InputHandler()(event, nil)
-
 }
 
 func TestShowAddCardForm_Cancel(t *testing.T) {
@@ -151,7 +163,6 @@ func TestShowAddCardForm_Cancel(t *testing.T) {
 	// Simulate cancel button click
 	event := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
 	form.GetButton(1).InputHandler()(event, nil)
-
 }
 
 func TestShowEditCardForm_Success(t *testing.T) {
@@ -168,11 +179,12 @@ func TestShowEditCardForm_Success(t *testing.T) {
 	mockFacade.UpdateCardFunc = func(ctx context.Context, id, cardNum, expDate, cvv, cardHolder string) error {
 		return nil
 	}
-	mockFacade.On("UpdateCard", context.Background(), "123", "4444333322221111", "12/26", "456", "Jane Doe").Return(nil)
+	mockFacade.On("UpdateCard", t.Context(), "123", "4444333322221111", "12/26", "456", "Jane Doe").Return(nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
 	mockStorage.ProcessCardFunc = func(ctx context.Context, cardID string, meta map[string]string) error {
 		assert.Equal(t, "123", cardID)
+
 		return nil
 	}
 
@@ -194,7 +206,6 @@ func TestShowEditCardForm_Success(t *testing.T) {
 	// Simulate save button click
 	event := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
 	form.GetButton(0).InputHandler()(event, nil)
-
 }
 
 func TestShowRemoveCardForm_Confirm(t *testing.T) {
@@ -209,7 +220,7 @@ func TestShowRemoveCardForm_Confirm(t *testing.T) {
 	mockFacade.DeleteCardFunc = func(ctx context.Context, cardID string) (bool, error) {
 		return true, nil
 	}
-	mockFacade.On("DeleteCard", context.Background(), "123").Return(true, nil)
+	mockFacade.On("DeleteCard", t.Context(), "123").Return(true, nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
 	mockStorage.DeleteCardsFunc = func(Id string) {
@@ -222,7 +233,6 @@ func TestShowRemoveCardForm_Confirm(t *testing.T) {
 	// Simulate "Yes" selection
 	modal.SetFocus(0) // Focus "Yes" button
 	modal.InputHandler()(tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone), nil)
-
 }
 
 func TestShowRemoveCardForm_Cancel(t *testing.T) {
@@ -237,5 +247,4 @@ func TestShowRemoveCardForm_Cancel(t *testing.T) {
 	// Simulate "No" selection
 	modal.SetFocus(1) // Focus "No" button
 	modal.InputHandler()(tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone), nil)
-
 }

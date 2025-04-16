@@ -1,3 +1,4 @@
+//nolint:wrapcheck
 package utils
 
 import (
@@ -10,9 +11,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+const keySize = 32
+
 // GenerateRandomKey a random encryption key.
 func GenerateRandomKey() (string, error) {
-	key := make([]byte, 32) // AES-256 key size
+	key := make([]byte, keySize) // AES-256 key size
 	_, err := rand.Read(key)
 	if err != nil {
 		return "", err

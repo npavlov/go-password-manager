@@ -1,16 +1,19 @@
+//nolint:goconst
 package auth_test
 
 import (
 	"context"
 	"testing"
 
-	pb "github.com/npavlov/go-password-manager/gen/proto/auth"
-	"github.com/npavlov/go-password-manager/internal/client/grpc/auth"
-	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+
+	pb "github.com/npavlov/go-password-manager/gen/proto/auth"
+	"github.com/npavlov/go-password-manager/internal/client/grpc/auth"
+	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 )
 
 type MockAuthServiceClient struct {
@@ -19,20 +22,25 @@ type MockAuthServiceClient struct {
 
 func (m *MockAuthServiceClient) RefreshToken(ctx context.Context, in *pb.RefreshTokenRequest, opts ...grpc.CallOption) (*pb.RefreshTokenResponse, error) {
 	args := m.Called(ctx, in)
+
 	return args.Get(0).(*pb.RefreshTokenResponse), args.Error(1)
 }
 
 func (m *MockAuthServiceClient) Register(ctx context.Context, in *pb.RegisterRequest, opts ...grpc.CallOption) (*pb.RegisterResponse, error) {
 	args := m.Called(ctx, in)
+
 	return args.Get(0).(*pb.RegisterResponse), args.Error(1)
 }
 
 func (m *MockAuthServiceClient) Login(ctx context.Context, in *pb.LoginRequest, opts ...grpc.CallOption) (*pb.LoginResponse, error) {
 	args := m.Called(ctx, in)
+
 	return args.Get(0).(*pb.LoginResponse), args.Error(1)
 }
 
 func TestRegister_Success(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockAuthServiceClient)
 	mockTokenManager := new(testutils.MockTokenManager)
 	logger := zerolog.Nop()
@@ -59,7 +67,7 @@ func TestRegister_Success(t *testing.T) {
 
 	result, err := authClient.Register(username, password, email)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, userKey, result)
 
 	mockClient.AssertExpectations(t)
@@ -67,6 +75,8 @@ func TestRegister_Success(t *testing.T) {
 }
 
 func TestLogin_Success(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockAuthServiceClient)
 	mockTokenManager := new(testutils.MockTokenManager)
 	logger := zerolog.Nop()
@@ -91,7 +101,7 @@ func TestLogin_Success(t *testing.T) {
 
 	err := authClient.Login(username, password)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	mockClient.AssertExpectations(t)
 	mockTokenManager.AssertExpectations(t)
 }
@@ -122,11 +132,13 @@ func TestRegister_TokenUpdateFails(t *testing.T) {
 
 	result, err := authClient.Register(username, password, email)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Empty(t, result)
 }
 
 func TestLogin_TokenUpdateFails(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockAuthServiceClient)
 	mockTokenManager := new(testutils.MockTokenManager)
 	logger := zerolog.Nop()
@@ -151,10 +163,11 @@ func TestLogin_TokenUpdateFails(t *testing.T) {
 
 	err := authClient.Login(username, password)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestNewBinaryClient(t *testing.T) {
+	t.Parallel()
 
 	tm := new(testutils.MockTokenManager)
 	logger := zerolog.Nop()

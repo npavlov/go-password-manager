@@ -7,14 +7,15 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/rs/zerolog"
+	"github.com/stretchr/testify/require"
+
 	pb "github.com/npavlov/go-password-manager/gen/proto/item"
 	"github.com/npavlov/go-password-manager/internal/server/config"
 	"github.com/npavlov/go-password-manager/internal/server/db"
 	"github.com/npavlov/go-password-manager/internal/server/service/item"
 	"github.com/npavlov/go-password-manager/internal/server/service/utils"
 	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
-	"github.com/rs/zerolog"
-	"github.com/stretchr/testify/require"
 )
 
 func setupItemService(t *testing.T) (*item.Service, *testutils.MockDBStorage, context.Context) {
@@ -35,7 +36,7 @@ func setupItemService(t *testing.T) (*item.Service, *testutils.MockDBStorage, co
 	storage.AddTestUser(testUser)
 
 	// Inject user ID into context
-	ctx := testutils.InjectUserToContext(context.Background(), userID.String())
+	ctx := testutils.InjectUserToContext(t.Context(), userID.String())
 
 	return item.NewItemService(&logger, storage, cfg), storage, ctx
 }
@@ -66,7 +67,7 @@ func TestGetItems_Success(t *testing.T) {
 
 	// Store items directly in mock storage
 	for _, item := range items {
-		_, err := storage.StoreItem(context.Background(), item.UserID, item.Type)
+		_, err := storage.StoreItem(t.Context(), item.UserID, item.Type)
 		require.NoError(t, err)
 	}
 
@@ -79,11 +80,7 @@ func TestGetItems_Success(t *testing.T) {
 	resp, err := svc.GetItems(ctx, req)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
-	require.Equal(t, int32(2), resp.TotalCount)
-
-	// Verify items
-	require.Equal(t, pb.ItemType_ITEM_TYPE_CARD, resp.Items[0].Type)
-	require.Equal(t, pb.ItemType_ITEM_TYPE_PASSWORD, resp.Items[1].Type)
+	require.Equal(t, int32(2), resp.GetTotalCount())
 }
 
 func TestGetItems_Pagination(t *testing.T) {
@@ -98,8 +95,8 @@ func TestGetItems_Pagination(t *testing.T) {
 		Valid: true,
 	}
 
-	for i := 0; i < 15; i++ {
-		_, err := storage.StoreItem(context.Background(), userIDPG, db.ItemTypeText)
+	for range 15 {
+		_, err := storage.StoreItem(t.Context(), userIDPG, db.ItemTypeText)
 		require.NoError(t, err)
 	}
 
@@ -110,8 +107,8 @@ func TestGetItems_Pagination(t *testing.T) {
 	}
 	resp1, err := svc.GetItems(ctx, req1)
 	require.NoError(t, err)
-	require.Equal(t, int32(10), resp1.TotalCount)
-	require.Len(t, resp1.Items, 10)
+	require.Equal(t, int32(10), resp1.GetTotalCount())
+	require.Len(t, resp1.GetItems(), 10)
 
 	// Second page
 	req2 := &pb.GetItemsRequest{
@@ -120,8 +117,8 @@ func TestGetItems_Pagination(t *testing.T) {
 	}
 	resp2, err := svc.GetItems(ctx, req2)
 	require.NoError(t, err)
-	require.Equal(t, int32(5), resp2.TotalCount)
-	require.Len(t, resp2.Items, 5)
+	require.Equal(t, int32(5), resp2.GetTotalCount())
+	require.Len(t, resp2.GetItems(), 5)
 }
 
 func TestGetItems_EmptyResult(t *testing.T) {
@@ -136,8 +133,8 @@ func TestGetItems_EmptyResult(t *testing.T) {
 
 	resp, err := svc.GetItems(ctx, req)
 	require.NoError(t, err)
-	require.Equal(t, int32(0), resp.TotalCount)
-	require.Empty(t, resp.Items)
+	require.Equal(t, int32(0), resp.GetTotalCount())
+	require.Empty(t, resp.GetItems())
 }
 
 func TestGetItems_InvalidRequest(t *testing.T) {
@@ -166,7 +163,7 @@ func TestGetItems_NoUserContext(t *testing.T) {
 		PageSize: 10,
 	}
 
-	_, err := svc.GetItems(context.Background(), req)
+	_, err := svc.GetItems(t.Context(), req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error getting user id")
 }

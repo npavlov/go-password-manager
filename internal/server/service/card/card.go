@@ -27,11 +27,11 @@ type Service struct {
 
 type Storage interface {
 	UpdateCard(ctx context.Context, updateCard db.UpdateCardParams) (*db.Card, error)
-	DeleteCard(ctx context.Context, cardId string, userId pgtype.UUID) error
-	GetCards(ctx context.Context, userId string) ([]db.Card, error)
-	GetCard(ctx context.Context, cardId string, userId pgtype.UUID) (*db.Card, error)
+	DeleteCard(ctx context.Context, cardID string, userID pgtype.UUID) error
+	GetCards(ctx context.Context, userID string) ([]db.Card, error)
+	GetCard(ctx context.Context, cardID string, userID pgtype.UUID) (*db.Card, error)
 	StoreCard(ctx context.Context, createCard db.StoreCardParams) (*db.Card, error)
-	GetUserById(ctx context.Context, id pgtype.UUID) (*db.User, error)
+	GetUserByID(ctx context.Context, id pgtype.UUID) (*db.User, error)
 }
 
 func NewCardService(log *zerolog.Logger, storage Storage, cfg *config.Config) *Service {
@@ -58,10 +58,18 @@ func (ns *Service) StoreCard(ctx context.Context, req *pb.StoreCardRequest) (*pb
 	}
 
 	userUUID, decryptedUserKey, err := utils.GetDecryptionKey(ctx, ns.storage, ns.cfg.SecuredMasterKey.Get())
+	if err != nil {
+		return nil, errors.Wrap(err, "error getting decrypted user UUID")
+	}
 
 	data := req.GetCard()
 
-	encryptedCardNumber, encryptedCVV, encryptedExpiryDate, err := ns.EncryptCard(decryptedUserKey, data.CardNumber, data.Cvv, data.ExpiryDate)
+	encryptedCardNumber, encryptedCVV, encryptedExpiryDate, err := ns.EncryptCard(
+		decryptedUserKey,
+		data.GetCardNumber(),
+		data.GetCvv(),
+		data.GetExpiryDate(),
+	)
 	if err != nil {
 		ns.logger.Error().Err(err).Msg("error encrypting card")
 
@@ -98,8 +106,16 @@ func (ns *Service) UpdateCard(ctx context.Context, req *pb.UpdateCardRequest) (*
 	data := req.GetData()
 
 	_, decryptedUserKey, err := utils.GetDecryptionKey(ctx, ns.storage, ns.cfg.SecuredMasterKey.Get())
+	if err != nil {
+		return nil, errors.Wrap(err, "error getting decrypted user UUID")
+	}
 
-	encryptedCardNumber, encryptedCVV, encryptedExpiryDate, err := ns.EncryptCard(decryptedUserKey, data.CardNumber, data.Cvv, data.ExpiryDate)
+	encryptedCardNumber, encryptedCVV, encryptedExpiryDate, err := ns.EncryptCard(
+		decryptedUserKey,
+		data.GetCardNumber(),
+		data.GetCvv(),
+		data.GetExpiryDate(),
+	)
 	if err != nil {
 		ns.logger.Error().Err(err).Msg("error encrypting card")
 
@@ -110,7 +126,7 @@ func (ns *Service) UpdateCard(ctx context.Context, req *pb.UpdateCardRequest) (*
 	hashedCardNumber := utils.HashCardNumber(req.GetData().GetCardNumber())
 
 	card, err := ns.storage.UpdateCard(ctx, db.UpdateCardParams{
-		ID:                  gu.GetIdFromString(req.GetCardId()),
+		ID:                  gu.GetIDFromString(req.GetCardId()),
 		EncryptedCardNumber: encryptedCardNumber,
 		HashedCardNumber:    hashedCardNumber,
 		EncryptedCvv:        encryptedCVV,
@@ -128,8 +144,7 @@ func (ns *Service) UpdateCard(ctx context.Context, req *pb.UpdateCardRequest) (*
 	}, nil
 }
 
-func (ns *Service) EncryptCard(decryptedUserKey, cardNum, CVV, ExpiryDate string) (string, string, string, error) {
-
+func (ns *Service) EncryptCard(decryptedUserKey, cardNum, cvv, expiryDate string) (string, string, string, error) {
 	encryptedCardNumber, err := utils.Encrypt(cardNum, decryptedUserKey)
 	if err != nil {
 		ns.logger.Error().Err(err).Msg("failed to encrypt card number")
@@ -137,14 +152,14 @@ func (ns *Service) EncryptCard(decryptedUserKey, cardNum, CVV, ExpiryDate string
 		return "", "", "", errors.Wrap(err, "failed to encrypt card number")
 	}
 
-	encryptedCVV, err := utils.Encrypt(CVV, decryptedUserKey)
+	encryptedCVV, err := utils.Encrypt(cvv, decryptedUserKey)
 	if err != nil {
-		ns.logger.Error().Err(err).Msg("failed to encrypt card CVV")
+		ns.logger.Error().Err(err).Msg("failed to encrypt card cvv")
 
-		return "", "", "", errors.Wrap(err, "failed to encrypt card CVV")
+		return "", "", "", errors.Wrap(err, "failed to encrypt card cvv")
 	}
 
-	encryptedExpiryDate, err := utils.Encrypt(ExpiryDate, decryptedUserKey)
+	encryptedExpiryDate, err := utils.Encrypt(expiryDate, decryptedUserKey)
 	if err != nil {
 		ns.logger.Error().Err(err).Msg("failed to encrypt card Expiry Date")
 
@@ -205,7 +220,9 @@ func (ns *Service) GetCards(ctx context.Context, req *pb.GetCardsRequest) (*pb.G
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	return &pb.GetCardsResponse{}, nil
+	return &pb.GetCardsResponse{
+		Cards: make([]*pb.CardData, 0),
+	}, nil
 }
 
 func (ns *Service) DeleteCard(ctx context.Context, req *pb.DeleteCardRequest) (*pb.DeleteCardResponse, error) {

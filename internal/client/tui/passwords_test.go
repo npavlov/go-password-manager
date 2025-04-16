@@ -1,3 +1,4 @@
+//nolint:dupl,err113
 package tui_test
 
 import (
@@ -8,12 +9,15 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/npavlov/go-password-manager/internal/client/model"
 	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 )
 
 func TestShowPasswordList(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 
 	// Test empty list
@@ -45,6 +49,8 @@ func TestShowPasswordList(t *testing.T) {
 }
 
 func TestShowPasswordDetails(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	pass := model.PasswordItem{
 		StorageItem: model.StorageItem{ID: "123"},
@@ -57,7 +63,7 @@ func TestShowPasswordDetails(t *testing.T) {
 	mockFacade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
 		return map[string]string{"key": "value"}, nil
 	}
-	mockFacade.On("GetMetainfo", context.Background(), "123").Return(map[string]string{"key": "value"}, nil)
+	mockFacade.On("GetMetainfo", mock.Anything, "123").Return(map[string]string{"key": "value"}, nil)
 
 	flex := ui.ShowPasswordDetails(pass)
 	assert.NotNil(t, flex)
@@ -75,6 +81,8 @@ func TestShowPasswordDetails(t *testing.T) {
 }
 
 func TestShowPasswordDetails_MetaError(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	pass := model.PasswordItem{
 		StorageItem: model.StorageItem{ID: "123"},
@@ -86,7 +94,7 @@ func TestShowPasswordDetails_MetaError(t *testing.T) {
 	mockFacade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
 		return nil, errors.New("meta error")
 	}
-	mockFacade.On("GetMetainfo", context.Background(), "123").Return(nil, errors.New("meta error"))
+	mockFacade.On("GetMetainfo", mock.Anything, "123").Return(nil, errors.New("meta error"))
 
 	flex := ui.ShowPasswordDetails(pass)
 	textView := flex.GetItem(0).(*tview.TextView)
@@ -94,6 +102,8 @@ func TestShowPasswordDetails_MetaError(t *testing.T) {
 }
 
 func TestShowAddPasswordForm_Success(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 
 	// Setup mocks
@@ -101,11 +111,12 @@ func TestShowAddPasswordForm_Success(t *testing.T) {
 	mockFacade.StorePasswordFunc = func(ctx context.Context, login, password string) (string, error) {
 		return "new-id", nil
 	}
-	mockFacade.On("StorePassword", context.Background(), "testuser", "secret").Return("new-id", nil)
+	mockFacade.On("StorePassword", t.Context(), "testuser", "secret").Return("new-id", nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
 	mockStorage.ProcessPasswordFunc = func(ctx context.Context, passID string, meta map[string]string) error {
 		assert.Equal(t, "new-id", passID)
+
 		return nil
 	}
 
@@ -123,6 +134,8 @@ func TestShowAddPasswordForm_Success(t *testing.T) {
 }
 
 func TestShowAddPasswordForm_Error(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 
 	// Setup mock to return error
@@ -130,7 +143,7 @@ func TestShowAddPasswordForm_Error(t *testing.T) {
 	mockFacade.StorePasswordFunc = func(ctx context.Context, login, password string) (string, error) {
 		return "", errors.New("store failed")
 	}
-	mockFacade.On("StorePassword", context.Background(), "testuser", "secret").Return("", errors.New("store failed"))
+	mockFacade.On("StorePassword", t.Context(), "testuser", "secret").Return("", errors.New("store failed"))
 
 	form := ui.ShowAddPasswordForm()
 
@@ -144,6 +157,8 @@ func TestShowAddPasswordForm_Error(t *testing.T) {
 }
 
 func TestShowAddPasswordForm_Cancel(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 
 	form := ui.ShowAddPasswordForm()
@@ -151,10 +166,11 @@ func TestShowAddPasswordForm_Cancel(t *testing.T) {
 	// Simulate cancel button click
 	event := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
 	form.GetButton(1).InputHandler()(event, nil)
-
 }
 
 func TestShowChangePasswordForm_Success(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	pass := model.PasswordItem{
 		StorageItem: model.StorageItem{ID: "123"},
@@ -167,11 +183,12 @@ func TestShowChangePasswordForm_Success(t *testing.T) {
 	mockFacade.UpdatePasswordFunc = func(ctx context.Context, id, login, password string) error {
 		return nil
 	}
-	mockFacade.On("UpdatePassword", context.Background(), "123", "newuser", "newsecret").Return(nil)
+	mockFacade.On("UpdatePassword", t.Context(), "123", "newuser", "newsecret").Return(nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
 	mockStorage.ProcessPasswordFunc = func(ctx context.Context, passID string, meta map[string]string) error {
 		assert.Equal(t, "123", passID)
+
 		return nil
 	}
 
@@ -189,10 +206,11 @@ func TestShowChangePasswordForm_Success(t *testing.T) {
 	// Simulate save button click
 	event := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
 	form.GetButton(0).InputHandler()(event, nil)
-
 }
 
 func TestShowRemovePasswordForm_Confirm(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	pass := model.PasswordItem{
 		StorageItem: model.StorageItem{ID: "123"},
@@ -204,7 +222,7 @@ func TestShowRemovePasswordForm_Confirm(t *testing.T) {
 	mockFacade.DeletePasswordFunc = func(ctx context.Context, passID string) (bool, error) {
 		return true, nil
 	}
-	mockFacade.On("DeletePassword", context.Background(), "123").Return(true, nil)
+	mockFacade.On("DeletePassword", t.Context(), "123").Return(true, nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
 	mockStorage.DeletePasswordFunc = func(Id string) {
@@ -217,10 +235,11 @@ func TestShowRemovePasswordForm_Confirm(t *testing.T) {
 	// Simulate "Yes" selection
 	modal.SetFocus(0) // Focus "Yes" button
 	modal.InputHandler()(tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone), nil)
-
 }
 
 func TestShowRemovePasswordForm_Cancel(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	pass := model.PasswordItem{
 		StorageItem: model.StorageItem{ID: "123"},
@@ -232,10 +251,11 @@ func TestShowRemovePasswordForm_Cancel(t *testing.T) {
 	// Simulate "No" selection
 	modal.SetFocus(1) // Focus "No" button
 	modal.InputHandler()(tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone), nil)
-
 }
 
 func TestShowPasswordDetails_Actions(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	pass := model.PasswordItem{
 		StorageItem: model.StorageItem{
@@ -252,7 +272,7 @@ func TestShowPasswordDetails_Actions(t *testing.T) {
 	mockFacade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
 		return pass.Metadata, nil
 	}
-	mockFacade.On("GetMetainfo", context.Background(), "123").Return(pass.Metadata, nil)
+	mockFacade.On("GetMetainfo", mock.Anything, "123").Return(pass.Metadata, nil)
 
 	flex := ui.ShowPasswordDetails(pass)
 	actions := flex.GetItem(1).(*tview.List)

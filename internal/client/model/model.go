@@ -18,7 +18,7 @@ const (
 type StorageItem struct {
 	ID        string            `json:"id"`
 	Type      ItemType          `json:"type"`
-	UpdatedAt time.Time         `json:"updated_at"`
+	UpdatedAt time.Time         `json:"updatedAt"`
 	Metadata  map[string]string `json:"metadata"` // Key-value metadata
 }
 
@@ -38,10 +38,10 @@ type NoteItem struct {
 // CardItem stores encrypted card details.
 type CardItem struct {
 	StorageItem
-	CardNumber     string `json:"card_number"` // Encrypted
-	ExpiryDate     string `json:"expiry_date"`
+	CardNumber     string `json:"cardNumber"` // Encrypted
+	ExpiryDate     string `json:"expiryDate"`
 	CVV            string `json:"cvv"` // Encrypted
-	CardholderName string `json:"cardholder_name"`
+	CardholderName string `json:"cardholderName"`
 }
 
 // BinaryItem stores metadata for large binary files.

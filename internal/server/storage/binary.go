@@ -23,8 +23,8 @@ func (ds *DBStorage) StoreBinary(ctx context.Context, createBinary db.StoreBinar
 }
 
 // GetBinary retrieves binary record.
-func (ds *DBStorage) GetBinary(ctx context.Context, binaryId string, userId pgtype.UUID) (*db.BinaryEntry, error) {
-	uuid := utils.GetIdFromString(binaryId)
+func (ds *DBStorage) GetBinary(ctx context.Context, binaryID string, userId pgtype.UUID) (*db.BinaryEntry, error) {
+	uuid := utils.GetIDFromString(binaryID)
 
 	binary, err := ds.Queries.GetBinaryEntryByID(ctx, db.GetBinaryEntryByIDParams{
 		ID:     uuid,
@@ -40,8 +40,8 @@ func (ds *DBStorage) GetBinary(ctx context.Context, binaryId string, userId pgty
 }
 
 // GetBinaries retrieves binary record.
-func (ds *DBStorage) GetBinaries(ctx context.Context, userId string) ([]db.BinaryEntry, error) {
-	uuid := utils.GetIdFromString(userId)
+func (ds *DBStorage) GetBinaries(ctx context.Context, userID string) ([]db.BinaryEntry, error) {
+	uuid := utils.GetIDFromString(userID)
 
 	cards, err := ds.Queries.GetBinaryEntriesByUserID(ctx, uuid)
 	if err != nil {

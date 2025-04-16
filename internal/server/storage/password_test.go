@@ -1,4 +1,4 @@
-//nolint:dupl
+//nolint:dupl,gochecknoglobals,lll,gosec
 package storage_test
 
 import (
@@ -108,8 +108,8 @@ func TestGetPassword(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		passwordId    string
-		userId        pgtype.UUID
+		passwordID    string
+		userID        pgtype.UUID
 		mock          func(mock pgxmock.PgxPoolIface)
 		want          *db.Password
 		wantErr       bool
@@ -117,8 +117,8 @@ func TestGetPassword(t *testing.T) {
 	}{
 		{
 			name:       "successful password retrieval",
-			passwordId: testPasswordID,
-			userId:     userUUID,
+			passwordID: testPasswordID,
+			userID:     userUUID,
 			mock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{"id", "user_id", "login", "password", "created_at", "updated_at"}).
@@ -137,8 +137,8 @@ func TestGetPassword(t *testing.T) {
 		},
 		{
 			name:       "password not found",
-			passwordId: testPasswordID,
-			userId:     userUUID,
+			passwordID: testPasswordID,
+			userID:     userUUID,
 			mock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectQuery("SELECT passwords.id, passwords.user_id, passwords.login, passwords.password, passwords.created_at, passwords.updated_at").
 					WithArgs(passwordUUID, userUUID).
@@ -157,7 +157,7 @@ func TestGetPassword(t *testing.T) {
 			storage, mock := testutils.SetupDBStorage(t)
 			tt.mock(mock)
 
-			result, err := storage.GetPassword(t.Context(), tt.passwordId, tt.userId)
+			result, err := storage.GetPassword(t.Context(), tt.passwordID, tt.userID)
 
 			if tt.wantErr {
 				require.Error(t, err)
@@ -180,7 +180,7 @@ func TestGetPasswords(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		userId        string
+		userID        string
 		mock          func(mock pgxmock.PgxPoolIface)
 		want          []db.Password
 		wantErr       bool
@@ -188,7 +188,7 @@ func TestGetPasswords(t *testing.T) {
 	}{
 		{
 			name:   "successful passwords retrieval",
-			userId: testUserID,
+			userID: testUserID,
 			mock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{"id", "user_id", "login", "password", "created_at", "updated_at"}).
@@ -216,7 +216,7 @@ func TestGetPasswords(t *testing.T) {
 		},
 		{
 			name:   "no passwords found",
-			userId: testUserID,
+			userID: testUserID,
 			mock: func(mock pgxmock.PgxPoolIface) {
 				rows := pgxmock.NewRows([]string{"id", "user_id", "login", "password", "created_at", "updated_at"})
 				mock.ExpectQuery("SELECT id, user_id, login, password, created_at, updated_at FROM passwords").
@@ -228,7 +228,7 @@ func TestGetPasswords(t *testing.T) {
 		},
 		{
 			name:   "database error",
-			userId: testUserID,
+			userID: testUserID,
 			mock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectQuery("SELECT id, user_id, login, password, created_at, updated_at FROM passwords").
 					WithArgs(userUUID).
@@ -247,7 +247,7 @@ func TestGetPasswords(t *testing.T) {
 			storage, mock := testutils.SetupDBStorage(t)
 			tt.mock(mock)
 
-			result, err := storage.GetPasswords(t.Context(), tt.userId)
+			result, err := storage.GetPasswords(t.Context(), tt.userID)
 
 			if tt.wantErr {
 				require.Error(t, err)
@@ -273,16 +273,16 @@ func TestDeletePassword(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		passwordId    string
-		userId        pgtype.UUID
+		passwordID    string
+		userID        pgtype.UUID
 		mock          func(mock pgxmock.PgxPoolIface)
 		wantErr       bool
 		expectedError string
 	}{
 		{
 			name:       "successful password deletion",
-			passwordId: testPasswordID,
-			userId:     userUUID,
+			passwordID: testPasswordID,
+			userID:     userUUID,
 			mock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectExec("DELETE FROM passwords").
 					WithArgs(passwordUUID, userUUID).
@@ -292,8 +292,8 @@ func TestDeletePassword(t *testing.T) {
 		},
 		{
 			name:       "database error",
-			passwordId: testPasswordID,
-			userId:     userUUID,
+			passwordID: testPasswordID,
+			userID:     userUUID,
 			mock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectExec("DELETE FROM passwords").
 					WithArgs(passwordUUID, userUUID).
@@ -311,7 +311,7 @@ func TestDeletePassword(t *testing.T) {
 			storage, mock := testutils.SetupDBStorage(t)
 			tt.mock(mock)
 
-			err := storage.DeletePassword(t.Context(), tt.passwordId, tt.userId)
+			err := storage.DeletePassword(t.Context(), tt.passwordID, tt.userID)
 
 			if tt.wantErr {
 				require.Error(t, err)

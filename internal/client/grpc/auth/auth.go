@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 
@@ -36,14 +37,14 @@ func (as *Client) Register(username, password, email string) (string, error) {
 		Email:    email,
 	})
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to register user")
 	}
 
 	err = as.TokenManager.UpdateTokens(resp.GetToken(), resp.GetRefreshToken())
 	if err != nil {
 		as.Log.Error().Err(err).Msg("failed to update tokens")
 
-		return "", err
+		return "", errors.New("failed to update tokens")
 	}
 
 	return resp.GetUserKey(), nil
@@ -56,13 +57,15 @@ func (as *Client) Login(username, password string) error {
 		Password: password,
 	})
 	if err != nil {
-		return err
+		as.TokenManager.HandleAuthFailure()
+
+		return errors.Wrap(err, "failed to login")
 	}
 	err = as.TokenManager.UpdateTokens(resp.GetToken(), resp.GetRefreshToken())
 	if err != nil {
 		as.Log.Error().Err(err).Msg("failed to update tokens")
 
-		return err
+		return errors.Wrap(err, "failed to update tokens")
 	}
 
 	return nil

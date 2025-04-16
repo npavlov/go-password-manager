@@ -11,7 +11,10 @@ import (
 func HashCardNumber(cardNumber string) pgtype.Text {
 	hash := sha256.Sum256([]byte(cardNumber))
 
-	text := pgtype.Text{}
+	text := pgtype.Text{
+		String: "",
+		Valid:  false,
+	}
 
 	hashString := hex.EncodeToString(hash[:]) // Convert to hex string for storage
 

@@ -29,7 +29,7 @@ func TestMockRedis_SetAndGet(t *testing.T) {
 	time.Sleep(expiration + time.Second)
 
 	_, err = mockRedis.Get(t.Context(), key)
-	assert.ErrorIs(t, err, testutils.ErrKeyNotFound, "expected error when key is expired")
+	require.ErrorIs(t, err, testutils.ErrKeyNotFound, "expected error when key is expired")
 }
 
 func TestMockRedis_GetNonExistentKey(t *testing.T) {
@@ -38,5 +38,5 @@ func TestMockRedis_GetNonExistentKey(t *testing.T) {
 	mockRedis := testutils.NewMockRedis()
 
 	_, err := mockRedis.Get(t.Context(), "non-existent-key")
-	assert.ErrorIs(t, err, testutils.ErrKeyNotFound, "expected error for non-existent key")
+	require.ErrorIs(t, err, testutils.ErrKeyNotFound, "expected error for non-existent key")
 }

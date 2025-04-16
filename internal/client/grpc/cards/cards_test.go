@@ -1,3 +1,4 @@
+//nolint:wrapcheck,err113
 package cards_test
 
 import (
@@ -6,14 +7,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/npavlov/go-password-manager/gen/proto/card"
-	"github.com/npavlov/go-password-manager/internal/client/grpc/cards"
-	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/npavlov/go-password-manager/gen/proto/card"
+	"github.com/npavlov/go-password-manager/internal/client/grpc/cards"
+	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 )
 
 // Mocks
@@ -80,10 +83,13 @@ func (m *MockCardServiceClient) DeleteCard(ctx context.Context, in *card.DeleteC
 
 func (m *MockTokenManager) GetToken() (string, error) {
 	args := m.Called()
+
 	return args.String(0), args.Error(1)
 }
 
 func TestGetCard_Success(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockCardServiceClient)
 	logger := zerolog.Nop()
 
@@ -107,12 +113,14 @@ func TestGetCard_Success(t *testing.T) {
 		Log:          &logger,
 	}
 
-	cardData, _, err := client.GetCard(context.Background(), "card123")
-	assert.NoError(t, err)
+	cardData, _, err := client.GetCard(t.Context(), "card123")
+	require.NoError(t, err)
 	assert.Equal(t, expectedCard, cardData)
 }
 
 func TestGetCard_Error(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockCardServiceClient)
 	logger := zerolog.Nop()
 
@@ -125,12 +133,14 @@ func TestGetCard_Error(t *testing.T) {
 		Log:          &logger,
 	}
 
-	_, _, err := client.GetCard(context.Background(), "card123")
-	assert.Error(t, err)
+	_, _, err := client.GetCard(t.Context(), "card123")
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "error getting password")
 }
 
 func TestUpdateCard_Success(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockCardServiceClient)
 	logger := zerolog.Nop()
 
@@ -153,8 +163,8 @@ func TestUpdateCard_Success(t *testing.T) {
 		Log:          &logger,
 	}
 
-	err := client.UpdateCard(context.Background(), "card123", "4111111111111111", "12/25", "123", "John Doe")
-	assert.NoError(t, err)
+	err := client.UpdateCard(t.Context(), "card123", "4111111111111111", "12/25", "123", "John Doe")
+	require.NoError(t, err)
 }
 
 func TestUpdateCard_Error(t *testing.T) {
@@ -180,12 +190,14 @@ func TestUpdateCard_Error(t *testing.T) {
 		Log:          &logger,
 	}
 
-	err := client.UpdateCard(context.Background(), "card123", "4111111111111111", "12/25", "123", "John Doe")
-	assert.Error(t, err)
+	err := client.UpdateCard(t.Context(), "card123", "4111111111111111", "12/25", "123", "John Doe")
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "error updating card")
 }
 
 func TestStoreCard_Success(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockCardServiceClient)
 	logger := zerolog.Nop()
 
@@ -207,12 +219,14 @@ func TestStoreCard_Success(t *testing.T) {
 		Log:          &logger,
 	}
 
-	cardID, err := client.StoreCard(context.Background(), "4111111111111111", "12/25", "123", "John Doe")
-	assert.NoError(t, err)
+	cardID, err := client.StoreCard(t.Context(), "4111111111111111", "12/25", "123", "John Doe")
+	require.NoError(t, err)
 	assert.Equal(t, "new-card-123", cardID)
 }
 
 func TestStoreCard_Error(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockCardServiceClient)
 	logger := zerolog.Nop()
 
@@ -234,12 +248,14 @@ func TestStoreCard_Error(t *testing.T) {
 		Log:          &logger,
 	}
 
-	_, err := client.StoreCard(context.Background(), "4111111111111111", "12/25", "123", "John Doe")
-	assert.Error(t, err)
+	_, err := client.StoreCard(t.Context(), "4111111111111111", "12/25", "123", "John Doe")
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "error storing card")
 }
 
 func TestDeleteCard_Success(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockCardServiceClient)
 	logger := zerolog.Nop()
 
@@ -252,12 +268,14 @@ func TestDeleteCard_Success(t *testing.T) {
 		Log:          &logger,
 	}
 
-	ok, err := client.DeleteCard(context.Background(), "card123")
-	assert.NoError(t, err)
+	ok, err := client.DeleteCard(t.Context(), "card123")
+	require.NoError(t, err)
 	assert.True(t, ok)
 }
 
 func TestDeleteCard_Error(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockCardServiceClient)
 	logger := zerolog.Nop()
 
@@ -270,12 +288,14 @@ func TestDeleteCard_Error(t *testing.T) {
 		Log:          &logger,
 	}
 
-	_, err := client.DeleteCard(context.Background(), "card123")
-	assert.Error(t, err)
+	_, err := client.DeleteCard(t.Context(), "card123")
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "error deleting card")
 }
 
 func TestDeleteCard_NotOk(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockCardServiceClient)
 	logger := zerolog.Nop()
 
@@ -288,12 +308,13 @@ func TestDeleteCard_NotOk(t *testing.T) {
 		Log:          &logger,
 	}
 
-	ok, err := client.DeleteCard(context.Background(), "card123")
-	assert.NoError(t, err)
+	ok, err := client.DeleteCard(t.Context(), "card123")
+	require.NoError(t, err)
 	assert.False(t, ok)
 }
 
 func TestNewCardsClient(t *testing.T) {
+	t.Parallel()
 
 	tm := new(testutils.MockTokenManager)
 	logger := zerolog.Nop()

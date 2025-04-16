@@ -1,3 +1,4 @@
+//nolint:dupl
 package storage
 
 import (
@@ -24,7 +25,7 @@ func (ds *DBStorage) StoreCard(ctx context.Context, createCard db.StoreCardParam
 
 // GetCard retrieves card record.
 func (ds *DBStorage) GetCard(ctx context.Context, cardId string, userId pgtype.UUID) (*db.Card, error) {
-	uuid := utils.GetIdFromString(cardId)
+	uuid := utils.GetIDFromString(cardId)
 
 	card, err := ds.Queries.GetCardByID(ctx, db.GetCardByIDParams{
 		ID:     uuid,
@@ -41,7 +42,7 @@ func (ds *DBStorage) GetCard(ctx context.Context, cardId string, userId pgtype.U
 
 // GetCards retrieves password record.
 func (ds *DBStorage) GetCards(ctx context.Context, userId string) ([]db.Card, error) {
-	uuid := utils.GetIdFromString(userId)
+	uuid := utils.GetIDFromString(userId)
 
 	cards, err := ds.Queries.GetCardsByUserID(ctx, uuid)
 	if err != nil {
@@ -54,7 +55,7 @@ func (ds *DBStorage) GetCards(ctx context.Context, userId string) ([]db.Card, er
 }
 
 func (ds *DBStorage) DeleteCard(ctx context.Context, cardId string, userId pgtype.UUID) error {
-	uuid := utils.GetIdFromString(cardId)
+	uuid := utils.GetIDFromString(cardId)
 
 	err := ds.Queries.DeleteCard(ctx, db.DeleteCardParams{
 		ID:     uuid,

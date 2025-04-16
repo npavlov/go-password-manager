@@ -1,3 +1,4 @@
+//nolint:err113
 package tui_test
 
 import (
@@ -15,6 +16,8 @@ import (
 )
 
 func TestShowAddMetadataForm(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name          string
 		itemType      model.ItemType
@@ -25,7 +28,7 @@ func TestShowAddMetadataForm(t *testing.T) {
 			name:     "Success for Card",
 			itemType: model.ItemTypeCard,
 			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
-				f.On("SetMetainfo", context.Background(), "123", mock.Anything).Return(true, nil)
+				f.On("SetMetainfo", t.Context(), "123", mock.Anything).Return(true, nil)
 				s.ProcessCardFunc = func(ctx context.Context, id string, meta map[string]string) error {
 					return nil
 				}
@@ -36,7 +39,7 @@ func TestShowAddMetadataForm(t *testing.T) {
 			name:     "Success for Note",
 			itemType: model.ItemTypeNote,
 			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
-				f.On("SetMetainfo", context.Background(), "123", mock.Anything).Return(true, nil)
+				f.On("SetMetainfo", t.Context(), "123", mock.Anything).Return(true, nil)
 				s.ProcessNoteFunc = func(ctx context.Context, id string, meta map[string]string) error {
 					return nil
 				}
@@ -47,7 +50,7 @@ func TestShowAddMetadataForm(t *testing.T) {
 			name:     "Success for Password",
 			itemType: model.ItemTypePassword,
 			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
-				f.On("SetMetainfo", context.Background(), "123", mock.Anything).Return(true, nil)
+				f.On("SetMetainfo", t.Context(), "123", mock.Anything).Return(true, nil)
 				s.ProcessPasswordFunc = func(ctx context.Context, id string, meta map[string]string) error {
 					return nil
 				}
@@ -58,7 +61,7 @@ func TestShowAddMetadataForm(t *testing.T) {
 			name:     "SetMetainfo Failure",
 			itemType: model.ItemTypePassword,
 			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
-				f.On("SetMetainfo", context.Background(), "123", mock.Anything).Return(false, errors.New("failed"))
+				f.On("SetMetainfo", t.Context(), "123", mock.Anything).Return(false, errors.New("failed"))
 			},
 			expectSuccess: false,
 		},
@@ -66,7 +69,7 @@ func TestShowAddMetadataForm(t *testing.T) {
 			name:     "Process Failure",
 			itemType: model.ItemTypePassword,
 			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
-				f.On("SetMetainfo", context.Background(), "123", mock.Anything).Return(true, nil)
+				f.On("SetMetainfo", t.Context(), "123", mock.Anything).Return(true, nil)
 				s.ProcessPasswordFunc = func(ctx context.Context, id string, meta map[string]string) error {
 					return errors.New("failed")
 				}
@@ -77,6 +80,8 @@ func TestShowAddMetadataForm(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			ui := setupTUI()
 			mockFacade := ui.Facade.(*testutils.MockFacade)
 			mockStorage := ui.Storage.(*testutils.MockStorageManager)
@@ -129,6 +134,8 @@ func TestShowAddMetadataForm(t *testing.T) {
 }
 
 func TestShowRemoveMetadataForm(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name          string
 		itemType      model.ItemType
@@ -139,7 +146,7 @@ func TestShowRemoveMetadataForm(t *testing.T) {
 			name:     "Success for Card",
 			itemType: model.ItemTypeCard,
 			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
-				f.On("DeleteMetainfo", context.Background(), "123", "testkey").Return(true, nil)
+				f.On("DeleteMetainfo", t.Context(), "123", "testkey").Return(true, nil)
 				s.ProcessCardFunc = func(ctx context.Context, id string, meta map[string]string) error {
 					return nil
 				}
@@ -150,7 +157,7 @@ func TestShowRemoveMetadataForm(t *testing.T) {
 			name:     "Success for Note",
 			itemType: model.ItemTypeNote,
 			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
-				f.On("DeleteMetainfo", context.Background(), "123", "testkey").Return(true, nil)
+				f.On("DeleteMetainfo", t.Context(), "123", "testkey").Return(true, nil)
 				s.ProcessNoteFunc = func(ctx context.Context, id string, meta map[string]string) error {
 					return nil
 				}
@@ -161,7 +168,7 @@ func TestShowRemoveMetadataForm(t *testing.T) {
 			name:     "Success for Password",
 			itemType: model.ItemTypePassword,
 			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
-				f.On("DeleteMetainfo", context.Background(), "123", "testkey").Return(true, nil)
+				f.On("DeleteMetainfo", t.Context(), "123", "testkey").Return(true, nil)
 				s.ProcessPasswordFunc = func(ctx context.Context, id string, meta map[string]string) error {
 					return nil
 				}
@@ -172,7 +179,7 @@ func TestShowRemoveMetadataForm(t *testing.T) {
 			name:     "DeleteMetainfo Failure",
 			itemType: model.ItemTypePassword,
 			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
-				f.On("DeleteMetainfo", context.Background(), "123", "testkey").Return(false, errors.New("failed"))
+				f.On("DeleteMetainfo", t.Context(), "123", "testkey").Return(false, errors.New("failed"))
 			},
 			expectSuccess: false,
 		},
@@ -180,7 +187,7 @@ func TestShowRemoveMetadataForm(t *testing.T) {
 			name:     "Process Failure",
 			itemType: model.ItemTypePassword,
 			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
-				f.On("DeleteMetainfo", context.Background(), "123", "testkey").Return(true, nil)
+				f.On("DeleteMetainfo", t.Context(), "123", "testkey").Return(true, nil)
 				s.ProcessPasswordFunc = func(ctx context.Context, id string, meta map[string]string) error {
 					return errors.New("failed")
 				}
@@ -191,6 +198,8 @@ func TestShowRemoveMetadataForm(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			ui := setupTUI()
 			mockFacade := ui.Facade.(*testutils.MockFacade)
 			mockStorage := ui.Storage.(*testutils.MockStorageManager)

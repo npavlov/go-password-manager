@@ -1,3 +1,4 @@
+//nolint:lll
 package password_test
 
 import (
@@ -44,7 +45,7 @@ func setupPasswordService(t *testing.T) (*password.Service, *testutils.MockDBSto
 	mockStorage.AddTestUser(testUser)
 
 	// Inject user ID into context
-	ctx := testutils.InjectUserToContext(context.Background(), userID.String())
+	ctx := testutils.InjectUserToContext(t.Context(), userID.String())
 
 	return password.NewPasswordService(&logger, mockStorage, cfg), mockStorage, ctx, encryptionKey
 }
@@ -66,10 +67,10 @@ func TestStorePassword_Success(t *testing.T) {
 
 	resp, err := svc.StorePassword(ctx, req)
 	require.NoError(t, err)
-	require.NotEmpty(t, resp.PasswordId)
+	require.NotEmpty(t, resp.GetPasswordId())
 
 	// Verify password was stored
-	storedPass, err := storage.GetPassword(ctx, resp.PasswordId, pgtype.UUID{Bytes: uuid.MustParse(testutils.GetUserIDFromContext(ctx)), Valid: true})
+	storedPass, err := storage.GetPassword(ctx, resp.GetPasswordId(), pgtype.UUID{Bytes: uuid.MustParse(testutils.GetUserIDFromContext(ctx)), Valid: true})
 	require.NoError(t, err)
 	require.Equal(t, testLogin, storedPass.Login)
 }
@@ -157,9 +158,9 @@ func TestGetPassword_Success(t *testing.T) {
 
 	resp, err := svc.GetPassword(ctx, req)
 	require.NoError(t, err)
-	require.Equal(t, testLogin, resp.Password.Login)
-	require.Equal(t, testPassword, resp.Password.Password)
-	require.True(t, timestamppb.New(storedPass.UpdatedAt.Time).AsTime().Equal(resp.LastUpdate.AsTime()))
+	require.Equal(t, testLogin, resp.GetPassword().GetLogin())
+	require.Equal(t, testPassword, resp.GetPassword().GetPassword())
+	require.True(t, timestamppb.New(storedPass.UpdatedAt.Time).AsTime().Equal(resp.GetLastUpdate().AsTime()))
 }
 
 func TestGetPassword_NotFound(t *testing.T) {
@@ -205,7 +206,7 @@ func TestGetPassword_Unauthorized(t *testing.T) {
 
 	// Store a password with different user
 	otherUserID := uuid.New()
-	otherPass, err := storage.StorePassword(context.Background(), db.CreatePasswordEntryParams{
+	otherPass, err := storage.StorePassword(t.Context(), db.CreatePasswordEntryParams{
 		UserID:   pgtype.UUID{Bytes: otherUserID, Valid: true},
 		Login:    "other@example.com",
 		Password: "encrypted-password",
@@ -259,7 +260,7 @@ func TestUpdatePassword_Success(t *testing.T) {
 
 	resp, err := svc.UpdatePassword(ctx, req)
 	require.NoError(t, err)
-	require.Equal(t, initialPass.ID.String(), resp.PasswordId)
+	require.Equal(t, initialPass.ID.String(), resp.GetPasswordId())
 
 	// Verify update
 	updatedPass, err := storage.GetPassword(ctx, initialPass.ID.String(), pgtype.UUID{Bytes: uuid.MustParse(testutils.GetUserIDFromContext(ctx)), Valid: true})
@@ -324,7 +325,7 @@ func TestDeletePassword_Success(t *testing.T) {
 
 	resp, err := svc.DeletePassword(ctx, req)
 	require.NoError(t, err)
-	require.True(t, resp.Ok)
+	require.True(t, resp.GetOk())
 
 	// Verify password was deleted
 	_, err = storage.GetPassword(ctx, testPass.ID.String(), pgtype.UUID{Bytes: uuid.MustParse(testutils.GetUserIDFromContext(ctx)), Valid: true})
@@ -352,7 +353,7 @@ func TestDeletePassword_Unauthorized(t *testing.T) {
 
 	// Store a password with different user
 	otherUserID := uuid.New()
-	otherPass, err := storage.StorePassword(context.Background(), db.CreatePasswordEntryParams{
+	otherPass, err := storage.StorePassword(t.Context(), db.CreatePasswordEntryParams{
 		UserID:   pgtype.UUID{Bytes: otherUserID, Valid: true},
 		Login:    "other@example.com",
 		Password: "encrypted-password",

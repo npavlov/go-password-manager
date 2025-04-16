@@ -12,6 +12,8 @@ import (
 )
 
 func TestDecryptor_Read_Success(t *testing.T) {
+	t.Parallel()
+
 	// Arrange
 	key, err := utils.GenerateRandomKey()
 	require.NoError(t, err)
@@ -34,11 +36,13 @@ func TestDecryptor_Read_Success(t *testing.T) {
 	read, err := decryptor.Read(decrypted)
 
 	// Assert
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, originalText, decrypted[:read])
 }
 
 func TestDecryptor_Read_InvalidKey(t *testing.T) {
+	t.Parallel()
+
 	// Arrange: valid encrypted data with valid key
 	key, err := utils.GenerateRandomKey()
 	require.NoError(t, err)
@@ -59,6 +63,8 @@ func TestDecryptor_Read_InvalidKey(t *testing.T) {
 }
 
 func TestDecryptor_Read_TamperedData(t *testing.T) {
+	t.Parallel()
+
 	key, err := utils.GenerateRandomKey()
 	require.NoError(t, err)
 
@@ -81,11 +87,13 @@ func TestDecryptor_Read_TamperedData(t *testing.T) {
 	out := make([]byte, 128)
 	_, err = decryptor.Read(out)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to decrypt data")
 }
 
 func TestDecryptor_Read_InvalidNonce(t *testing.T) {
+	t.Parallel()
+
 	key, err := utils.GenerateRandomKey()
 	require.NoError(t, err)
 
@@ -98,6 +106,6 @@ func TestDecryptor_Read_InvalidNonce(t *testing.T) {
 	buf := make([]byte, 64)
 	_, err = decryptor.Read(buf)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unexpected EOF")
 }

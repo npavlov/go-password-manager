@@ -11,7 +11,7 @@ import (
 
 // AddMeta add meta data.
 func (ds *DBStorage) AddMeta(ctx context.Context, recordId, key, value string) (*db.Metainfo, error) {
-	uuid := utils.GetIdFromString(recordId)
+	uuid := utils.GetIDFromString(recordId)
 
 	meta, err := ds.Queries.AddMetaInfo(ctx, db.AddMetaInfoParams{
 		ItemID: uuid,
@@ -28,7 +28,7 @@ func (ds *DBStorage) AddMeta(ctx context.Context, recordId, key, value string) (
 }
 
 func (ds *DBStorage) GetMetaInfo(ctx context.Context, recordId string) ([]db.GetMetaInfoByItemIDRow, error) {
-	uuid := utils.GetIdFromString(recordId)
+	uuid := utils.GetIDFromString(recordId)
 
 	meta, err := ds.Queries.GetMetaInfoByItemID(ctx, uuid)
 	if err != nil {
@@ -41,7 +41,7 @@ func (ds *DBStorage) GetMetaInfo(ctx context.Context, recordId string) ([]db.Get
 }
 
 func (ds *DBStorage) DeleteMetaInfo(ctx context.Context, key, itemId string) error {
-	uuid := utils.GetIdFromString(itemId)
+	uuid := utils.GetIDFromString(itemId)
 
 	err := ds.Queries.DeleteMetaInfo(ctx, db.DeleteMetaInfoParams{
 		Key:    key,

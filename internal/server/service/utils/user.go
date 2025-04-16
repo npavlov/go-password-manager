@@ -8,7 +8,7 @@ import (
 )
 
 func GetDecryptionKey(ctx context.Context, storage UserGetter, masterKey string) (pgtype.UUID, string, error) {
-	userUUID, err := GetUserId(ctx)
+	userUUID, err := GetUserID(ctx)
 	if err != nil {
 		return pgtype.UUID{}, "", errors.Wrap(err, "error getting user id")
 	}

@@ -1,3 +1,4 @@
+//nolint:lll,dogsled
 package note_test
 
 import (
@@ -6,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	generalutils "github.com/npavlov/go-password-manager/internal/utils"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
@@ -18,6 +18,7 @@ import (
 	"github.com/npavlov/go-password-manager/internal/server/service/note"
 	"github.com/npavlov/go-password-manager/internal/server/service/utils"
 	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
+	generalutils "github.com/npavlov/go-password-manager/internal/utils"
 )
 
 func setupNoteService(t *testing.T) (*note.Service, *testutils.MockDBStorage, context.Context, string) {
@@ -44,7 +45,7 @@ func setupNoteService(t *testing.T) (*note.Service, *testutils.MockDBStorage, co
 	storage.AddTestUser(testUser)
 
 	// Inject user ID and encryption key into context
-	ctx := testutils.InjectUserToContext(context.Background(), userID.String())
+	ctx := testutils.InjectUserToContext(t.Context(), userID.String())
 
 	return note.NewNoteService(&logger, storage, cfg), storage, ctx, encryptionKey
 }
@@ -64,17 +65,17 @@ func TestStoreNote_Success(t *testing.T) {
 
 	resp, err := svc.StoreNote(ctx, req)
 	require.NoError(t, err)
-	require.NotEmpty(t, resp.NoteId)
+	require.NotEmpty(t, resp.GetNoteId())
 
 	// Verify note was stored
 	notes, err := storage.GetNotes(ctx, pgtype.UUID{Bytes: uuid.MustParse(testutils.GetUserIDFromContext(ctx)), Valid: true})
 	require.NoError(t, err)
 	require.Len(t, notes, 1)
 
-	getNote, err := svc.GetNote(ctx, &pb.GetNoteRequest{NoteId: resp.NoteId})
+	getNote, err := svc.GetNote(ctx, &pb.GetNoteRequest{NoteId: resp.GetNoteId()})
 	require.NoError(t, err)
 
-	require.Equal(t, getNote.Note.Content, testContent)
+	require.Equal(t, getNote.GetNote().GetContent(), testContent)
 }
 
 func TestStoreNote_InvalidInput(t *testing.T) {
@@ -111,8 +112,8 @@ func TestGetNote_Success(t *testing.T) {
 
 	resp, err := svc.GetNote(ctx, req)
 	require.NoError(t, err)
-	require.Equal(t, testContent, resp.Note.Content)
-	require.True(t, timestamppb.New(note.UpdatedAt.Time).AsTime().Equal(resp.LastUpdate.AsTime()))
+	require.Equal(t, testContent, resp.GetNote().GetContent())
+	require.True(t, timestamppb.New(note.UpdatedAt.Time).AsTime().Equal(resp.GetLastUpdate().AsTime()))
 }
 
 func TestGetNote_NotFound(t *testing.T) {
@@ -136,7 +137,7 @@ func TestGetNote_Unauthorized(t *testing.T) {
 
 	// Store a note with different user
 	otherUserID := uuid.New()
-	otherNote, err := storage.StoreNote(context.Background(), db.CreateNoteEntryParams{
+	otherNote, err := storage.StoreNote(t.Context(), db.CreateNoteEntryParams{
 		UserID:           pgtype.UUID{Bytes: otherUserID, Valid: true},
 		EncryptedContent: "encrypted-content",
 	})
@@ -171,7 +172,7 @@ func TestDeleteNote_Success(t *testing.T) {
 
 	resp, err := svc.DeleteNote(ctx, req)
 	require.NoError(t, err)
-	require.True(t, resp.Ok)
+	require.True(t, resp.GetOk())
 
 	// Verify note was deleted
 	_, err = storage.GetNote(ctx, note.ID.String(), pgtype.UUID{Bytes: uuid.MustParse(testutils.GetUserIDFromContext(ctx)), Valid: true})
@@ -291,7 +292,7 @@ func TestStoreNote_MissingUserContext(t *testing.T) {
 		},
 	}
 
-	_, err := svc.StoreNote(context.Background(), req)
+	_, err := svc.StoreNote(t.Context(), req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error getting user id")
 }
@@ -302,7 +303,7 @@ func TestGetNote_MissingUserContext(t *testing.T) {
 	svc, storage, _, userKey := setupNoteService(t)
 
 	// Store a test note first with valid context
-	ctx := testutils.InjectUserToContext(context.Background(), uuid.NewString())
+	ctx := testutils.InjectUserToContext(t.Context(), uuid.NewString())
 	encryptedContent, _ := utils.Encrypt("test content", userKey)
 	note, err := storage.StoreNote(ctx, db.CreateNoteEntryParams{
 		UserID:           pgtype.UUID{Bytes: uuid.MustParse(testutils.GetUserIDFromContext(ctx)), Valid: true},
@@ -315,7 +316,7 @@ func TestGetNote_MissingUserContext(t *testing.T) {
 		NoteId: note.ID.String(),
 	}
 
-	_, err = svc.GetNote(context.Background(), req)
+	_, err = svc.GetNote(t.Context(), req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error getting user id")
 }

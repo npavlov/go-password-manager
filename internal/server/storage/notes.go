@@ -24,7 +24,7 @@ func (ds *DBStorage) StoreNote(ctx context.Context, createNote db.CreateNoteEntr
 
 // GetNote retrieves note record.
 func (ds *DBStorage) GetNote(ctx context.Context, noteId string, userId pgtype.UUID) (*db.Note, error) {
-	uuid := utils.GetIdFromString(noteId)
+	uuid := utils.GetIDFromString(noteId)
 
 	note, err := ds.Queries.GetNoteByID(ctx, db.GetNoteByIDParams{
 		ID:     uuid,
@@ -41,7 +41,7 @@ func (ds *DBStorage) GetNote(ctx context.Context, noteId string, userId pgtype.U
 
 // GetNotes retrieves note records.
 func (ds *DBStorage) GetNotes(ctx context.Context, userId string) ([]db.Note, error) {
-	uuid := utils.GetIdFromString(userId)
+	uuid := utils.GetIDFromString(userId)
 
 	notes, err := ds.Queries.GetNotesByUserID(ctx, uuid)
 	if err != nil {
@@ -54,7 +54,7 @@ func (ds *DBStorage) GetNotes(ctx context.Context, userId string) ([]db.Note, er
 }
 
 func (ds *DBStorage) DeleteNote(ctx context.Context, noteId string, userId pgtype.UUID) error {
-	uuid := utils.GetIdFromString(noteId)
+	uuid := utils.GetIDFromString(noteId)
 
 	err := ds.Queries.DeleteNoteEntry(ctx, db.DeleteNoteEntryParams{
 		ID:     uuid,

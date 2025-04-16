@@ -9,6 +9,8 @@ import (
 )
 
 func TestGetLogger(t *testing.T) {
+	t.Parallel()
+
 	logger := testutils.GetTLogger()
 
 	assert.NotNil(t, logger)

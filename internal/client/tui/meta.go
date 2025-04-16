@@ -1,3 +1,4 @@
+//nolint:mnd,forcetypeassert
 package tui
 
 import (
@@ -34,6 +35,8 @@ func (t *TUI) ShowAddMetadataForm(storageItem model.StorageItem, backFunc func()
 				err = t.Storage.ProcessNote(context.Background(), storageItem.ID, storageItem.Metadata)
 			case model.ItemTypePassword:
 				err = t.Storage.ProcessPassword(context.Background(), storageItem.ID, storageItem.Metadata)
+			case model.ItemTypeBinary:
+				err = t.Storage.ProcessBinary(context.Background(), storageItem.ID, storageItem.Metadata)
 			}
 
 			if err != nil {
@@ -76,6 +79,8 @@ func (t *TUI) ShowRemoveMetadataForm(storageItem model.StorageItem, backFunc fun
 				err = t.Storage.ProcessNote(context.Background(), storageItem.ID, storageItem.Metadata)
 			case model.ItemTypePassword:
 				err = t.Storage.ProcessPassword(context.Background(), storageItem.ID, storageItem.Metadata)
+			case model.ItemTypeBinary:
+				err = t.Storage.ProcessBinary(context.Background(), storageItem.ID, storageItem.Metadata)
 			}
 
 			if err != nil {

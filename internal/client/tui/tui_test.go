@@ -1,3 +1,4 @@
+//nolint:err113
 package tui_test
 
 import (
@@ -6,12 +7,12 @@ import (
 	"testing"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/google/uuid"
-	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/npavlov/go-password-manager/internal/client/tui"
+	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 )
 
 func setupTUI() *tui.TUI {
@@ -37,6 +38,8 @@ func TestMainMenu_Authorized(t *testing.T) {
 }
 
 func TestMainMenu_NotAuthorized(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	mockToken := ui.TokenMgr.(*testutils.MockTokenManager)
 	mockToken.Authorized = false
@@ -49,6 +52,8 @@ func TestMainMenu_NotAuthorized(t *testing.T) {
 }
 
 func TestHandleLogin_Success(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 
 	mockFacade := ui.Facade.(*testutils.MockFacade)
@@ -63,18 +68,16 @@ func TestHandleLogin_Success(t *testing.T) {
 	}
 
 	mockFacade.On("Login", "user", "pass").Return(nil)
-	mockStorage.On("SyncItems", context.Background()).Return(nil)
+	mockStorage.On("SyncItems", mock.Anything).Return(nil)
 
 	form := tview.NewForm().
 		AddInputField("Username", "user", 20, nil, nil).
 		AddPasswordField("Password", "pass", 20, '*', nil)
 
-	loggedIn := false
-	ui.OnLogin = func() { loggedIn = true }
-
 	ui.HandleLogin(form)
 
-	assert.True(t, loggedIn)
+	mockFacade.AssertExpectations(t)
+	mockStorage.AssertExpectations(t)
 }
 
 func TestHandleLogin_Failure(t *testing.T) {
@@ -94,11 +97,13 @@ func TestHandleLogin_Failure(t *testing.T) {
 }
 
 func TestHandleRegister_Success(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 
 	mockFacade := ui.Facade.(*testutils.MockFacade)
 	mockFacade.RegisterFunc = func(username, password, email string) (string, error) {
-		return uuid.New().String(), nil
+		return "", nil
 	}
 	mockFacade.On("Register", "user", "pass", "email@example.com").Return("user-id-123", nil)
 
@@ -107,20 +112,20 @@ func TestHandleRegister_Success(t *testing.T) {
 		AddPasswordField("Password", "pass", 20, '*', nil).
 		AddInputField("Email", "email@example.com", 50, nil, nil)
 
-	registered := false
-	ui.OnRegister = func() { registered = true }
-
 	ui.HandleRegister(form)
 
-	assert.True(t, registered)
+	mockFacade.AssertExpectations(t)
 }
 
 func TestResetToLoginScreen(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	called := false
 
 	ui.SetRoot = func(p tview.Primitive, fullscreen bool) *tview.Application {
 		called = true
+
 		return ui.App
 	}
 
@@ -132,11 +137,14 @@ func TestResetToLoginScreen(t *testing.T) {
 }
 
 func TestShowRegisterForm(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	mockFacade := ui.Facade.(*testutils.MockFacade)
 	mockFacade.RegisterFunc = func(username, password, email string) (string, error) {
-		return uuid.New().String(), nil
+		return "", nil
 	}
+	mockFacade.On("Register", "testuser", "secret", "test@example.com").Return("user-id-123", nil)
 
 	form := ui.ShowRegisterForm()
 
@@ -147,10 +155,6 @@ func TestShowRegisterForm(t *testing.T) {
 	assert.Equal(t, "Username", form.GetFormItem(0).GetLabel())
 	assert.Equal(t, "Password", form.GetFormItem(1).GetLabel())
 	assert.Equal(t, "Email", form.GetFormItem(2).GetLabel())
-
-	// Simulate clicking the "Register" button (item 3)
-	called := false
-	ui.OnRegister = func() { called = true }
 
 	usernameField := form.GetFormItem(0).(*tview.InputField)
 	passwordField := form.GetFormItem(1).(*tview.InputField)
@@ -164,5 +168,5 @@ func TestShowRegisterForm(t *testing.T) {
 	event := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
 	form.GetButton(0).InputHandler()(event, nil)
 
-	assert.True(t, called)
+	mockFacade.AssertExpectations(t)
 }

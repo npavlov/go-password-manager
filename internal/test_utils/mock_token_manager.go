@@ -1,3 +1,4 @@
+//nolint:wrapcheck
 package testutils
 
 import "github.com/stretchr/testify/mock"
@@ -25,11 +26,13 @@ func (m *MockTokenManager) LoadTokens() error {
 
 func (m *MockTokenManager) SaveTokens(accessToken, refreshToken string) error {
 	args := m.Called(accessToken, refreshToken)
+
 	return args.Error(0)
 }
 
 func (m *MockTokenManager) UpdateTokens(access, refresh string) error {
 	args := m.Called(access, refresh)
+
 	return args.Error(0)
 }
 

@@ -1,3 +1,4 @@
+//nolint:wrapcheck
 package file
 
 import (
@@ -21,18 +22,28 @@ import (
 	gu "github.com/npavlov/go-password-manager/internal/utils"
 )
 
+const (
+	chunkSize = 1024
+)
+
 type Storage interface {
 	StoreBinary(ctx context.Context, createBinary db.StoreBinaryEntryParams) (*db.BinaryEntry, error)
 	DeleteBinary(ctx context.Context, arg db.DeleteBinaryEntryParams) error
 	GetBinaries(ctx context.Context, userId string) ([]db.BinaryEntry, error)
 	GetBinary(ctx context.Context, binaryId string, userId pgtype.UUID) (*db.BinaryEntry, error)
-	GetUserById(ctx context.Context, id pgtype.UUID) (*db.User, error)
+	GetUserByID(ctx context.Context, id pgtype.UUID) (*db.User, error)
 }
 
 type S3Storage interface {
-	PutObject(ctx context.Context, bucketName string, objectName string, reader io.Reader, objectSize int64, opts minio.PutObjectOptions) (info minio.UploadInfo, err error)
-	GetObject(ctx context.Context, bucketName string, objectName string, opts minio.GetObjectOptions) (io.ReadCloser, error)
-	RemoveObject(ctx context.Context, bucketName string, objectName string, opts minio.RemoveObjectOptions) error
+	PutObject(ctx context.Context,
+		bucketName string,
+		objectName string,
+		reader io.Reader,
+		objectSize int64,
+		opts minio.PutObjectOptions,
+	) (info minio.UploadInfo, err error)
+	GetObject(ctx context.Context, bucketName string, objName string, opts minio.GetObjectOptions) (io.ReadCloser, error)
+	RemoveObject(ctx context.Context, bucketName string, objName string, opts minio.RemoveObjectOptions) error
 }
 
 type Service struct {
@@ -63,6 +74,7 @@ func (fs *Service) RegisterService(grpcServer *grpc.Server) {
 	pb.RegisterFileServiceServer(grpcServer, fs)
 }
 
+//nolint:cyclop,funlen
 func (fs *Service) UploadFile(stream grpc.ClientStreamingServer[pb.UploadFileRequest, pb.UploadFileResponse]) error {
 	ctx := stream.Context()
 
@@ -117,7 +129,7 @@ func (fs *Service) UploadFile(stream grpc.ClientStreamingServer[pb.UploadFileReq
 	var totalSize int64 = 0
 	for {
 		chunk, err := stream.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -171,7 +183,7 @@ func (fs *Service) DeleteFile(ctx context.Context, req *pb.DeleteFileRequest) (*
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	userUUID, err := utils.GetUserId(ctx)
+	userUUID, err := utils.GetUserID(ctx)
 	if err != nil {
 		fs.logger.Error().Err(err).Msg("error getting user id")
 
@@ -179,7 +191,7 @@ func (fs *Service) DeleteFile(ctx context.Context, req *pb.DeleteFileRequest) (*
 	}
 
 	err = fs.storage.DeleteBinary(ctx, db.DeleteBinaryEntryParams{
-		ID:     gu.GetIdFromString(req.GetFileId()),
+		ID:     gu.GetIDFromString(req.GetFileId()),
 		UserID: userUUID,
 	})
 	if err != nil {
@@ -193,8 +205,9 @@ func (fs *Service) DeleteFile(ctx context.Context, req *pb.DeleteFileRequest) (*
 	}, nil
 }
 
-func (fs *Service) DownloadFile(req *pb.DownloadFileRequest, stream grpc.ServerStreamingServer[pb.DownloadFileResponse]) error {
-	ctx := stream.Context()
+//nolint:cyclop,funlen
+func (fs *Service) DownloadFile(req *pb.DownloadFileRequest, str grpc.ServerStreamingServer[pb.DownloadFileResponse]) error {
+	ctx := str.Context()
 
 	userUUID, decryptedUserKey, err := utils.GetDecryptionKey(ctx, fs.storage, fs.cfg.SecuredMasterKey.Get())
 	if err != nil {
@@ -208,6 +221,7 @@ func (fs *Service) DownloadFile(req *pb.DownloadFileRequest, stream grpc.ServerS
 	if err != nil {
 		fs.logger.Error().Err(err).Msg("failed to fetch file metadata")
 
+		//nolint:wrapcheck
 		return status.Error(codes.NotFound, "file not found")
 	}
 
@@ -215,6 +229,7 @@ func (fs *Service) DownloadFile(req *pb.DownloadFileRequest, stream grpc.ServerS
 	if fileEntry.UserID != userUUID {
 		fs.logger.Error().Msg("you do not have access to this file")
 
+		//nolint:wrapcheck
 		return status.Error(codes.PermissionDenied, "you do not have access to this file")
 	}
 
@@ -224,6 +239,7 @@ func (fs *Service) DownloadFile(req *pb.DownloadFileRequest, stream grpc.ServerS
 	if err != nil {
 		fs.logger.Error().Err(err).Msg("failed to fetch file from MinIO")
 
+		//nolint:wrapcheck
 		return status.Error(codes.Internal, "failed to retrieve file")
 	}
 	defer reader.Close()
@@ -233,33 +249,33 @@ func (fs *Service) DownloadFile(req *pb.DownloadFileRequest, stream grpc.ServerS
 	if err != nil {
 		fs.logger.Error().Err(err).Msg("error creating decryptor")
 
+		//nolint:wrapcheck
 		return status.Error(codes.Internal, "error creating decryptor")
 	}
 
 	// Stream decrypted data in blocks
-	buffer := make([]byte, 1024) // Read in 1024-byte chunks
+	buffer := make([]byte, chunkSize) // Read in 1024-byte chunks
 
 	for {
-		n, err := decryptor.Read(buffer) // Read a chunk
-		if n > 0 {
+		cursor, err := decryptor.Read(buffer) // Read a chunk
+		if cursor > 0 {
 			// Send only the exact number of bytes read
-			if err := stream.Send(&pb.DownloadFileResponse{
-				Data:       buffer[:n], // Trim the buffer to actual size
+			if err := str.Send(&pb.DownloadFileResponse{
+				Data:       buffer[:cursor], // Trim the buffer to actual size
 				LastUpdate: timestamppb.New(fileEntry.UpdatedAt.Time),
 			}); err != nil {
 				return errors.Wrap(err, "error sending download response")
 			}
 		}
-		if err != nil && err != io.EOF {
+		if err != nil && !errors.Is(err, io.EOF) {
 			fs.logger.Error().Err(err).Msg("error reading and decrypting file")
 
 			return status.Error(codes.Internal, "error reading and decrypting file")
 		}
 
-		if n < len(buffer) || err == io.EOF {
+		if cursor < len(buffer) || errors.Is(err, io.EOF) {
 			break
 		}
-
 	}
 
 	fs.logger.Info().Str("file", fileEntry.FileName).Msg("file successfully streamed")
@@ -272,7 +288,7 @@ func (fs *Service) GetFile(ctx context.Context, req *pb.GetFileRequest) (*pb.Get
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	userUUID, err := utils.GetUserId(ctx)
+	userUUID, err := utils.GetUserID(ctx)
 	if err != nil {
 		fs.logger.Error().Err(err).Msg("error getting user id")
 

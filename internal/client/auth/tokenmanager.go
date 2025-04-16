@@ -23,8 +23,8 @@ type TokenManager struct {
 }
 
 type DataObject struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
 }
 
 func NewTokenManager(logger *zerolog.Logger, cfg *config.Config) *TokenManager {
@@ -50,7 +50,7 @@ func (tm *TokenManager) LoadTokens() error {
 			return nil // No file means first-time login
 		}
 
-		return err
+		return errors.Wrap(err, "failed to open token file")
 	}
 	defer file.Close()
 
@@ -78,9 +78,10 @@ func (tm *TokenManager) SaveTokens(accessToken, refreshToken string) error {
 		RefreshToken: refreshToken,
 	}, "", "  ")
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to serialize token")
 	}
 
+	//nolint:mnd,wrapcheck
 	return os.WriteFile(tm.cfg.TokenFile, data, 0o600)
 }
 
@@ -88,6 +89,7 @@ func (tm *TokenManager) SaveTokens(accessToken, refreshToken string) error {
 func (tm *TokenManager) UpdateTokens(access, refresh string) error {
 	tm.AccessToken = utils.NewString(access)
 	tm.RefreshToken = utils.NewString(refresh)
+	tm.isAuthorized = true
 
 	return tm.SaveTokens(access, refresh)
 }

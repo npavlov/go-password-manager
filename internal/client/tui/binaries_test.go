@@ -1,3 +1,4 @@
+//nolint:wrapcheck,err113,goconst
 package tui_test
 
 import (
@@ -12,12 +13,15 @@ import (
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/npavlov/go-password-manager/internal/client/model"
 	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 )
 
 func TestShowBinaryList(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 
 	// Test empty list
@@ -38,6 +42,8 @@ func TestShowBinaryList(t *testing.T) {
 }
 
 func TestShowBinaryDetails(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	file := model.BinaryItem{
 		StorageItem: model.StorageItem{ID: "123"},
@@ -55,6 +61,8 @@ func TestShowBinaryDetails(t *testing.T) {
 }
 
 func TestShowBinaryDetails_DownloadAction(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	file := model.BinaryItem{
 		StorageItem: model.StorageItem{ID: "123"},
@@ -66,9 +74,10 @@ func TestShowBinaryDetails_DownloadAction(t *testing.T) {
 	mockFacade := ui.Facade.(*testutils.MockFacade)
 	mockFacade.DownloadBinaryFunc = func(ctx context.Context, fileID string, writer io.Writer) error {
 		_, err := writer.Write([]byte("test content"))
+
 		return err
 	}
-	mockFacade.On("DownloadBinary", context.Background(), "123", mock.Anything).Return(nil)
+	mockFacade.On("DownloadBinary", t.Context(), "123", mock.Anything).Return(nil)
 
 	details := ui.ShowBinaryDetails(file)
 	actions := details.GetItem(1).(*tview.List)
@@ -77,10 +86,11 @@ func TestShowBinaryDetails_DownloadAction(t *testing.T) {
 	event := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
 	actions.SetCurrentItem(0) // Download is first item
 	actions.InputHandler()(event, nil)
-
 }
 
 func TestShowBinaryDetails_RemoveAction(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	file := model.BinaryItem{
 		StorageItem: model.StorageItem{ID: "123"},
@@ -93,7 +103,7 @@ func TestShowBinaryDetails_RemoveAction(t *testing.T) {
 	mockFacade.DeleteBinaryFunc = func(ctx context.Context, fileID string) (bool, error) {
 		return true, nil
 	}
-	mockFacade.On("DeleteBinary", context.Background(), "123").Return(true, nil)
+	mockFacade.On("DeleteBinary", t.Context(), "123").Return(true, nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
 	mockStorage.DeleteBinaryFunc = func(Id string) {
@@ -117,25 +127,28 @@ func TestShowBinaryDetails_RemoveAction(t *testing.T) {
 }
 
 func TestShowUploadBinaryForm_Success(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 
 	// Create a test file
-	tmpFile, err := os.CreateTemp("", "testfile")
-	assert.NoError(t, err)
+	tmpFile, err := os.CreateTemp(t.TempDir(), "testfile")
+	require.NoError(t, err)
 	defer os.Remove(tmpFile.Name())
-	tmpFile.WriteString("test content")
-	tmpFile.Close()
+	_, _ = tmpFile.WriteString("test content")
+	_ = tmpFile.Close()
 
 	// Setup mocks
 	mockFacade := ui.Facade.(*testutils.MockFacade)
 	mockFacade.UploadBinaryFunc = func(ctx context.Context, filename string, reader io.Reader) (string, error) {
 		return "new-id", nil
 	}
-	mockFacade.On("UploadBinary", context.Background(), filepath.Base(tmpFile.Name()), mock.Anything).Return("new-id", nil)
+	mockFacade.On("UploadBinary", t.Context(), filepath.Base(tmpFile.Name()), mock.Anything).Return("new-id", nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
 	mockStorage.ProcessBinaryFunc = func(ctx context.Context, fileID string, meta map[string]string) error {
 		assert.Equal(t, "new-id", fileID)
+
 		return nil
 	}
 
@@ -145,7 +158,6 @@ func TestShowUploadBinaryForm_Success(t *testing.T) {
 	// Simulate upload button click
 	event := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
 	form.GetButton(0).InputHandler()(event, nil)
-
 }
 
 func TestShowUploadBinaryForm_FileError(t *testing.T) {
@@ -157,25 +169,25 @@ func TestShowUploadBinaryForm_FileError(t *testing.T) {
 	// Simulate upload button click
 	event := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
 	form.GetButton(0).InputHandler()(event, nil)
-
 }
 
 func TestShowUploadBinaryForm_UploadError(t *testing.T) {
 	ui := setupTUI()
 
 	// Create a test file
-	tmpFile, err := os.CreateTemp("", "testfile")
-	assert.NoError(t, err)
+	tmpFile, err := os.CreateTemp(t.TempDir(), "testfile")
+	require.NoError(t, err)
 	defer os.Remove(tmpFile.Name())
-	tmpFile.WriteString("test content")
-	tmpFile.Close()
+	_, _ = tmpFile.WriteString("test content")
+	_ = tmpFile.Close()
 
 	// Setup mock to return error
 	mockFacade := ui.Facade.(*testutils.MockFacade)
 	mockFacade.UploadBinaryFunc = func(ctx context.Context, filename string, reader io.Reader) (string, error) {
 		return "", errors.New("upload failed")
 	}
-	mockFacade.On("UploadBinary", context.Background(), filepath.Base(tmpFile.Name()), mock.Anything).Return("", errors.New("upload failed"))
+	mockFacade.On("UploadBinary", t.Context(), filepath.Base(tmpFile.Name()), mock.Anything).
+		Return("", errors.New("upload failed"))
 
 	form := ui.ShowUploadBinaryForm()
 	form.GetFormItem(0).(*tview.InputField).SetText(tmpFile.Name())
@@ -183,10 +195,11 @@ func TestShowUploadBinaryForm_UploadError(t *testing.T) {
 	// Simulate upload button click
 	event := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
 	form.GetButton(0).InputHandler()(event, nil)
-
 }
 
 func TestShowRemoveBinaryForm_Confirm(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	file := model.BinaryItem{
 		StorageItem: model.StorageItem{ID: "123"},
@@ -198,7 +211,7 @@ func TestShowRemoveBinaryForm_Confirm(t *testing.T) {
 	mockFacade.DeleteBinaryFunc = func(ctx context.Context, fileID string) (bool, error) {
 		return true, nil
 	}
-	mockFacade.On("DeleteBinary", context.Background(), "123").Return(true, nil)
+	mockFacade.On("DeleteBinary", t.Context(), "123").Return(true, nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
 	mockStorage.DeleteBinaryFunc = func(Id string) {
@@ -210,7 +223,6 @@ func TestShowRemoveBinaryForm_Confirm(t *testing.T) {
 	// Simulate "Yes" selection
 	modal.SetFocus(0) // Focus "Yes" button
 	modal.InputHandler()(tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone), nil)
-
 }
 
 func TestShowRemoveBinaryForm_Cancel(t *testing.T) {
@@ -225,7 +237,6 @@ func TestShowRemoveBinaryForm_Cancel(t *testing.T) {
 	// Simulate "No" selection
 	modal.SetFocus(1) // Focus "No" button
 	modal.InputHandler()(tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone), nil)
-
 }
 
 func TestShowBinaryDetails_MetadataActions(t *testing.T) {

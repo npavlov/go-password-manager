@@ -12,7 +12,9 @@ import (
 	pb_password "github.com/npavlov/go-password-manager/gen/proto/password"
 )
 
-// IFacade defines the interface for the Facade package
+// IFacade defines the interface for the Facade package.
+//
+//nolint:interfacebloat
 type IFacade interface {
 	Login(username, password string) error
 	Register(username, password, email string) (string, error)
