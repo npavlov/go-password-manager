@@ -224,7 +224,7 @@ func TestShowRemoveBinaryForm_Confirm(t *testing.T) {
 
 	modal := ui.ShowRemoveBinaryForm(file)
 
-	// Simulate "Yes" selection
+	// Simulate yesLabel selection
 	modal.SetFocus(0) // Focus "Yes" button
 	modal.InputHandler()(tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone), nil)
 }

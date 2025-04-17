@@ -1,4 +1,4 @@
-//nolint:mnd,forcetypeassert,goconst
+//nolint:mnd,forcetypeassert
 package tui
 
 import (
@@ -144,9 +144,9 @@ func (t *TUI) ShowUploadBinaryForm() *tview.Form {
 func (t *TUI) ShowRemoveBinaryForm(file model.BinaryItem) *tview.Modal {
 	confirmation := tview.NewModal().
 		SetText(fmt.Sprintf("Delete '%s'?", file.Filename)).
-		AddButtons([]string{"Yes", "No"}).
+		AddButtons([]string{yesLabel, noLabel}).
 		SetDoneFunc(func(_ int, label string) {
-			if label == "Yes" {
+			if label == yesLabel {
 				ok, err := t.Facade.DeleteBinary(context.Background(), file.ID)
 				if !ok || err != nil {
 					t.Logger.Error().Err(err).Msg("Failed to delete binary")

@@ -166,9 +166,9 @@ func (t *TUI) ShowAddPasswordForm() *tview.Form {
 func (t *TUI) ShowRemovePasswordForm(pass model.PasswordItem) *tview.Modal {
 	confirmation := tview.NewModal().
 		SetText(fmt.Sprintf("Are you sure you want to delete the password for %s?", pass.Login)).
-		AddButtons([]string{"Yes", "No"}).
+		AddButtons([]string{yesLabel, noLabel}).
 		SetDoneFunc(func(_ int, buttonLabel string) {
-			if buttonLabel == "Yes" {
+			if buttonLabel == yesLabel {
 				ok, err := t.Facade.DeletePassword(context.Background(), pass.ID)
 				if !ok || err != nil {
 					t.Logger.Error().Err(err).Msg("Failed to remove password")

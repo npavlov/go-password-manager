@@ -12,6 +12,11 @@ import (
 	"github.com/npavlov/go-password-manager/internal/client/storage"
 )
 
+const (
+	yesLabel = "Yes"
+	noLabel  = "No"
+)
+
 type TUI struct {
 	App      *tview.Application
 	Facade   facade.IFacade

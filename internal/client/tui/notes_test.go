@@ -104,16 +104,18 @@ func TestShowAddNoteForm_Success(t *testing.T) {
 
 	ui := setupTUI()
 
+	id := "new-id"
+
 	// Setup mocks
 	mockFacade := ui.Facade.(*testutils.MockFacade)
 	mockFacade.StoreNoteFunc = func(_ context.Context, _ string) (string, error) {
-		return "new-id", nil
+		return id, nil
 	}
-	mockFacade.On("StoreNote", t.Context(), "test content").Return("new-id", nil)
+	mockFacade.On("StoreNote", t.Context(), "test content").Return(id, nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
 	mockStorage.ProcessNoteFunc = func(_ context.Context, noteID string, _ map[string]string) error {
-		assert.Equal(t, "new-id", noteID)
+		assert.Equal(t, id, noteID)
 
 		return nil
 	}

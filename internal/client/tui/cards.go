@@ -177,9 +177,9 @@ func (t *TUI) ShowEditCardForm(card model.CardItem) *tview.Form {
 func (t *TUI) ShowRemoveCardForm(card model.CardItem) *tview.Modal {
 	confirmation := tview.NewModal().
 		SetText(fmt.Sprintf("Are you sure you want to delete the card %s?", card.CardNumber)).
-		AddButtons([]string{"Yes", "No"}).
+		AddButtons([]string{yesLabel, noLabel}).
 		SetDoneFunc(func(_ int, label string) {
-			if label == "Yes" {
+			if label == yesLabel {
 				ok, err := t.Facade.DeleteCard(context.Background(), card.ID)
 				if !ok || err != nil {
 					t.Logger.Error().Err(err).Msg("Failed to delete card")
