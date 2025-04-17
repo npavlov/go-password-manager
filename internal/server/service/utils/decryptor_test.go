@@ -109,3 +109,13 @@ func TestDecryptor_Read_InvalidNonce(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unexpected EOF")
 }
+
+func TestDecryptor_InvalidKey(t *testing.T) {
+	t.Parallel()
+
+	// Create a buffer with insufficient nonce size
+	badData := bytes.NewBufferString("shortnonce")
+
+	_, err := utils.NewDecryptor(badData, "broken")
+	require.Error(t, err)
+}

@@ -15,12 +15,11 @@ func TestGetEnvAsJSONWithInclusion(t *testing.T) {
 	t.Setenv("POLL_INTERVAL", "5")
 
 	// Call the function to get environment variables as JSON
-	result, err := getEnvAsJSON()
-	require.NoError(t, err, "getEnvAsJSON should not return an error")
+	result := getEnvAsJSON()
 
 	// Parse the result into a map for inclusion check
 	var resultMap map[string]string
-	err = json.Unmarshal([]byte(result), &resultMap)
+	err := json.Unmarshal([]byte(result), &resultMap)
 	require.NoError(t, err, "Unmarshalling the result JSON should not return an error")
 
 	// Expected key-value pairs

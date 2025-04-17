@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	envJSON, _ := getEnvAsJSON()
+	envJSON := getEnvAsJSON()
 
 	// Output the JSON string
 	//nolint:forbidigo
@@ -15,16 +15,17 @@ func main() {
 }
 
 // getEnvAsJSON retrieves environment variables as a JSON string.
-func getEnvAsJSON() (string, error) {
+func getEnvAsJSON() string {
 	envs := make(map[string]string)
 	for _, env := range os.Environ() {
 		pair := splitEnv(env)
 		envs[pair[0]] = pair[1]
 	}
 
+	//nolint:errchkjson
 	envJSON, _ := json.Marshal(envs)
 
-	return string(envJSON), nil
+	return string(envJSON)
 }
 
 // splitEnv splits an environment variable into key and value parts.
