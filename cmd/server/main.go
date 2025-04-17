@@ -10,6 +10,7 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	"github.com/npavlov/go-password-manager/internal/pkg/logger"
 	"github.com/npavlov/go-password-manager/internal/server/adapter"
@@ -46,9 +47,15 @@ func main() {
 	var wg sync.WaitGroup
 
 	ctx, cancel := utils.WithSignalCancel(context.Background(), &log)
-	defer cancel()
-
 	dbManager := setupDatabase(ctx, cfg, &log)
+
+	if dbManager == nil {
+		cancel()
+		dbManager.Close()
+		log.Fatal().Err(ErrDatabaseNotConnected).Msg("Database is not connected")
+	}
+
+	defer cancel()
 	defer dbManager.Close()
 
 	wg.Add(1)
@@ -97,7 +104,12 @@ func starServer(
 	cardService := card.NewCardService(log, dbStorage, cfg)
 	cardService.RegisterService(grpcServer)
 
-	minioClient := setupMinIO(ctx, cfg, log)
+	minioClient, err := setupMinIO(cfg)
+	if err != nil {
+		log.Fatal().Err(ErrMinioNotConnected).Msg("Failed to connect to MinIO")
+	}
+
+	setBucket(ctx, cfg, minioClient)
 
 	fileService := file.NewFileService(log, dbStorage, cfg, adapter.NewMinioAdapter(minioClient))
 	fileService.RegisterService(grpcServer)
@@ -112,20 +124,22 @@ func starServer(
 }
 
 func setupDatabase(ctx context.Context, cfg *config.Config, log *zerolog.Logger) *dbmanager.DBManager {
-	dbManager := dbmanager.NewDBManager(cfg.Database, log).Connect(ctx).VerifyConnection(ctx).ApplyMigrations()
+	dbManager := dbmanager.NewDBManager(cfg.Database, log).Connect(ctx)
 	if dbManager.DB == nil {
-		log.Fatal().Err(ErrDatabaseNotConnected).Msg("Database is not connected")
+		return nil
 	}
+	dbManager.VerifyConnection(ctx).ApplyMigrations()
 
 	return dbManager
 }
 
+//nolint:ireturn
 func setupStorage(
 	ctx context.Context,
 	cfg *config.Config,
 	dbManager *dbmanager.DBManager,
 	log *zerolog.Logger,
-) (*storage.DBStorage, *redis.RStorage) {
+) (*storage.DBStorage, redis.MemStorage) {
 	st := storage.NewDBStorage(dbManager.DB, log)
 	memStorage := redis.NewRStorage(*cfg, log)
 
@@ -136,20 +150,17 @@ func setupStorage(
 	return st, memStorage
 }
 
-func setupMinIO(ctx context.Context, cfg *config.Config, log *zerolog.Logger) *minio.Client {
+func setupMinIO(cfg *config.Config) (*minio.Client, error) {
 	//nolint:exhaustruct
 	client, err := minio.New(cfg.Minio, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.MinioAccessKey, cfg.MinioSecretKey, ""),
 		Secure: false, // Set to `true` if using HTTPS
 	})
-	if err != nil {
-		log.Fatal().Err(ErrMinioNotConnected).Msg("Failed to connect to MinIO")
-	}
 
-	if client == nil {
-		log.Fatal().Err(ErrMinioNotConnected).Msg("Failed to connect to MinIO")
-	}
+	return client, errors.Wrap(err, "error creating minio client")
+}
 
+func setBucket(ctx context.Context, cfg *config.Config, client *minio.Client) {
 	// Check if bucket exists, create if not
 	bucketName := cfg.Bucket
 	exists, err := client.BucketExists(ctx, bucketName)
@@ -167,6 +178,4 @@ func setupMinIO(ctx context.Context, cfg *config.Config, log *zerolog.Logger) *m
 	}
 
 	log.Info().Msg("Connected to MinIO successfully")
-
-	return client
 }
