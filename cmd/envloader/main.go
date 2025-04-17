@@ -4,18 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-
-	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
 )
 
 func main() {
-	envJSON, err := getEnvAsJSON()
-	if err != nil {
-		log.Error().Err(err).Msg("Error marshalling envs to JSON")
-
-		return
-	}
+	envJSON, _ := getEnvAsJSON()
 
 	// Output the JSON string
 	//nolint:forbidigo
@@ -30,10 +22,7 @@ func getEnvAsJSON() (string, error) {
 		envs[pair[0]] = pair[1]
 	}
 
-	envJSON, err := json.Marshal(envs)
-	if err != nil {
-		return "", errors.Wrap(err, "Error marshalling envs to JSON")
-	}
+	envJSON, _ := json.Marshal(envs)
 
 	return string(envJSON), nil
 }
