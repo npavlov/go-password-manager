@@ -103,13 +103,13 @@ func TestShowAddCardForm_Success(t *testing.T) {
 	// Setup mocks
 	mockFacade := ui.Facade.(*testutils.MockFacade)
 	mockFacade.StoreCardFunc = func(_ context.Context, _, _, _, _ string) (string, error) {
-		return "new-id", nil
+		return newID, nil
 	}
-	mockFacade.On("StoreCard", t.Context(), "1111222233334444", "12/25", "123", "John Doe").Return("new-id", nil)
+	mockFacade.On("StoreCard", t.Context(), "1111222233334444", "12/25", "123", "John Doe").Return(newID, nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
 	mockStorage.ProcessCardFunc = func(_ context.Context, cardID string, _ map[string]string) error {
-		assert.Equal(t, "new-id", cardID)
+		assert.Equal(t, newID, cardID)
 
 		return nil
 	}

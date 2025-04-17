@@ -15,6 +15,10 @@ import (
 	testutils "github.com/npavlov/go-password-manager/internal/test_utils"
 )
 
+const (
+	newID = "new-id"
+)
+
 func TestShowNoteList(t *testing.T) {
 	t.Parallel()
 
@@ -104,18 +108,16 @@ func TestShowAddNoteForm_Success(t *testing.T) {
 
 	ui := setupTUI()
 
-	id := "new-id"
-
 	// Setup mocks
 	mockFacade := ui.Facade.(*testutils.MockFacade)
 	mockFacade.StoreNoteFunc = func(_ context.Context, _ string) (string, error) {
-		return id, nil
+		return newID, nil
 	}
-	mockFacade.On("StoreNote", t.Context(), "test content").Return(id, nil)
+	mockFacade.On("StoreNote", t.Context(), "test content").Return(newID, nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
 	mockStorage.ProcessNoteFunc = func(_ context.Context, noteID string, _ map[string]string) error {
-		assert.Equal(t, id, noteID)
+		assert.Equal(t, newID, noteID)
 
 		return nil
 	}

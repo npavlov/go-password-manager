@@ -1,3 +1,4 @@
+//nolint:ireturn
 package testutils
 
 import (
@@ -10,8 +11,6 @@ import (
 )
 
 // SetupDBStorage creates a DBStorage with a pgxmock pool and returns the DBStorate and mock pool.
-//
-//nolint:ireturn
 func SetupDBStorage(t *testing.T) (*storage.DBStorage, pgxmock.PgxPoolIface) {
 	t.Helper()
 

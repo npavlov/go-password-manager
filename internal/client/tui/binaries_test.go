@@ -1,4 +1,4 @@
-//nolint:wrapcheck,err113,goconst,exhaustruct,forcetypeassert
+//nolint:wrapcheck,err113,exhaustruct,forcetypeassert
 package tui_test
 
 import (
@@ -141,13 +141,13 @@ func TestShowUploadBinaryForm_Success(t *testing.T) {
 	// Setup mocks
 	mockFacade := ui.Facade.(*testutils.MockFacade)
 	mockFacade.UploadBinaryFunc = func(_ context.Context, _ string, _ io.Reader) (string, error) {
-		return "new-id", nil
+		return newID, nil
 	}
-	mockFacade.On("UploadBinary", t.Context(), filepath.Base(tmpFile.Name()), mock.Anything).Return("new-id", nil)
+	mockFacade.On("UploadBinary", t.Context(), filepath.Base(tmpFile.Name()), mock.Anything).Return(newID, nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
 	mockStorage.ProcessBinaryFunc = func(_ context.Context, fileID string, _ map[string]string) error {
-		assert.Equal(t, "new-id", fileID)
+		assert.Equal(t, newID, fileID)
 
 		return nil
 	}
