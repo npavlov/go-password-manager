@@ -459,3 +459,172 @@ func TestGetCard_DecryptionFailure(t *testing.T) {
 	_, err = svc.GetCard(ctx, req)
 	require.Error(t, err)
 }
+
+func TestCardValidation(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name        string
+		card        *pb.CardData
+		shouldError bool
+		errContains string
+	}{
+		{
+			name: "valid card",
+			card: &pb.CardData{
+				CardNumber:     "4111111111111111",
+				Cvv:            "123",
+				ExpiryDate:     "12/30",
+				CardholderName: "John Doe",
+			},
+			shouldError: false,
+		},
+		{
+			name: "invalid card number - too short",
+			card: &pb.CardData{
+				CardNumber:     "411111",
+				Cvv:            "123",
+				ExpiryDate:     "12/30",
+				CardholderName: "John Doe",
+			},
+			shouldError: true,
+			errContains: "value does not match regex pattern",
+		},
+		{
+			name: "invalid card number - non-numeric",
+			card: &pb.CardData{
+				CardNumber:     "4111-1111-1111-1111",
+				Cvv:            "123",
+				ExpiryDate:     "12/30",
+				CardholderName: "John Doe",
+			},
+			shouldError: true,
+			errContains: "value does not match regex pattern",
+		},
+		{
+			name: "invalid expiry date - wrong format",
+			card: &pb.CardData{
+				CardNumber:     "4111111111111111",
+				Cvv:            "123",
+				ExpiryDate:     "12-30",
+				CardholderName: "John Doe",
+			},
+			shouldError: true,
+			errContains: "value does not match regex pattern",
+		},
+		{
+			name: "invalid expiry date - invalid month",
+			card: &pb.CardData{
+				CardNumber:     "4111111111111111",
+				Cvv:            "123",
+				ExpiryDate:     "13/30",
+				CardholderName: "John Doe",
+			},
+			shouldError: true,
+			errContains: "value does not match regex pattern",
+		},
+		{
+			name: "invalid CVV - too short",
+			card: &pb.CardData{
+				CardNumber:     "4111111111111111",
+				Cvv:            "12",
+				ExpiryDate:     "12/30",
+				CardholderName: "John Doe",
+			},
+			shouldError: true,
+			errContains: "value does not match regex pattern ",
+		},
+		{
+			name: "invalid CVV - too long",
+			card: &pb.CardData{
+				CardNumber:     "4111111111111111",
+				Cvv:            "12345",
+				ExpiryDate:     "12/30",
+				CardholderName: "John Doe",
+			},
+			shouldError: true,
+			errContains: "value does not match regex pattern",
+		},
+		{
+			name: "invalid CVV - non-numeric",
+			card: &pb.CardData{
+				CardNumber:     "4111111111111111",
+				Cvv:            "12a",
+				ExpiryDate:     "12/30",
+				CardholderName: "John Doe",
+			},
+			shouldError: true,
+			errContains: "value does not match regex pattern",
+		},
+		{
+			name: "missing cardholder name",
+			card: &pb.CardData{
+				CardNumber:     "4111111111111111",
+				Cvv:            "123",
+				ExpiryDate:     "12/30",
+				CardholderName: "",
+			},
+			shouldError: true,
+			errContains: "value length must be at least 1 characters",
+		},
+		{
+			name: "cardholder name too long",
+			card: &pb.CardData{
+				CardNumber: "4111111111111111",
+				Cvv:        "123",
+				ExpiryDate: "12/30",
+				//nolint:lll
+				CardholderName: "This name is way too long and exceeds the maximum allowed length of 100 characters which should trigger a validation error",
+			},
+			shouldError: true,
+			errContains: "value length must be at most 100 characters",
+		},
+	}
+
+	svc, _, ctx := setupCardService(t)
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Test StoreCard validation
+			storeReq := &pb.StoreCardRequest{Card: tc.card}
+			_, err := svc.StoreCard(ctx, storeReq)
+
+			if tc.shouldError {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tc.errContains)
+			} else {
+				require.NoError(t, err)
+			}
+
+			// Test UpdateCard validation (only if we have a valid card to update)
+			if !tc.shouldError {
+				// First create a card to update
+				storeResp, err := svc.StoreCard(ctx, &pb.StoreCardRequest{
+					Card: &pb.CardData{
+						CardNumber:     "5555555555554444", // Different card number
+						Cvv:            "321",
+						ExpiryDate:     "01/25",
+						CardholderName: "Initial Name",
+					},
+				})
+				require.NoError(t, err)
+
+				// Now try to update with test case data
+				updateReq := &pb.UpdateCardRequest{
+					CardId: storeResp.GetCardId(),
+					Data:   tc.card,
+				}
+				_, err = svc.UpdateCard(ctx, updateReq)
+
+				if tc.shouldError {
+					require.Error(t, err)
+					require.Contains(t, err.Error(), tc.errContains)
+				} else {
+					require.NoError(t, err)
+				}
+			}
+		})
+	}
+}

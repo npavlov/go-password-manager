@@ -206,3 +206,179 @@ func TestTokenGenerationFailsToStoreToken(t *testing.T) {
 func serviceStorage(s *auth.Service) *testutils.MockDBStorage {
 	return s.Storage.(*testutils.MockDBStorage)
 }
+
+func TestRefreshTokenValidation(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name        string
+		req         *pb.RefreshTokenRequest
+		expectedErr string
+	}{
+		{
+			name: "empty refresh token",
+			req: &pb.RefreshTokenRequest{
+				RefreshToken: "",
+			},
+		},
+		{
+			name: "invalid refresh token format",
+			req: &pb.RefreshTokenRequest{
+				RefreshToken: "invalid.token.format",
+			},
+		},
+	}
+
+	ctx := t.Context()
+	service := newTestService(t)
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := service.RefreshToken(ctx, tc.req)
+			require.Error(t, err)
+		})
+	}
+}
+
+func TestRegisterValidation(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name        string
+		req         *pb.RegisterRequest
+		expectedErr string
+	}{
+		{
+			name: "valid request",
+			req: &pb.RegisterRequest{
+				Username: "validuser",
+				Password: "ValidPass123!",
+				Email:    "valid@example.com",
+			},
+			expectedErr: "",
+		},
+		{
+			name: "empty username",
+			req: &pb.RegisterRequest{
+				Username: "",
+				Password: "ValidPass123!",
+				Email:    "valid@example.com",
+			},
+			expectedErr: "value length must be at least 3 characters",
+		},
+		{
+			name: "short username",
+			req: &pb.RegisterRequest{
+				Username: "ab",
+				Password: "ValidPass123!",
+				Email:    "valid@example.com",
+			},
+			expectedErr: "value length must be at least 3 characters",
+		},
+		{
+			name: "empty password",
+			req: &pb.RegisterRequest{
+				Username: "validuser",
+				Password: "",
+				Email:    "valid@example.com",
+			},
+			expectedErr: "value length must be at least 8 characters",
+		},
+		{
+			name: "weak password",
+			req: &pb.RegisterRequest{
+				Username: "validuser",
+				Password: "weak",
+				Email:    "valid@example.com",
+			},
+			expectedErr: "value length must be at least 8 characters",
+		},
+		{
+			name: "invalid email",
+			req: &pb.RegisterRequest{
+				Username: "validuser",
+				Password: "ValidPass123!",
+				Email:    "invalid-email",
+			},
+			expectedErr: "value must be a valid email address",
+		},
+	}
+
+	ctx := t.Context()
+	service := newTestService(t)
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := service.Register(ctx, tc.req)
+			if tc.expectedErr == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tc.expectedErr)
+			}
+		})
+	}
+}
+
+func TestLoginValidation(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name        string
+		req         *pb.LoginRequest
+		expectedErr bool
+	}{
+		{
+			name: "valid request",
+			req: &pb.LoginRequest{
+				Username: "validuser",
+				Password: "ValidPass123!",
+			},
+			expectedErr: false,
+		},
+		{
+			name: "empty username",
+			req: &pb.LoginRequest{
+				Username: "",
+				Password: "ValidPass123!",
+			},
+			expectedErr: true,
+		},
+		{
+			name: "empty password",
+			req: &pb.LoginRequest{
+				Username: "validuser",
+				Password: "",
+			},
+			expectedErr: true,
+		},
+	}
+
+	ctx := t.Context()
+	service := newTestService(t)
+
+	// First register a valid user for login tests
+	_, err := service.Register(ctx, &pb.RegisterRequest{
+		Username: "validuser",
+		Password: "ValidPass123!",
+		Email:    "valid@example.com",
+	})
+	require.NoError(t, err)
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := service.Login(ctx, tc.req)
+			if tc.expectedErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
