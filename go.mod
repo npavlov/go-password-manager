@@ -1,6 +1,6 @@
 module github.com/npavlov/go-password-manager
 
-go 1.23.0
+go 1.24.0
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.5-20250307204501-0409229c3780.1

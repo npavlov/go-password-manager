@@ -224,7 +224,7 @@ func TestGetNotes(t *testing.T) {
 				require.Contains(t, err.Error(), "failed to create note")
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, len(tt.want), len(result))
+				require.Len(t, result, len(tt.want))
 				for i, note := range tt.want {
 					require.Equal(t, note.EncryptedContent, result[i].EncryptedContent)
 				}

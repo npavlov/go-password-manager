@@ -50,6 +50,7 @@ func TestEncryptDecrypt(t *testing.T) {
 		{"short text", "hello world"},
 		{"long text", "Lorem ipsum dolor sit amet, consectetur adipiscing elit."},
 		{"special characters", "!@#$%^&*()_+-=[]{};':\",./<>?"},
+		//nolint:gosmopolitan
 		{"unicode text", "こんにちは世界"},
 	}
 

@@ -93,22 +93,6 @@ func (ai *AuthInterceptor) UnaryInterceptor(
 	return err
 }
 
-// refreshAccessToken calls the auth service to get a new token.
-func (ai *AuthInterceptor) refreshAccessToken(ctx context.Context) (string, string, error) {
-	ai.mu.Lock()
-	defer ai.mu.Unlock()
-
-	// Call the RefreshToken gRPC endpoint
-	resp, err := ai.AuthClient.RefreshToken(ctx, &pb.RefreshTokenRequest{
-		RefreshToken: ai.tokenManager.GetRefreshToken(),
-	})
-	if err != nil {
-		return "", "", errors.Wrap(err, "failed to get new access token")
-	}
-
-	return resp.GetToken(), resp.GetRefreshToken(), nil
-}
-
 // StreamInterceptor attaches the token to streaming RPCs.
 //
 
@@ -132,4 +116,20 @@ func (ai *AuthInterceptor) StreamInterceptor(
 	newCtx := metadata.AppendToOutgoingContext(ctx, "authorization", token)
 
 	return streamer(newCtx, desc, cc, method, opts...)
+}
+
+// refreshAccessToken calls the auth service to get a new token.
+func (ai *AuthInterceptor) refreshAccessToken(ctx context.Context) (string, string, error) {
+	ai.mu.Lock()
+	defer ai.mu.Unlock()
+
+	// Call the RefreshToken gRPC endpoint
+	resp, err := ai.AuthClient.RefreshToken(ctx, &pb.RefreshTokenRequest{
+		RefreshToken: ai.tokenManager.GetRefreshToken(),
+	})
+	if err != nil {
+		return "", "", errors.Wrap(err, "failed to get new access token")
+	}
+
+	return resp.GetToken(), resp.GetRefreshToken(), nil
 }

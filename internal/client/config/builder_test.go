@@ -67,7 +67,7 @@ func TestFromEnv(t *testing.T) {
 			assert.Equal(t, tt.expected.Certificate, cfg.Certificate)
 			assert.Equal(t, tt.expected.TokenFile, cfg.TokenFile)
 			// MasterKey should be cleared after Build()
-			assert.Equal(t, "", cfg.MasterKey)
+			assert.Empty(t, cfg.MasterKey)
 			assert.NotNil(t, cfg.SecuredMasterKey)
 		})
 	}
@@ -123,7 +123,7 @@ func TestFromFlags(t *testing.T) {
 			assert.Equal(t, tt.expected.Certificate, cfg.Certificate)
 			assert.Equal(t, tt.expected.TokenFile, cfg.TokenFile)
 			// MasterKey should be cleared after Build()
-			assert.Equal(t, "", cfg.MasterKey)
+			assert.Empty(t, cfg.MasterKey)
 			assert.NotNil(t, cfg.SecuredMasterKey)
 		})
 	}
@@ -147,7 +147,7 @@ func TestFromObj(t *testing.T) {
 	assert.Equal(t, inputCfg.Certificate, cfg.Certificate)
 	assert.Equal(t, inputCfg.TokenFile, cfg.TokenFile)
 	// MasterKey should be cleared after Build()
-	assert.Equal(t, "", cfg.MasterKey)
+	assert.Empty(t, cfg.MasterKey)
 	assert.NotNil(t, cfg.SecuredMasterKey)
 }
 
@@ -185,7 +185,7 @@ func TestBuild(t *testing.T) {
 
 			assert.Empty(t, cfg.MasterKey)
 
-			assert.Equal(t, "", cfg.MasterKey)
+			assert.Empty(t, cfg.MasterKey)
 		})
 	}
 }

@@ -254,7 +254,7 @@ func TestGetPasswords(t *testing.T) {
 				require.Contains(t, err.Error(), tt.expectedError)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, len(tt.want), len(result))
+				require.Len(t, result, len(tt.want))
 				for i, password := range tt.want {
 					require.Equal(t, password.ID, result[i].ID)
 					require.Equal(t, password.UserID, result[i].UserID)

@@ -157,7 +157,7 @@ func TestGetMetaInfo(t *testing.T) {
 				require.Contains(t, err.Error(), "failed to get items")
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, len(tt.want), len(result))
+				require.Len(t, result, len(tt.want))
 				for i, item := range tt.want {
 					require.Equal(t, item.Key, result[i].Key)
 					require.Equal(t, item.Value, result[i].Value)
