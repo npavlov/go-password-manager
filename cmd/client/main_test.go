@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/npavlov/go-password-manager/internal/client/config"
@@ -98,9 +99,13 @@ func TestGetTUI(t *testing.T) {
 	t.Setenv("ADDRESS", "localhost:50051")
 	t.Setenv("CERTIFICATE", "testdata/cert.pem")
 
-	tokenMgr, facade, stMgr, _ := GetApp(logger)
+	mockToken := new(testutils.MockTokenManager)
+	mockFacade := new(testutils.MockFacade)
+	mockStorage := new(testutils.MockStorageManager)
 
-	tui := GetTUI(logger, facade, stMgr, tokenMgr)
+	mockToken.On("SetAuthFailCallback", mock.Anything).Return(nil)
+
+	tui := GetTUI(logger, mockFacade, mockStorage, mockToken)
 
 	require.NotNil(t, tui)
 }

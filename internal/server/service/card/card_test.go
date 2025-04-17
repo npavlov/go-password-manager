@@ -19,7 +19,7 @@ import (
 	generalutils "github.com/npavlov/go-password-manager/internal/utils"
 )
 
-func setupCardService(t *testing.T) (*card.Service, context.Context) {
+func setupCardService(t *testing.T) (*card.Service, *testutils.MockDBStorage, context.Context) {
 	t.Helper()
 
 	logger := zerolog.New(nil)
@@ -48,13 +48,13 @@ func setupCardService(t *testing.T) (*card.Service, context.Context) {
 	// Inject user ID and encryption key into context
 	ctx := testutils.InjectUserToContext(t.Context(), testUser.ID.String())
 
-	return svc, ctx
+	return svc, storage, ctx
 }
 
 func TestStoreCard_Success(t *testing.T) {
 	t.Parallel()
 
-	svc, ctx := setupCardService(t)
+	svc, _, ctx := setupCardService(t)
 
 	req := &pb.StoreCardRequest{
 		Card: &pb.CardData{
@@ -73,7 +73,7 @@ func TestStoreCard_Success(t *testing.T) {
 func TestStoreCard_InvalidInput(t *testing.T) {
 	t.Parallel()
 
-	svc, ctx := setupCardService(t)
+	svc, _, ctx := setupCardService(t)
 
 	req := &pb.StoreCardRequest{
 		Card: &pb.CardData{}, // Missing required fields
@@ -86,7 +86,7 @@ func TestStoreCard_InvalidInput(t *testing.T) {
 func TestGetCard_Success(t *testing.T) {
 	t.Parallel()
 
-	svc, ctx := setupCardService(t)
+	svc, _, ctx := setupCardService(t)
 
 	card, err := svc.StoreCard(ctx, &pb.StoreCardRequest{
 		Card: &pb.CardData{
@@ -113,7 +113,7 @@ func TestGetCard_Success(t *testing.T) {
 func TestDeleteCard_Success(t *testing.T) {
 	t.Parallel()
 
-	svc, ctx := setupCardService(t)
+	svc, _, ctx := setupCardService(t)
 
 	created, err := svc.StoreCard(ctx, &pb.StoreCardRequest{
 		Card: &pb.CardData{
@@ -134,7 +134,7 @@ func TestDeleteCard_Success(t *testing.T) {
 func TestUpdateCard_Success(t *testing.T) {
 	t.Parallel()
 
-	svc, ctx := setupCardService(t)
+	svc, _, ctx := setupCardService(t)
 
 	created, err := svc.StoreCard(ctx, &pb.StoreCardRequest{
 		Card: &pb.CardData{
@@ -172,7 +172,7 @@ func TestUpdateCard_Success(t *testing.T) {
 func TestUpdateCard_Invalid(t *testing.T) {
 	t.Parallel()
 
-	svc, ctx := setupCardService(t)
+	svc, _, ctx := setupCardService(t)
 
 	req := &pb.UpdateCardRequest{
 		CardId: "invalid-uuid",
@@ -186,7 +186,7 @@ func TestUpdateCard_Invalid(t *testing.T) {
 func TestGetCards_Empty(t *testing.T) {
 	t.Parallel()
 
-	svc, ctx := setupCardService(t)
+	svc, _, ctx := setupCardService(t)
 
 	req := &pb.GetCardsRequest{}
 	resp, err := svc.GetCards(ctx, req)
@@ -197,7 +197,7 @@ func TestGetCards_Empty(t *testing.T) {
 func TestStoreCard_MissingContext(t *testing.T) {
 	t.Parallel()
 
-	svc, _ := setupCardService(t)
+	svc, _, _ := setupCardService(t)
 
 	req := &pb.StoreCardRequest{
 		Card: &pb.CardData{
@@ -215,7 +215,7 @@ func TestStoreCard_MissingContext(t *testing.T) {
 func TestDeleteCard_InvalidId(t *testing.T) {
 	t.Parallel()
 
-	svc, ctx := setupCardService(t)
+	svc, _, ctx := setupCardService(t)
 
 	req := &pb.DeleteCardRequest{CardId: "invalid-id"}
 	_, err := svc.DeleteCard(ctx, req)
@@ -225,7 +225,7 @@ func TestDeleteCard_InvalidId(t *testing.T) {
 func TestUpdateCard_GetUserIdFailure(t *testing.T) {
 	t.Parallel()
 
-	svc, _ := setupCardService(t)
+	svc, _, _ := setupCardService(t)
 
 	req := &pb.UpdateCardRequest{
 		CardId: uuid.NewString(),
@@ -245,7 +245,7 @@ func TestUpdateCard_GetUserIdFailure(t *testing.T) {
 func TestGetCards_ValidEmpty(t *testing.T) {
 	t.Parallel()
 
-	svc, ctx := setupCardService(t)
+	svc, _, ctx := setupCardService(t)
 
 	resp, err := svc.GetCards(ctx, &pb.GetCardsRequest{})
 	require.NoError(t, err)
@@ -256,7 +256,7 @@ func TestGetCards_ValidEmpty(t *testing.T) {
 func TestDeleteCard_InvalidUUID(t *testing.T) {
 	t.Parallel()
 
-	svc, ctx := setupCardService(t)
+	svc, _, ctx := setupCardService(t)
 
 	_, err := svc.DeleteCard(ctx, &pb.DeleteCardRequest{
 		CardId: "not-a-uuid",
@@ -267,7 +267,7 @@ func TestDeleteCard_InvalidUUID(t *testing.T) {
 func TestEncryptCard_Success(t *testing.T) {
 	t.Parallel()
 
-	svc, _ := setupCardService(t)
+	svc, _, _ := setupCardService(t)
 
 	encryptionKey, err := utils.GenerateRandomKey()
 	require.NoError(t, err)
@@ -283,4 +283,179 @@ func TestEncryptCard_Success(t *testing.T) {
 	require.NotEmpty(t, encryptedCardNumber)
 	require.NotEmpty(t, encryptedCVV)
 	require.NotEmpty(t, encryptedExpiryDate)
+}
+
+func TestStoreCard_DuplicateCardNumber(t *testing.T) {
+	t.Parallel()
+
+	svc, _, ctx := setupCardService(t)
+
+	req := &pb.StoreCardRequest{
+		Card: &pb.CardData{
+			CardNumber:     "4111111111111111",
+			Cvv:            "123",
+			ExpiryDate:     "12/30",
+			CardholderName: "John Doe",
+		},
+	}
+
+	// First store should succeed
+	_, err := svc.StoreCard(ctx, req)
+	require.NoError(t, err)
+
+	// Second store with same card number should fail
+	_, err = svc.StoreCard(ctx, req)
+	require.Error(t, err)
+}
+
+func TestGetCard_NotFound(t *testing.T) {
+	t.Parallel()
+
+	svc, _, ctx := setupCardService(t)
+
+	req := &pb.GetCardRequest{
+		CardId: uuid.NewString(), // Non-existent ID
+	}
+
+	_, err := svc.GetCard(ctx, req)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "not found")
+}
+
+func TestGetCard_WrongUser(t *testing.T) {
+	t.Parallel()
+
+	svc, storage, ctx := setupCardService(t)
+
+	// Create card for first user
+	card, err := svc.StoreCard(ctx, &pb.StoreCardRequest{
+		Card: &pb.CardData{
+			CardNumber:     "4111111111111111",
+			Cvv:            "123",
+			ExpiryDate:     "12/30",
+			CardholderName: "John Doe",
+		},
+	})
+	require.NoError(t, err)
+
+	// Create second user
+	user2 := db.User{
+		ID:            pgtype.UUID{Bytes: uuid.New(), Valid: true},
+		Username:      "tester2",
+		Email:         "test2@example.com",
+		Password:      "hashed-password2",
+		EncryptionKey: "enc-key-2",
+	}
+	storage.AddTestUser(user2)
+	ctx2 := testutils.InjectUserToContext(t.Context(), user2.ID.String())
+
+	// Try to access first user's card with second user
+	req := &pb.GetCardRequest{CardId: card.GetCardId()}
+	_, err = svc.GetCard(ctx2, req)
+	require.Error(t, err)
+}
+
+func TestUpdateCard_NotFound(t *testing.T) {
+	t.Parallel()
+
+	svc, _, ctx := setupCardService(t)
+
+	req := &pb.UpdateCardRequest{
+		CardId: uuid.NewString(), // Non-existent ID
+		Data: &pb.CardData{
+			CardNumber:     "4000000000000002",
+			Cvv:            "999",
+			ExpiryDate:     "01/31",
+			CardholderName: "Jane Smith",
+		},
+	}
+
+	_, err := svc.UpdateCard(ctx, req)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "not found")
+}
+
+func TestDeleteCard_NotFound(t *testing.T) {
+	t.Parallel()
+
+	svc, _, ctx := setupCardService(t)
+
+	req := &pb.DeleteCardRequest{
+		CardId: uuid.NewString(), // Non-existent ID
+	}
+
+	_, err := svc.DeleteCard(ctx, req)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "not found")
+}
+
+func TestEncryptCard_InvalidKey(t *testing.T) {
+	t.Parallel()
+
+	svc, _, _ := setupCardService(t)
+
+	//nolint:dogsled
+	_, _, _, err := svc.EncryptCard(
+		"invalid-key", // Invalid encryption key
+		"4111111111111111",
+		"123",
+		"12/30",
+	)
+	require.Error(t, err)
+}
+
+func TestStoreCard_EncryptionFailure(t *testing.T) {
+	t.Parallel()
+
+	svc, _, ctx := setupCardService(t)
+
+	// Force encryption failure by providing invalid user key
+	//nolint:revive,staticcheck
+	ctx = context.WithValue(ctx, "user_id", uuid.NewString())
+
+	req := &pb.StoreCardRequest{
+		Card: &pb.CardData{
+			CardNumber:     "4111111111111111",
+			Cvv:            "123",
+			ExpiryDate:     "12/30",
+			CardholderName: "John Doe",
+		},
+	}
+
+	_, err := svc.StoreCard(ctx, req)
+	require.Error(t, err)
+}
+
+func TestGetCard_DecryptionFailure(t *testing.T) {
+	t.Parallel()
+
+	svc, storage, ctx := setupCardService(t)
+
+	// Store card normally
+	card, err := svc.StoreCard(ctx, &pb.StoreCardRequest{
+		Card: &pb.CardData{
+			CardNumber:     "4111111111111111",
+			Cvv:            "123",
+			ExpiryDate:     "12/30",
+			CardholderName: "John Doe",
+		},
+	})
+	require.NoError(t, err)
+
+	// Force decryption failure by changing user's encryption key
+	userID := testutils.GetUserIDFromContext(ctx)
+	userGUID := pgtype.UUID{
+		Bytes: uuid.MustParse(userID),
+		Valid: true,
+	}
+	newKey, _ := utils.GenerateRandomKey()
+
+	newMasterKey, _ := utils.GenerateRandomKey()
+	user := storage.UsersByID[userGUID]
+	user.EncryptionKey, _ = utils.Encrypt(newKey, newMasterKey)
+	storage.UsersByID[userGUID] = user
+
+	req := &pb.GetCardRequest{CardId: card.GetCardId()}
+	_, err = svc.GetCard(ctx, req)
+	require.Error(t, err)
 }

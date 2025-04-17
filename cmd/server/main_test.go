@@ -169,3 +169,28 @@ func TestSetBucket(t *testing.T) {
 		})
 	})
 }
+
+func TestStartServerSuccess(t *testing.T) {
+	t.Parallel()
+
+	log := zerolog.Nop()
+	//nolint:exhaustruct
+	cfg := &config.Config{
+		Minio:          "test-minio-address:9000",
+		MinioAccessKey: "test",
+		MinioSecretKey: "test",
+		Certificate:    "testdata/cert.pem",
+		PrivateKey:     "testdata/key.pem",
+	}
+
+	//nolint:exhaustruct
+	dbMgr := &dbmanager.DBManager{
+		DB: nil, // In real test, this would be a test DB
+	}
+	client, err := setupMinIO(cfg)
+	require.NoError(t, err)
+
+	grpcManager := startServer(t.Context(), cfg, &log, dbMgr, client)
+
+	assert.NotNil(t, grpcManager)
+}

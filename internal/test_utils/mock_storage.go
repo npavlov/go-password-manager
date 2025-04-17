@@ -172,6 +172,12 @@ func (m *MockDBStorage) StoreCard(_ context.Context, createCard db.StoreCardPara
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	for _, card := range m.cards {
+		if card.HashedCardNumber == createCard.HashedCardNumber {
+			return nil, errors.New("already encrypted card")
+		}
+	}
+
 	card := db.Card{
 		ID:                  pgtype.UUID{Bytes: uuid.New(), Valid: true},
 		UserID:              createCard.UserID,
@@ -256,6 +262,10 @@ func (m *MockDBStorage) GetCards(_ context.Context, userID string) ([]db.Card, e
 func (m *MockDBStorage) DeleteCard(_ context.Context, cardID string, _ pgtype.UUID) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	if _, found := m.cards[cardID]; !found {
+		return errors.New("card not found")
+	}
 
 	delete(m.cards, cardID)
 

@@ -48,18 +48,19 @@ func main() {
 
 	ctx, cancel := utils.WithSignalCancel(context.Background(), &log)
 	dbManager := setupDatabase(ctx, cfg, &log)
-
-	if dbManager == nil {
+	minioClient, err := setupMinIO(cfg)
+	if err != nil || dbManager == nil {
 		cancel()
 		dbManager.Close()
-		log.Fatal().Err(ErrDatabaseNotConnected).Msg("Database is not connected")
+		log.Fatal().Err(ErrMinioNotConnected).Msg("Failed to connect to MinIO")
 	}
-
 	defer cancel()
 	defer dbManager.Close()
+	setBucket(ctx, cfg, minioClient)
 
 	wg.Add(1)
-	starServer(ctx, cfg, &log, &wg, dbManager)
+	grpcServer := startServer(ctx, cfg, &log, dbManager, minioClient)
+	grpcServer.Start(ctx, &wg)
 
 	utils.WaitForShutdown(&wg)
 }
@@ -79,13 +80,13 @@ func loadConfig(log *zerolog.Logger) *config.Config {
 	return cfg
 }
 
-func starServer(
+func startServer(
 	ctx context.Context,
 	cfg *config.Config,
 	log *zerolog.Logger,
-	wg *sync.WaitGroup,
 	dbM *dbmanager.DBManager,
-) {
+	minioClient *minio.Client,
+) *service.GManager {
 	dbStorage, memStorage := setupStorage(ctx, cfg, dbM, log)
 
 	//nolint:contextcheck
@@ -104,13 +105,6 @@ func starServer(
 	cardService := card.NewCardService(log, dbStorage, cfg)
 	cardService.RegisterService(grpcServer)
 
-	minioClient, err := setupMinIO(cfg)
-	if err != nil {
-		log.Fatal().Err(ErrMinioNotConnected).Msg("Failed to connect to MinIO")
-	}
-
-	setBucket(ctx, cfg, minioClient)
-
 	fileService := file.NewFileService(log, dbStorage, cfg, adapter.NewMinioAdapter(minioClient))
 	fileService.RegisterService(grpcServer)
 
@@ -120,7 +114,7 @@ func starServer(
 	metaService := meta.NewMetadataService(log, dbStorage, cfg)
 	metaService.RegisterService(grpcServer)
 
-	grpcManager.Start(ctx, wg)
+	return grpcManager
 }
 
 func setupDatabase(ctx context.Context, cfg *config.Config, log *zerolog.Logger) *dbmanager.DBManager {
