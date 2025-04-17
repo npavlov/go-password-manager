@@ -1,3 +1,4 @@
+//nolint:exhaustruct
 package auth
 
 import (
@@ -158,6 +159,11 @@ func (as *Service) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest
 
 	// Generate a new access token
 	newToken, newRefreshToken, err := as.tokenGeneration(ctx, tokenRow.UserID)
+	if err != nil {
+		as.logger.Error().Err(err).Msg("error generating token")
+
+		return nil, errors.Wrap(err, "error generating token")
+	}
 
 	as.logger.Info().Str("user_id", tokenRow.UserID.String()).Msg("refresh token successfully rotated")
 
@@ -168,16 +174,16 @@ func (as *Service) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest
 }
 
 func (as *Service) tokenGeneration(ctx context.Context, userID pgtype.UUID) (string, string, error) {
-	userId := userID.String()
+	userIDStr := userID.String()
 
 	tokenExp := time.Now().Add(TokenExpiration).Unix()
 
-	token, err := utils.GenerateJWT(userId, as.cfg.JwtSecret, tokenExp)
+	token, err := utils.GenerateJWT(userIDStr, as.cfg.JwtSecret, tokenExp)
 	if err != nil {
 		return "", "", errors.Wrap(err, "error generating token")
 	}
 
-	err = as.memStorage.Set(ctx, token, userId, TokenExpiration)
+	err = as.memStorage.Set(ctx, token, userIDStr, TokenExpiration)
 	if err != nil {
 		as.logger.Error().Err(err).Msg("failed to set token")
 
@@ -186,7 +192,7 @@ func (as *Service) tokenGeneration(ctx context.Context, userID pgtype.UUID) (str
 
 	refreshTokenExp := time.Now().Add(RefreshTokenExpiration)
 
-	refreshToken, err := utils.GenerateJWT(userId, as.cfg.JwtSecret, refreshTokenExp.Unix())
+	refreshToken, err := utils.GenerateJWT(userIDStr, as.cfg.JwtSecret, refreshTokenExp.Unix())
 	if err != nil {
 		return "", "", errors.Wrap(err, "error generating refresh token")
 	}

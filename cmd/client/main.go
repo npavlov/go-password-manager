@@ -44,6 +44,7 @@ func main() {
 	storageMgr.StopSync()
 }
 
+//nolint:ireturn
 func GetApp(log *zerolog.Logger) (auth.ITokenManager, facade.IFacade, storage.IStorageManager, *grpc.ClientConn) {
 	log.Info().Str("buildVersion", buildinfo.Version).
 		Str("buildCommit", buildinfo.Commit).

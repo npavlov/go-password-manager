@@ -1,3 +1,4 @@
+//nolint:exhaustruct
 package storage_test
 
 import (
@@ -90,25 +91,25 @@ func TestAddMeta(t *testing.T) {
 func TestGetMetaInfo(t *testing.T) {
 	t.Parallel()
 
-	recordId := uuid.New()
-	uuid := pgtype.UUID{Bytes: recordId, Valid: true}
+	recordID := uuid.New()
+	recordUUID := pgtype.UUID{Bytes: recordID, Valid: true}
 
 	tests := []struct {
 		name     string
-		recordId string
+		recordID string
 		mock     func(mock pgxmock.PgxPoolIface)
 		want     []db.GetMetaInfoByItemIDRow
 		wantErr  bool
 	}{
 		{
 			name:     "successful meta retrieval",
-			recordId: recordId.String(),
+			recordID: recordID.String(),
 			mock: func(mock pgxmock.PgxPoolIface) {
 				rows := pgxmock.NewRows([]string{"key", "value"}).
 					AddRow("key1", "value1").
 					AddRow("key2", "value2")
 				mock.ExpectQuery("SELECT key, value FROM metainfo").
-					WithArgs(uuid).
+					WithArgs(recordUUID).
 					WillReturnRows(rows)
 			},
 			want: []db.GetMetaInfoByItemIDRow{
@@ -119,11 +120,11 @@ func TestGetMetaInfo(t *testing.T) {
 		},
 		{
 			name:     "no meta found",
-			recordId: recordId.String(),
+			recordID: recordID.String(),
 			mock: func(mock pgxmock.PgxPoolIface) {
 				rows := pgxmock.NewRows([]string{"key", "value"})
 				mock.ExpectQuery("SELECT key, value FROM metainfo").
-					WithArgs(uuid).
+					WithArgs(recordUUID).
 					WillReturnRows(rows)
 			},
 			want:    []db.GetMetaInfoByItemIDRow{},
@@ -131,10 +132,10 @@ func TestGetMetaInfo(t *testing.T) {
 		},
 		{
 			name:     "database error",
-			recordId: recordId.String(),
+			recordID: recordID.String(),
 			mock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectQuery("SELECT key, value FROM metainfo").
-					WithArgs(uuid).
+					WithArgs(recordUUID).
 					WillReturnError(errors.New("db error"))
 			},
 			want:    nil,
@@ -149,7 +150,7 @@ func TestGetMetaInfo(t *testing.T) {
 			storage, mock := testutils.SetupDBStorage(t)
 			tt.mock(mock)
 
-			result, err := storage.GetMetaInfo(t.Context(), tt.recordId)
+			result, err := storage.GetMetaInfo(t.Context(), tt.recordID)
 
 			if tt.wantErr {
 				require.Error(t, err)
@@ -171,20 +172,20 @@ func TestGetMetaInfo(t *testing.T) {
 func TestDeleteMetaInfo(t *testing.T) {
 	t.Parallel()
 
-	recordId := uuid.New()
-	uuid := pgtype.UUID{Bytes: recordId, Valid: true}
+	recordID := uuid.New()
+	uuid := pgtype.UUID{Bytes: recordID, Valid: true}
 
 	tests := []struct {
 		name    string
 		key     string
-		itemId  string
+		itemID  string
 		mock    func(mock pgxmock.PgxPoolIface)
 		wantErr bool
 	}{
 		{
 			name:   "successful deletion",
 			key:    "test_key",
-			itemId: recordId.String(),
+			itemID: recordID.String(),
 			mock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectExec("DELETE FROM metainfo").
 					WithArgs(uuid, "test_key").
@@ -195,7 +196,7 @@ func TestDeleteMetaInfo(t *testing.T) {
 		{
 			name:   "database error",
 			key:    "test_key",
-			itemId: recordId.String(),
+			itemID: recordID.String(),
 			mock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectExec("DELETE FROM metainfo").
 					WithArgs(uuid, "test_key").
@@ -212,7 +213,7 @@ func TestDeleteMetaInfo(t *testing.T) {
 			storage, mock := testutils.SetupDBStorage(t)
 			tt.mock(mock)
 
-			err := storage.DeleteMetaInfo(t.Context(), tt.key, tt.itemId)
+			err := storage.DeleteMetaInfo(t.Context(), tt.key, tt.itemID)
 
 			if tt.wantErr {
 				require.Error(t, err)

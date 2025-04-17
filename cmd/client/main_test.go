@@ -1,3 +1,4 @@
+//nolint:exhaustruct
 package main
 
 import (
@@ -31,7 +32,10 @@ func TestLoadConfig(t *testing.T) {
 }
 
 func TestMakeConnection(t *testing.T) {
+	t.Parallel()
+
 	t.Run("successful connection", func(t *testing.T) {
+		t.Parallel()
 		// Setup
 		cfg := config.Config{
 			Address:     "localhost:50051",
@@ -53,6 +57,7 @@ func TestMakeConnection(t *testing.T) {
 	})
 
 	t.Run("invalid certificate", func(t *testing.T) {
+		t.Parallel()
 		// Setup
 		cfg := config.Config{
 			Address:     "localhost:50051",

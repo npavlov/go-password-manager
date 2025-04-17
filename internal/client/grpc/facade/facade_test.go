@@ -1,4 +1,4 @@
-//nolint:wrapcheck
+//nolint:wrapcheck,exhaustruct,forcetypeassert
 package facade_test
 
 import (
@@ -499,6 +499,8 @@ func TestFacade_NoteOperations(t *testing.T) {
 
 	// StoreNote
 	t.Run("StoreNote success", func(t *testing.T) {
+		t.Parallel()
+
 		fClient, _, _, _, _, noteMock, _, _ := setupFacadeTest()
 		ctx := t.Context()
 

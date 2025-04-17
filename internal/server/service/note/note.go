@@ -1,3 +1,4 @@
+//nolint:exhaustruct
 package note
 
 import (
@@ -18,7 +19,7 @@ import (
 
 type Storage interface {
 	StoreNote(ctx context.Context, createNote db.CreateNoteEntryParams) (*db.Note, error)
-	GetNote(ctx context.Context, noteId string, userId pgtype.UUID) (*db.Note, error)
+	GetNote(ctx context.Context, noteID string, userID pgtype.UUID) (*db.Note, error)
 	GetUserByID(ctx context.Context, id pgtype.UUID) (*db.User, error)
 	DeleteNote(ctx context.Context, noteID string, userID pgtype.UUID) error
 }

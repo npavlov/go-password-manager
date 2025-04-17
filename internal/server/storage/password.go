@@ -27,12 +27,12 @@ func (ds *DBStorage) StorePassword(
 }
 
 // GetPassword retrieves password record.
-func (ds *DBStorage) GetPassword(ctx context.Context, passwordId string, userId pgtype.UUID) (*db.Password, error) {
-	uuid := utils.GetIDFromString(passwordId)
+func (ds *DBStorage) GetPassword(ctx context.Context, passwordID string, userID pgtype.UUID) (*db.Password, error) {
+	uuid := utils.GetIDFromString(passwordID)
 
 	password, err := ds.Queries.GetPasswordEntryByID(ctx, db.GetPasswordEntryByIDParams{
 		ID:     uuid,
-		UserID: userId,
+		UserID: userID,
 	})
 	if err != nil {
 		ds.log.Error().Err(err).Msg("failed to create password")
@@ -44,8 +44,8 @@ func (ds *DBStorage) GetPassword(ctx context.Context, passwordId string, userId 
 }
 
 // GetPasswords retrieves password record.
-func (ds *DBStorage) GetPasswords(ctx context.Context, userId string) ([]db.Password, error) {
-	uuid := utils.GetIDFromString(userId)
+func (ds *DBStorage) GetPasswords(ctx context.Context, userID string) ([]db.Password, error) {
+	uuid := utils.GetIDFromString(userID)
 
 	passwords, err := ds.Queries.GetPasswordEntriesByUserID(ctx, uuid)
 	if err != nil {
@@ -57,12 +57,12 @@ func (ds *DBStorage) GetPasswords(ctx context.Context, userId string) ([]db.Pass
 	return passwords, nil
 }
 
-func (ds *DBStorage) DeletePassword(ctx context.Context, passwordId string, userId pgtype.UUID) error {
-	uuid := utils.GetIDFromString(passwordId)
+func (ds *DBStorage) DeletePassword(ctx context.Context, passwordID string, userID pgtype.UUID) error {
+	uuid := utils.GetIDFromString(passwordID)
 
 	err := ds.Queries.DeletePasswordEntry(ctx, db.DeletePasswordEntryParams{
 		ID:     uuid,
-		UserID: userId,
+		UserID: userID,
 	})
 	if err != nil {
 		ds.log.Error().Err(err).Msg("failed to delete password")

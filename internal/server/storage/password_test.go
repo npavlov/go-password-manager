@@ -1,4 +1,4 @@
-//nolint:dupl,gochecknoglobals,lll,gosec
+//nolint:dupl,gochecknoglobals,lll,gosec,exhaustruct
 package storage_test
 
 import (

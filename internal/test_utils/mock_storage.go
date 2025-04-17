@@ -1,4 +1,4 @@
-//nolint:prealloc
+//nolint:prealloc,exhaustruct
 package testutils
 
 import (
@@ -87,7 +87,7 @@ func (m *MockDBStorage) RegisterUser(_ context.Context, createUser db.CreateUser
 }
 
 // GetUser mock implementation.
-func (m *MockDBStorage) GetUser(ctx context.Context, username string) (*db.User, error) {
+func (m *MockDBStorage) GetUser(_ context.Context, username string) (*db.User, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -99,16 +99,16 @@ func (m *MockDBStorage) GetUser(ctx context.Context, username string) (*db.User,
 	return &user, nil
 }
 
-// GetUserById mock implementation.
-func (m *MockDBStorage) GetUserByID(ctx context.Context, userId pgtype.UUID) (*db.User, error) {
+// GetUserByID mock implementation.
+func (m *MockDBStorage) GetUserByID(_ context.Context, userID pgtype.UUID) (*db.User, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	if !userId.Valid {
+	if !userID.Valid {
 		return nil, errors.New("invalid user ID")
 	}
 
-	user, exists := m.UsersByID[userId]
+	user, exists := m.UsersByID[userID]
 	if !exists {
 		return nil, errors.New("user not found")
 	}
@@ -168,7 +168,7 @@ func (m *MockDBStorage) GetToken(_ context.Context, token string) (db.GetRefresh
 	return row, nil
 }
 
-func (m *MockDBStorage) StoreCard(ctx context.Context, createCard db.StoreCardParams) (*db.Card, error) {
+func (m *MockDBStorage) StoreCard(_ context.Context, createCard db.StoreCardParams) (*db.Card, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -193,7 +193,7 @@ func (m *MockDBStorage) StoreCard(ctx context.Context, createCard db.StoreCardPa
 	return &card, nil
 }
 
-func (m *MockDBStorage) UpdateCard(ctx context.Context, updateCard db.UpdateCardParams) (*db.Card, error) {
+func (m *MockDBStorage) UpdateCard(_ context.Context, updateCard db.UpdateCardParams) (*db.Card, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -219,7 +219,7 @@ func (m *MockDBStorage) UpdateCard(ctx context.Context, updateCard db.UpdateCard
 	return &card, nil
 }
 
-func (m *MockDBStorage) GetCard(ctx context.Context, cardId string, userId pgtype.UUID) (*db.Card, error) {
+func (m *MockDBStorage) GetCard(_ context.Context, cardID string, userID pgtype.UUID) (*db.Card, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -227,25 +227,25 @@ func (m *MockDBStorage) GetCard(ctx context.Context, cardId string, userId pgtyp
 		return nil, errors.New("no cards stored")
 	}
 
-	card, exists := m.cards[cardId]
+	card, exists := m.cards[cardID]
 	if !exists {
 		return nil, errors.New("card not found")
 	}
 
-	if card.UserID != userId {
+	if card.UserID != userID {
 		return nil, errors.New("unauthorized access to card")
 	}
 
 	return &card, nil
 }
 
-func (m *MockDBStorage) GetCards(ctx context.Context, userId string) ([]db.Card, error) {
+func (m *MockDBStorage) GetCards(_ context.Context, userID string) ([]db.Card, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
 	var result []db.Card
 	for _, card := range m.cards {
-		if card.UserID.Valid && card.UserID.String() == userId {
+		if card.UserID.Valid && card.UserID.String() == userID {
 			result = append(result, card)
 		}
 	}
@@ -253,17 +253,19 @@ func (m *MockDBStorage) GetCards(ctx context.Context, userId string) ([]db.Card,
 	return result, nil
 }
 
-func (m *MockDBStorage) DeleteCard(_ context.Context, cardId string, _ pgtype.UUID) error {
+func (m *MockDBStorage) DeleteCard(_ context.Context, cardID string, _ pgtype.UUID) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	delete(m.cards, cardId)
+	delete(m.cards, cardID)
 
 	return nil
 }
 
 // StoreBinary stores a binary entry in the mock storage.
-func (m *MockDBStorage) StoreBinary(ctx context.Context, createBinary db.StoreBinaryEntryParams) (*db.BinaryEntry, error) {
+func (m *MockDBStorage) StoreBinary(_ context.Context,
+	createBinary db.StoreBinaryEntryParams,
+) (*db.BinaryEntry, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -289,7 +291,7 @@ func (m *MockDBStorage) StoreBinary(ctx context.Context, createBinary db.StoreBi
 }
 
 // DeleteBinary removes a binary entry from the mock storage.
-func (m *MockDBStorage) DeleteBinary(ctx context.Context, arg db.DeleteBinaryEntryParams) error {
+func (m *MockDBStorage) DeleteBinary(_ context.Context, arg db.DeleteBinaryEntryParams) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -320,13 +322,13 @@ func (m *MockDBStorage) DeleteBinary(ctx context.Context, arg db.DeleteBinaryEnt
 }
 
 // GetBinaries returns all binaries for a user.
-func (m *MockDBStorage) GetBinaries(ctx context.Context, userId string) ([]db.BinaryEntry, error) {
+func (m *MockDBStorage) GetBinaries(_ context.Context, userID string) ([]db.BinaryEntry, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
 	var result []db.BinaryEntry
 	for _, binary := range m.binaries {
-		if binary.UserID.Valid && binary.UserID.String() == userId {
+		if binary.UserID.Valid && binary.UserID.String() == userID {
 			result = append(result, binary)
 		}
 	}
@@ -335,16 +337,16 @@ func (m *MockDBStorage) GetBinaries(ctx context.Context, userId string) ([]db.Bi
 }
 
 // GetBinary retrieves a specific binary entry.
-func (m *MockDBStorage) GetBinary(ctx context.Context, binaryId string, userId pgtype.UUID) (*db.BinaryEntry, error) {
+func (m *MockDBStorage) GetBinary(_ context.Context, binaryID string, userID pgtype.UUID) (*db.BinaryEntry, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	binary, exists := m.binaries[binaryId]
+	binary, exists := m.binaries[binaryID]
 	if !exists {
 		return nil, errors.New("binary not found")
 	}
 
-	if binary.UserID != userId {
+	if binary.UserID != userID {
 		return nil, errors.New("unauthorized access to binary")
 	}
 
@@ -352,7 +354,9 @@ func (m *MockDBStorage) GetBinary(ctx context.Context, binaryId string, userId p
 }
 
 // GetItems Add these new methods to MockDBStorage.
-func (m *MockDBStorage) GetItems(ctx context.Context, params db.GetItemsByUserIDParams) ([]db.GetItemsByUserIDRow, error) {
+func (m *MockDBStorage) GetItems(_ context.Context,
+	params db.GetItemsByUserIDParams,
+) ([]db.GetItemsByUserIDRow, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -380,7 +384,7 @@ func (m *MockDBStorage) GetItems(ctx context.Context, params db.GetItemsByUserID
 	return result[start:end], nil
 }
 
-func (m *MockDBStorage) GetItem(ctx context.Context, itemID string, userID pgtype.UUID) (*db.Item, error) {
+func (m *MockDBStorage) GetItem(_ context.Context, itemID string, userID pgtype.UUID) (*db.Item, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -396,13 +400,13 @@ func (m *MockDBStorage) GetItem(ctx context.Context, itemID string, userID pgtyp
 	return &item, nil
 }
 
-func (m *MockDBStorage) StoreItem(ctx context.Context, userId pgtype.UUID, itemType db.ItemType) (*db.Item, error) {
+func (m *MockDBStorage) StoreItem(_ context.Context, userID pgtype.UUID, itemType db.ItemType) (*db.Item, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	item := db.Item{
 		ID:        pgtype.UUID{Bytes: uuid.New(), Valid: true},
-		UserID:    userId,
+		UserID:    userID,
 		Type:      itemType,
 		CreatedAt: pgtype.Timestamp{Time: time.Now(), Valid: true},
 	}
@@ -412,7 +416,7 @@ func (m *MockDBStorage) StoreItem(ctx context.Context, userId pgtype.UUID, itemT
 	return &item, nil
 }
 
-func (m *MockDBStorage) DeleteItem(ctx context.Context, itemID string, userID pgtype.UUID) error {
+func (m *MockDBStorage) DeleteItem(_ context.Context, itemID string, userID pgtype.UUID) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -431,7 +435,7 @@ func (m *MockDBStorage) DeleteItem(ctx context.Context, itemID string, userID pg
 }
 
 // AddMeta Add these new methods to MockDBStorage.
-func (m *MockDBStorage) AddMeta(ctx context.Context, itemID string, key string, value string) (*db.Metainfo, error) {
+func (m *MockDBStorage) AddMeta(_ context.Context, itemID string, key string, value string) (*db.Metainfo, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -449,7 +453,7 @@ func (m *MockDBStorage) AddMeta(ctx context.Context, itemID string, key string, 
 	}, nil
 }
 
-func (m *MockDBStorage) DeleteMetaInfo(ctx context.Context, key string, itemID string) error {
+func (m *MockDBStorage) DeleteMetaInfo(_ context.Context, key string, itemID string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -466,7 +470,7 @@ func (m *MockDBStorage) DeleteMetaInfo(ctx context.Context, key string, itemID s
 	return nil
 }
 
-func (m *MockDBStorage) GetMetaInfo(ctx context.Context, itemID string) ([]db.GetMetaInfoByItemIDRow, error) {
+func (m *MockDBStorage) GetMetaInfo(_ context.Context, itemID string) ([]db.GetMetaInfoByItemIDRow, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -487,7 +491,7 @@ func (m *MockDBStorage) GetMetaInfo(ctx context.Context, itemID string) ([]db.Ge
 }
 
 // StoreNote Add these new methods to MockDBStorage.
-func (m *MockDBStorage) StoreNote(ctx context.Context, params db.CreateNoteEntryParams) (*db.Note, error) {
+func (m *MockDBStorage) StoreNote(_ context.Context, params db.CreateNoteEntryParams) (*db.Note, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -508,7 +512,7 @@ func (m *MockDBStorage) StoreNote(ctx context.Context, params db.CreateNoteEntry
 	return &note, nil
 }
 
-func (m *MockDBStorage) GetNote(ctx context.Context, noteID string, userID pgtype.UUID) (*db.Note, error) {
+func (m *MockDBStorage) GetNote(_ context.Context, noteID string, userID pgtype.UUID) (*db.Note, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -524,7 +528,7 @@ func (m *MockDBStorage) GetNote(ctx context.Context, noteID string, userID pgtyp
 	return &note, nil
 }
 
-func (m *MockDBStorage) GetNotes(ctx context.Context, userID pgtype.UUID) ([]db.Note, error) {
+func (m *MockDBStorage) GetNotes(_ context.Context, userID pgtype.UUID) ([]db.Note, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -538,7 +542,7 @@ func (m *MockDBStorage) GetNotes(ctx context.Context, userID pgtype.UUID) ([]db.
 	return result, nil
 }
 
-func (m *MockDBStorage) DeleteNote(ctx context.Context, noteID string, userID pgtype.UUID) error {
+func (m *MockDBStorage) DeleteNote(_ context.Context, noteID string, userID pgtype.UUID) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -560,8 +564,8 @@ func (m *MockDBStorage) DeleteNote(ctx context.Context, noteID string, userID pg
 	return nil
 }
 
-// Add these new methods to MockDBStorage.
-func (m *MockDBStorage) StorePassword(ctx context.Context, params db.CreatePasswordEntryParams) (*db.Password, error) {
+// StorePassword Add these new methods to MockDBStorage.
+func (m *MockDBStorage) StorePassword(_ context.Context, params db.CreatePasswordEntryParams) (*db.Password, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -583,23 +587,23 @@ func (m *MockDBStorage) StorePassword(ctx context.Context, params db.CreatePassw
 	return &password, nil
 }
 
-func (m *MockDBStorage) GetPassword(ctx context.Context, passwordId string, userId pgtype.UUID) (*db.Password, error) {
+func (m *MockDBStorage) GetPassword(_ context.Context, passwordID string, userID pgtype.UUID) (*db.Password, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	password, exists := m.passwords[passwordId]
+	password, exists := m.passwords[passwordID]
 	if !exists {
 		return nil, errors.New("password not found")
 	}
 
-	if password.UserID != userId {
+	if password.UserID != userID {
 		return nil, errors.New("unauthorized access to password")
 	}
 
 	return &password, nil
 }
 
-func (m *MockDBStorage) UpdatePassword(ctx context.Context, params db.UpdatePasswordEntryParams) (*db.Password, error) {
+func (m *MockDBStorage) UpdatePassword(_ context.Context, params db.UpdatePasswordEntryParams) (*db.Password, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -622,7 +626,7 @@ func (m *MockDBStorage) UpdatePassword(ctx context.Context, params db.UpdatePass
 	return &password, nil
 }
 
-func (m *MockDBStorage) DeletePassword(ctx context.Context, passwordId string, userId pgtype.UUID) error {
+func (m *MockDBStorage) DeletePassword(_ context.Context, passwordID string, userID pgtype.UUID) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -630,16 +634,16 @@ func (m *MockDBStorage) DeletePassword(ctx context.Context, passwordId string, u
 		return m.CallError
 	}
 
-	password, exists := m.passwords[passwordId]
+	password, exists := m.passwords[passwordID]
 	if !exists {
 		return errors.New("password not found")
 	}
 
-	if password.UserID != userId {
+	if password.UserID != userID {
 		return errors.New("unauthorized access to password")
 	}
 
-	delete(m.passwords, passwordId)
+	delete(m.passwords, passwordID)
 
 	return nil
 }

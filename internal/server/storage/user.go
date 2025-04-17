@@ -34,8 +34,8 @@ func (ds *DBStorage) GetUser(ctx context.Context, username string) (*db.User, er
 }
 
 // GetUserById retrieves user record.
-func (ds *DBStorage) GetUserByID(ctx context.Context, userId pgtype.UUID) (*db.User, error) {
-	user, err := ds.Queries.GetUserByID(ctx, userId)
+func (ds *DBStorage) GetUserByID(ctx context.Context, userID pgtype.UUID) (*db.User, error) {
+	user, err := ds.Queries.GetUserByID(ctx, userID)
 	if err != nil {
 		ds.log.Error().Err(err).Msg("failed to create user")
 

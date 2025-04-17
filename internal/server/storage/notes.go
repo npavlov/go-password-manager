@@ -23,12 +23,12 @@ func (ds *DBStorage) StoreNote(ctx context.Context, createNote db.CreateNoteEntr
 }
 
 // GetNote retrieves note record.
-func (ds *DBStorage) GetNote(ctx context.Context, noteId string, userId pgtype.UUID) (*db.Note, error) {
-	uuid := utils.GetIDFromString(noteId)
+func (ds *DBStorage) GetNote(ctx context.Context, noteID string, userID pgtype.UUID) (*db.Note, error) {
+	uuid := utils.GetIDFromString(noteID)
 
 	note, err := ds.Queries.GetNoteByID(ctx, db.GetNoteByIDParams{
 		ID:     uuid,
-		UserID: userId,
+		UserID: userID,
 	})
 	if err != nil {
 		ds.log.Error().Err(err).Msg("failed to create user")
@@ -40,8 +40,8 @@ func (ds *DBStorage) GetNote(ctx context.Context, noteId string, userId pgtype.U
 }
 
 // GetNotes retrieves note records.
-func (ds *DBStorage) GetNotes(ctx context.Context, userId string) ([]db.Note, error) {
-	uuid := utils.GetIDFromString(userId)
+func (ds *DBStorage) GetNotes(ctx context.Context, userID string) ([]db.Note, error) {
+	uuid := utils.GetIDFromString(userID)
 
 	notes, err := ds.Queries.GetNotesByUserID(ctx, uuid)
 	if err != nil {
@@ -53,12 +53,12 @@ func (ds *DBStorage) GetNotes(ctx context.Context, userId string) ([]db.Note, er
 	return notes, nil
 }
 
-func (ds *DBStorage) DeleteNote(ctx context.Context, noteId string, userId pgtype.UUID) error {
-	uuid := utils.GetIDFromString(noteId)
+func (ds *DBStorage) DeleteNote(ctx context.Context, noteID string, userID pgtype.UUID) error {
+	uuid := utils.GetIDFromString(noteID)
 
 	err := ds.Queries.DeleteNoteEntry(ctx, db.DeleteNoteEntryParams{
 		ID:     uuid,
-		UserID: userId,
+		UserID: userID,
 	})
 	if err != nil {
 		ds.log.Error().Err(err).Msg("failed to delete note")

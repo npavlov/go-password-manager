@@ -1,4 +1,4 @@
-//nolint:lll
+//nolint:lll,exhaustruct
 package storage_test
 
 import (

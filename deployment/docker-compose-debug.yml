@@ -75,6 +75,8 @@ services:
       - MINIO=minio:9000
       - MINIO_ACCESS_KEY=admin
       - MINIO_SECRET_KEY=adminpassword
+    volumes:
+      - ../certs:/app/certs:ro
     command: dlv exec /app/server --headless --listen=:40001 --api-version=2 --log --accept-multiclient
 
 volumes:

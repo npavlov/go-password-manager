@@ -35,7 +35,6 @@ RUN apk add --no-cache libc6-compat
 COPY --from=builder /app/server /app/server
 COPY server.env /app/server.env
 COPY /migrations /app/migrations
-COPY /certs /app/certs
 
 # Expose the port the server listens on
 EXPOSE 9090

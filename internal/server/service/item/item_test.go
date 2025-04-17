@@ -1,3 +1,4 @@
+//nolint:exhaustruct
 package item_test
 
 import (

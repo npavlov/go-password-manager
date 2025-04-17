@@ -136,6 +136,8 @@ func TestLoadTokens_InvalidJSON(t *testing.T) {
 }
 
 func TestSaveTokens_Success(t *testing.T) {
+	t.Parallel()
+
 	logger := zerolog.Nop()
 	cfg := &config.Config{TokenFile: "save_test.json"}
 	defer os.Remove(cfg.TokenFile)
@@ -156,6 +158,8 @@ func TestSaveTokens_Success(t *testing.T) {
 }
 
 func TestSaveTokens_FileError(t *testing.T) {
+	t.Parallel()
+
 	logger := zerolog.Nop()
 	cfg := &config.Config{TokenFile: "/invalid/path/tokens.json"}
 
@@ -165,6 +169,8 @@ func TestSaveTokens_FileError(t *testing.T) {
 }
 
 func TestUpdateTokens(t *testing.T) {
+	t.Parallel()
+
 	logger := zerolog.Nop()
 	cfg := &config.Config{TokenFile: "update_test.json"}
 	defer os.Remove(cfg.TokenFile)

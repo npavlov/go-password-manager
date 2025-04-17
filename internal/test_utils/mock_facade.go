@@ -162,9 +162,9 @@ func (m *MockFacade) DeleteNote(ctx context.Context, id string) (bool, error) {
 	return false, errors.New("DeleteNoteFunc not implemented")
 }
 
-func (m *MockFacade) StoreCard(ctx context.Context, cardNum, expDate, Cvv, cardHolder string) (string, error) {
+func (m *MockFacade) StoreCard(ctx context.Context, cardNum, expDate, cvv, cardHolder string) (string, error) {
 	if m.StoreCardFunc != nil {
-		return m.StoreCardFunc(ctx, cardNum, expDate, Cvv, cardHolder)
+		return m.StoreCardFunc(ctx, cardNum, expDate, cvv, cardHolder)
 	}
 
 	return "", errors.New("StoreCardFunc not implemented")

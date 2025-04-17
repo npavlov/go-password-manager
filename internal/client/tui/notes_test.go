@@ -1,4 +1,4 @@
-//nolint:dupl,err113
+//nolint:dupl,err113,exhaustruct,forcetypeassert
 package tui_test
 
 import (
@@ -59,7 +59,7 @@ func TestShowNoteDetails(t *testing.T) {
 
 	// Setup mock facade
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
+	mockFacade.GetMetainfoFunc = func(_ context.Context, _ string) (map[string]string, error) {
 		return map[string]string{"key": "value"}, nil
 	}
 	mockFacade.On("GetMetainfo", mock.Anything, "123").Return(map[string]string{"key": "value"}, nil)
@@ -89,7 +89,7 @@ func TestShowNoteDetails_MetaError(t *testing.T) {
 
 	// Setup mock facade to return error
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
+	mockFacade.GetMetainfoFunc = func(_ context.Context, _ string) (map[string]string, error) {
 		return nil, errors.New("meta error")
 	}
 	mockFacade.On("GetMetainfo", mock.Anything, "123").Return(nil, errors.New("meta error"))
@@ -106,13 +106,13 @@ func TestShowAddNoteForm_Success(t *testing.T) {
 
 	// Setup mocks
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.StoreNoteFunc = func(ctx context.Context, content string) (string, error) {
+	mockFacade.StoreNoteFunc = func(_ context.Context, _ string) (string, error) {
 		return "new-id", nil
 	}
 	mockFacade.On("StoreNote", t.Context(), "test content").Return("new-id", nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
-	mockStorage.ProcessNoteFunc = func(ctx context.Context, noteID string, meta map[string]string) error {
+	mockStorage.ProcessNoteFunc = func(_ context.Context, noteID string, _ map[string]string) error {
 		assert.Equal(t, "new-id", noteID)
 
 		return nil
@@ -138,7 +138,7 @@ func TestShowAddNoteForm_Error(t *testing.T) {
 
 	// Setup mock to return error
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.StoreNoteFunc = func(ctx context.Context, content string) (string, error) {
+	mockFacade.StoreNoteFunc = func(_ context.Context, _ string) (string, error) {
 		return "", errors.New("store failed")
 	}
 	mockFacade.On("StoreNote", t.Context(), "test content").Return("", errors.New("store failed"))
@@ -155,6 +155,8 @@ func TestShowAddNoteForm_Error(t *testing.T) {
 }
 
 func TestShowAddNoteForm_Cancel(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 
 	form := ui.ShowAddNoteForm()
@@ -175,7 +177,7 @@ func TestShowRemoveNoteForm_Confirm(t *testing.T) {
 
 	// Setup mocks
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.DeleteNoteFunc = func(ctx context.Context, noteID string) (bool, error) {
+	mockFacade.DeleteNoteFunc = func(_ context.Context, _ string) (bool, error) {
 		return true, nil
 	}
 	mockFacade.On("DeleteNote", t.Context(), "123").Return(true, nil)
@@ -194,6 +196,8 @@ func TestShowRemoveNoteForm_Confirm(t *testing.T) {
 }
 
 func TestShowRemoveNoteForm_Cancel(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	note := model.NoteItem{
 		StorageItem: model.StorageItem{ID: "123"},
@@ -224,7 +228,7 @@ func TestShowNoteDetails_Actions(t *testing.T) {
 	// Setup mock facade
 	mockFacade := ui.Facade.(*testutils.MockFacade)
 	mockFacade.On("GetMetainfo", mock.Anything, "123").Return(note.Metadata, nil)
-	mockFacade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
+	mockFacade.GetMetainfoFunc = func(_ context.Context, _ string) (map[string]string, error) {
 		return note.Metadata, nil
 	}
 

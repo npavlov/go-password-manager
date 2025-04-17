@@ -1,3 +1,4 @@
+//nolint:exhaustruct,forcetypeassert
 package auth_test
 
 import (

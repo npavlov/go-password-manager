@@ -44,6 +44,7 @@ func TokenInterceptor(log *zerolog.Logger, jwtSecret string, memSt redis.MemStor
 			return nil, errors.Wrap(err, "authenticating token")
 		}
 
+		//nolint:revive,staticcheck
 		ctx = context.WithValue(ctx, "user_id", userID)
 
 		log.Info().Str("method", info.FullMethod).Msg("user_id extracted and added to context")
@@ -85,6 +86,7 @@ func StreamTokenInterceptor(logger *zerolog.Logger,
 		}
 
 		// Add user ID to context
+		//nolint:revive,staticcheck
 		ctx = context.WithValue(ctx, "user_id", userID)
 
 		// Wrap the original stream with the new context

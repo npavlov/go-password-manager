@@ -1,4 +1,4 @@
-//nolint:dupl,err113
+//nolint:dupl,err113,exhaustruct,forcetypeassert
 package tui_test
 
 import (
@@ -61,7 +61,7 @@ func TestShowCardDetails(t *testing.T) {
 
 	// Setup mock facade
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
+	mockFacade.GetMetainfoFunc = func(_ context.Context, _ string) (map[string]string, error) {
 		return map[string]string{"key": "value"}, nil
 	}
 	mockFacade.On("GetMetainfo", mock.Anything, "123").Return(map[string]string{"key": "value"}, nil)
@@ -86,7 +86,7 @@ func TestShowCardDetails_MetaError(t *testing.T) {
 
 	// Setup mock facade to return error
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
+	mockFacade.GetMetainfoFunc = func(_ context.Context, _ string) (map[string]string, error) {
 		return nil, errors.New("meta error")
 	}
 	mockFacade.On("GetMetainfo", mock.Anything, "123").Return(nil, errors.New("meta error"))
@@ -102,13 +102,13 @@ func TestShowAddCardForm_Success(t *testing.T) {
 
 	// Setup mocks
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.StoreCardFunc = func(ctx context.Context, cardNum, expDate, cvv, cardHolder string) (string, error) {
+	mockFacade.StoreCardFunc = func(_ context.Context, _, _, _, _ string) (string, error) {
 		return "new-id", nil
 	}
 	mockFacade.On("StoreCard", t.Context(), "1111222233334444", "12/25", "123", "John Doe").Return("new-id", nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
-	mockStorage.ProcessCardFunc = func(ctx context.Context, cardID string, meta map[string]string) error {
+	mockStorage.ProcessCardFunc = func(_ context.Context, cardID string, _ map[string]string) error {
 		assert.Equal(t, "new-id", cardID)
 
 		return nil
@@ -136,7 +136,7 @@ func TestShowAddCardForm_Error(t *testing.T) {
 
 	// Setup mock to return error
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.StoreCardFunc = func(ctx context.Context, cardNum, expDate, cvv, cardHolder string) (string, error) {
+	mockFacade.StoreCardFunc = func(_ context.Context, _, _, _, _ string) (string, error) {
 		return "", errors.New("store failed")
 	}
 	mockFacade.On("StoreCard", t.Context(), "1111222233334444", "12/25", "123", "John Doe").
@@ -156,6 +156,8 @@ func TestShowAddCardForm_Error(t *testing.T) {
 }
 
 func TestShowAddCardForm_Cancel(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 
 	form := ui.ShowAddCardForm()
@@ -166,6 +168,8 @@ func TestShowAddCardForm_Cancel(t *testing.T) {
 }
 
 func TestShowEditCardForm_Success(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	card := model.CardItem{
 		StorageItem: model.StorageItem{ID: "123"},
@@ -176,13 +180,13 @@ func TestShowEditCardForm_Success(t *testing.T) {
 
 	// Setup mocks
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.UpdateCardFunc = func(ctx context.Context, id, cardNum, expDate, cvv, cardHolder string) error {
+	mockFacade.UpdateCardFunc = func(_ context.Context, _, _, _, _, _ string) error {
 		return nil
 	}
 	mockFacade.On("UpdateCard", t.Context(), "123", "4444333322221111", "12/26", "456", "Jane Doe").Return(nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
-	mockStorage.ProcessCardFunc = func(ctx context.Context, cardID string, meta map[string]string) error {
+	mockStorage.ProcessCardFunc = func(_ context.Context, cardID string, _ map[string]string) error {
 		assert.Equal(t, "123", cardID)
 
 		return nil
@@ -209,6 +213,8 @@ func TestShowEditCardForm_Success(t *testing.T) {
 }
 
 func TestShowRemoveCardForm_Confirm(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	card := model.CardItem{
 		StorageItem: model.StorageItem{ID: "123"},
@@ -217,7 +223,7 @@ func TestShowRemoveCardForm_Confirm(t *testing.T) {
 
 	// Setup mocks
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.DeleteCardFunc = func(ctx context.Context, cardID string) (bool, error) {
+	mockFacade.DeleteCardFunc = func(_ context.Context, _ string) (bool, error) {
 		return true, nil
 	}
 	mockFacade.On("DeleteCard", t.Context(), "123").Return(true, nil)
@@ -236,6 +242,8 @@ func TestShowRemoveCardForm_Confirm(t *testing.T) {
 }
 
 func TestShowRemoveCardForm_Cancel(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	card := model.CardItem{
 		StorageItem: model.StorageItem{ID: "123"},

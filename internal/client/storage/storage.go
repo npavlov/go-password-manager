@@ -1,3 +1,4 @@
+//nolint:exhaustruct
 package storage
 
 import (
@@ -21,7 +22,7 @@ const (
 	pageLimit int32 = 10
 )
 
-// StManager manages client-side storage and background syncing.
+// StManager manages client-sIDe storage and background syncing.
 type StManager struct {
 	facade     facade.IFacade
 	Password   map[string]model.PasswordItem `json:"passwords"`
@@ -91,9 +92,9 @@ func (sm *StManager) ProcessItem(ctx context.Context, item *pb.ItemData) bool {
 		return false
 	}
 
-	itemId := item.GetId()
+	itemID := item.GetId()
 
-	meta, err := sm.facade.GetMetainfo(ctx, itemId)
+	meta, err := sm.facade.GetMetainfo(ctx, itemID)
 	if err != nil {
 		sm.logger.Error().Err(err).Msg("error getting metainfo")
 
@@ -102,13 +103,13 @@ func (sm *StManager) ProcessItem(ctx context.Context, item *pb.ItemData) bool {
 
 	switch item.GetType() {
 	case pb.ItemType_ITEM_TYPE_PASSWORD:
-		err = sm.ProcessPassword(ctx, itemId, meta)
+		err = sm.ProcessPassword(ctx, itemID, meta)
 	case pb.ItemType_ITEM_TYPE_NOTE:
-		err = sm.ProcessNote(ctx, itemId, meta)
+		err = sm.ProcessNote(ctx, itemID, meta)
 	case pb.ItemType_ITEM_TYPE_CARD:
-		err = sm.ProcessCard(ctx, itemId, meta)
+		err = sm.ProcessCard(ctx, itemID, meta)
 	case pb.ItemType_ITEM_TYPE_BINARY:
-		err = sm.ProcessBinary(ctx, itemId, meta)
+		err = sm.ProcessBinary(ctx, itemID, meta)
 	case pb.ItemType_ITEM_TYPE_UNSPECIFIED:
 		return false
 	}
@@ -116,20 +117,20 @@ func (sm *StManager) ProcessItem(ctx context.Context, item *pb.ItemData) bool {
 	return err == nil
 }
 
-func (sm *StManager) ProcessPassword(ctx context.Context, passwordId string, meta map[string]string) error {
-	password, lastUpdate, err := sm.facade.GetPassword(ctx, passwordId)
+func (sm *StManager) ProcessPassword(ctx context.Context, passwordID string, meta map[string]string) error {
+	password, lastUpdate, err := sm.facade.GetPassword(ctx, passwordID)
 	if err != nil {
 		sm.logger.Error().Err(err).Msg("error getting password")
 
 		return errors.Wrap(err, "error getting password")
 	}
 
-	sm.Password[passwordId] = model.PasswordItem{
+	sm.Password[passwordID] = model.PasswordItem{
 		Login:    password.GetLogin(),
 		Password: password.GetPassword(),
 		StorageItem: model.StorageItem{
 			Type:      model.ItemTypePassword,
-			ID:        passwordId,
+			ID:        passwordID,
 			UpdatedAt: lastUpdate,
 			Metadata:  meta,
 		},
@@ -138,19 +139,19 @@ func (sm *StManager) ProcessPassword(ctx context.Context, passwordId string, met
 	return nil
 }
 
-func (sm *StManager) ProcessNote(ctx context.Context, noteId string, meta map[string]string) error {
-	note, lastUpdate, err := sm.facade.GetNote(ctx, noteId)
+func (sm *StManager) ProcessNote(ctx context.Context, noteID string, meta map[string]string) error {
+	note, lastUpdate, err := sm.facade.GetNote(ctx, noteID)
 	if err != nil {
 		sm.logger.Error().Err(err).Msg("error getting password")
 
 		return errors.Wrap(err, "error getting password")
 	}
 
-	sm.Notes[noteId] = model.NoteItem{
+	sm.Notes[noteID] = model.NoteItem{
 		Content: note.GetContent(),
 		StorageItem: model.StorageItem{
 			Type:      model.ItemTypeNote,
-			ID:        noteId,
+			ID:        noteID,
 			UpdatedAt: lastUpdate,
 			Metadata:  meta,
 		},
@@ -159,22 +160,22 @@ func (sm *StManager) ProcessNote(ctx context.Context, noteId string, meta map[st
 	return nil
 }
 
-func (sm *StManager) ProcessCard(ctx context.Context, cardId string, meta map[string]string) error {
-	card, lastUpdate, err := sm.facade.GetCard(ctx, cardId)
+func (sm *StManager) ProcessCard(ctx context.Context, cardID string, meta map[string]string) error {
+	card, lastUpdate, err := sm.facade.GetCard(ctx, cardID)
 	if err != nil {
 		sm.logger.Error().Err(err).Msg("error getting card")
 
 		return errors.Wrap(err, "error getting card")
 	}
 
-	sm.Cards[cardId] = model.CardItem{
+	sm.Cards[cardID] = model.CardItem{
 		CardNumber:     card.GetCardNumber(),
 		CVV:            card.GetCvv(),
 		ExpiryDate:     card.GetExpiryDate(),
 		CardholderName: card.GetCardholderName(),
 		StorageItem: model.StorageItem{
 			Type:      model.ItemTypeCard,
-			ID:        cardId,
+			ID:        cardID,
 			UpdatedAt: lastUpdate,
 			Metadata:  meta,
 		},
@@ -295,18 +296,18 @@ func (sm *StManager) GetCards() map[string]model.CardItem {
 	return sm.Cards
 }
 
-func (sm *StManager) DeleteBinary(Id string) {
-	delete(sm.Binaries, Id)
+func (sm *StManager) DeleteBinary(id string) {
+	delete(sm.Binaries, id)
 }
 
-func (sm *StManager) DeleteCards(Id string) {
-	delete(sm.Cards, Id)
+func (sm *StManager) DeleteCards(id string) {
+	delete(sm.Cards, id)
 }
 
-func (sm *StManager) DeleteNotes(Id string) {
-	delete(sm.Notes, Id)
+func (sm *StManager) DeleteNotes(id string) {
+	delete(sm.Notes, id)
 }
 
-func (sm *StManager) DeletePassword(Id string) {
-	delete(sm.Password, Id)
+func (sm *StManager) DeletePassword(id string) {
+	delete(sm.Password, id)
 }

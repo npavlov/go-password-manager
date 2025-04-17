@@ -27,7 +27,10 @@ type MockTokenManager struct {
 	mock.Mock
 }
 
-func (m *MockItemServiceClient) GetItems(ctx context.Context, in *item.GetItemsRequest, opts ...grpc.CallOption) (*item.GetItemsResponse, error) {
+func (m *MockItemServiceClient) GetItems(ctx context.Context,
+	in *item.GetItemsRequest,
+	_ ...grpc.CallOption,
+) (*item.GetItemsResponse, error) {
 	args := m.Called(ctx, in)
 
 	// Safely handle nil to avoid type assertion panic

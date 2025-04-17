@@ -137,7 +137,7 @@ func (t *TUI) ShowAddPasswordForm() *tview.Form {
 			username := form.GetFormItem(0).(*tview.InputField).GetText()
 			password := form.GetFormItem(1).(*tview.InputField).GetText()
 
-			passwordId, err := t.Facade.StorePassword(context.Background(), username, password)
+			passwordID, err := t.Facade.StorePassword(context.Background(), username, password)
 			if err != nil {
 				t.Logger.Error().Err(err).Msg("Failed to add password")
 
@@ -145,7 +145,7 @@ func (t *TUI) ShowAddPasswordForm() *tview.Form {
 			}
 
 			// no meta because password is new!
-			err = t.Storage.ProcessPassword(context.Background(), passwordId, map[string]string{})
+			err = t.Storage.ProcessPassword(context.Background(), passwordID, map[string]string{})
 			if err != nil {
 				t.Logger.Error().Err(err).Msg("Failed to add password")
 
@@ -167,7 +167,7 @@ func (t *TUI) ShowRemovePasswordForm(pass model.PasswordItem) *tview.Modal {
 	confirmation := tview.NewModal().
 		SetText(fmt.Sprintf("Are you sure you want to delete the password for %s?", pass.Login)).
 		AddButtons([]string{"Yes", "No"}).
-		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+		SetDoneFunc(func(_ int, buttonLabel string) {
 			if buttonLabel == "Yes" {
 				ok, err := t.Facade.DeletePassword(context.Background(), pass.ID)
 				if !ok || err != nil {

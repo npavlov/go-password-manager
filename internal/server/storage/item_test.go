@@ -1,3 +1,4 @@
+//nolint:exhaustruct
 package storage_test
 
 import (
@@ -15,6 +16,8 @@ import (
 )
 
 func TestGetItems(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
 		params   db.GetItemsByUserIDParams
@@ -92,6 +95,8 @@ func TestGetItems(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			storage, mock := testutils.SetupDBStorage(t)
 
 			if tt.wantErr {
@@ -142,6 +147,8 @@ func TestGetItems(t *testing.T) {
 }
 
 func TestGetItemsWithPagination(t *testing.T) {
+	t.Parallel()
+
 	storage, mock := testutils.SetupDBStorage(t)
 
 	userID := pgtype.UUID{Bytes: uuid.New(), Valid: true}
@@ -195,6 +202,8 @@ func TestGetItemsEmptyResult(t *testing.T) {
 }
 
 func TestGetItemsDatabaseError(t *testing.T) {
+	t.Parallel()
+
 	storage, mock := testutils.SetupDBStorage(t)
 
 	userID := pgtype.UUID{Bytes: uuid.New(), Valid: true}

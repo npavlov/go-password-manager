@@ -19,6 +19,10 @@ BUILD_FLAGS_SERVER=-X '$(BUILDINFO_PKG_SERVER).Version=1.0.0' \
 build-server:
 	$(GO) build -gcflags="all=-N -l" -ldflags="${BUILD_FLAGS_SERVER}" -o bin/server ${CURDIR}/cmd/server/main.go
 
+.PHONY: build-server-docker
+build-server-docker:
+	docker build -f "./deployment/dockerfile" .
+
 # build the agent binary from Go source files in cmd/agent directory
 .PHONY: build-client
 BUILDINFO_PKG_CLIENT=github.com/npavlov/go-password-manager/internal/client/buildinfo
@@ -51,6 +55,12 @@ clean:
 .PHONY: run-server
 run-server:
 	$(GO) run -ldflags="${BUILD_FLAGS_SERVER}" ${CURDIR}/cmd/server/main.go
+
+# ----------- Run Commands -----------
+# Run the server in a docker image
+.PHONY: run-docker
+run-docker:
+	docker compose -f ./deployment/docker-compose.yml up --build
 
 # Run the agent directly from Go source files in cmd/agent directory
 .PHONY: run-client
@@ -138,3 +148,11 @@ build-client-mac:
 .PHONY: build-client-windows
 build-client-windows:
 	GOOS=windows GOARCH=amd64 $(GO) build -gcflags="all=-N -l" -ldflags="${BUILD_FLAGS_CLIENT}" -o bin/client-windows.exe ${CURDIR}/cmd/client/main.go
+
+.PHONY: generate-cert
+generate-cert:
+	@mkdir -p certs
+	openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes \
+		-keyout certs/key.pem -out certs/cert.pem \
+		-subj "/CN=localhost" \
+		-addext "subjectAltName=DNS:localhost,IP:127.0.0.1"

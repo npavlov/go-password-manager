@@ -1,4 +1,4 @@
-//nolint:wrapcheck,err113
+//nolint:wrapcheck,err113,lll
 package metainfo_test
 
 import (

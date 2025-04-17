@@ -1,4 +1,4 @@
-//nolint:err113
+//nolint:err113,exhaustruct
 package storage_test
 
 import (
@@ -50,7 +50,7 @@ func TestFetchItems_Success(t *testing.T) {
 		{Id: "2", Type: item.ItemType_ITEM_TYPE_NOTE, UpdatedAt: timestamppb.Now()},
 	}
 	facade := new(testutils.MockFacade)
-	facade.GetItemsFunc = func(ctx context.Context, page, pageSize int32) ([]*item.ItemData, int32, error) {
+	facade.GetItemsFunc = func(_ context.Context, _, _ int32) ([]*item.ItemData, int32, error) {
 		return itemsPage1, 0, nil
 	}
 	tm := new(testutils.MockTokenManager)
@@ -71,7 +71,7 @@ func TestFetchItems_Error(t *testing.T) {
 	facade := new(testutils.MockFacade)
 	tm := new(testutils.MockTokenManager)
 
-	facade.GetItemsFunc = func(ctx context.Context, page, pageSize int32) ([]*item.ItemData, int32, error) {
+	facade.GetItemsFunc = func(_ context.Context, _, _ int32) ([]*item.ItemData, int32, error) {
 		return []*item.ItemData{}, 0, errors.New("error")
 	}
 	facade.On("GetItems", mock.Anything, int32(1), int32(10)).
@@ -114,7 +114,7 @@ func TestProcessPassword_Success(t *testing.T) {
 		Login:    "user",
 		Password: "pass",
 	}
-	facade.GetPasswordFunc = func(ctx context.Context, id string) (*password.PasswordData, time.Time, error) {
+	facade.GetPasswordFunc = func(_ context.Context, _ string) (*password.PasswordData, time.Time, error) {
 		return passwordData, time.Time{}, nil
 	}
 	passwordID := "pass123"
@@ -148,7 +148,7 @@ func TestProcessNote_Success(t *testing.T) {
 		Content: "test content",
 	}
 	lastUpdate := time.Now()
-	fClient.GetNoteFunc = func(ctx context.Context, id string) (*note.NoteData, time.Time, error) {
+	fClient.GetNoteFunc = func(_ context.Context, _ string) (*note.NoteData, time.Time, error) {
 		return noteData, time.Time{}, nil
 	}
 	fClient.On("GetNote", mock.Anything, noteID).Return(noteData, lastUpdate, nil)
@@ -178,7 +178,7 @@ func TestProcessCard_Success(t *testing.T) {
 		CardholderName: "John Doe",
 	}
 	lastUpdate := time.Now()
-	facade.GetCardFunc = func(ctx context.Context, id string) (*card.CardData, time.Time, error) {
+	facade.GetCardFunc = func(_ context.Context, _ string) (*card.CardData, time.Time, error) {
 		return cardData, time.Time{}, nil
 	}
 	facade.On("GetCard", mock.Anything, cardID).Return(cardData, lastUpdate, nil)
@@ -206,7 +206,7 @@ func TestProcessBinary_Success(t *testing.T) {
 		FileSize: 1024,
 	}
 
-	facade.GetFileFunc = func(ctx context.Context, fileID string) (*file.FileMeta, error) {
+	facade.GetFileFunc = func(_ context.Context, _ string) (*file.FileMeta, error) {
 		return fileMeta, nil
 	}
 	facade.On("GetFile", mock.Anything, fileID).Return(fileMeta, nil)
@@ -324,19 +324,19 @@ func TestProcessItem_Success(t *testing.T) {
 
 			logger := zerolog.Nop()
 			facade := new(testutils.MockFacade)
-			facade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
+			facade.GetMetainfoFunc = func(_ context.Context, _ string) (map[string]string, error) {
 				return map[string]string{}, nil
 			}
-			facade.GetNoteFunc = func(ctx context.Context, id string) (*note.NoteData, time.Time, error) {
+			facade.GetNoteFunc = func(_ context.Context, _ string) (*note.NoteData, time.Time, error) {
 				return &note.NoteData{}, time.Time{}, nil
 			}
-			facade.GetPasswordFunc = func(ctx context.Context, id string) (*password.PasswordData, time.Time, error) {
+			facade.GetPasswordFunc = func(_ context.Context, _ string) (*password.PasswordData, time.Time, error) {
 				return &password.PasswordData{}, time.Time{}, nil
 			}
-			facade.GetCardFunc = func(ctx context.Context, id string) (*card.CardData, time.Time, error) {
+			facade.GetCardFunc = func(_ context.Context, _ string) (*card.CardData, time.Time, error) {
 				return &card.CardData{}, time.Time{}, nil
 			}
-			facade.GetFileFunc = func(ctx context.Context, fileID string) (*file.FileMeta, error) {
+			facade.GetFileFunc = func(_ context.Context, _ string) (*file.FileMeta, error) {
 				return &file.FileMeta{}, nil
 			}
 			tm := new(testutils.MockTokenManager)
@@ -374,7 +374,7 @@ func TestProcessItem_MetaError(t *testing.T) {
 		UpdatedAt: timestamppb.Now(),
 	}
 
-	fClient.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
+	fClient.GetMetainfoFunc = func(_ context.Context, _ string) (map[string]string, error) {
 		return map[string]string{}, nil
 	}
 	fClient.On("GetMetainfo", mock.Anything, "item1").Return(nil, errors.New("meta error"))
@@ -400,10 +400,10 @@ func TestProcessItem_ProcessingError(t *testing.T) {
 		UpdatedAt: timestamppb.Now(),
 	}
 
-	facade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
+	facade.GetMetainfoFunc = func(_ context.Context, _ string) (map[string]string, error) {
 		return map[string]string{}, nil
 	}
-	facade.GetPasswordFunc = func(ctx context.Context, id string) (*password.PasswordData, time.Time, error) {
+	facade.GetPasswordFunc = func(_ context.Context, _ string) (*password.PasswordData, time.Time, error) {
 		return &password.PasswordData{}, time.Time{}, errors.New("password error")
 	}
 
@@ -444,7 +444,7 @@ func TestSyncItems_Logging(t *testing.T) {
 	facade.On("GetPassword", mock.Anything, "item1").Return(&password.PasswordData{}, time.Now(), nil)
 	facade.On("GetMetainfo", mock.Anything, "item2").Return(map[string]string{}, nil)
 	facade.On("GetNote", mock.Anything, "item2").Return(&note.NoteData{}, time.Now(), nil)
-	facade.GetItemsFunc = func(ctx context.Context, page, pageSize int32) ([]*item.ItemData, int32, error) {
+	facade.GetItemsFunc = func(_ context.Context, _, _ int32) ([]*item.ItemData, int32, error) {
 		return items, 2, nil
 	}
 

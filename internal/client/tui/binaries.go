@@ -145,7 +145,7 @@ func (t *TUI) ShowRemoveBinaryForm(file model.BinaryItem) *tview.Modal {
 	confirmation := tview.NewModal().
 		SetText(fmt.Sprintf("Delete '%s'?", file.Filename)).
 		AddButtons([]string{"Yes", "No"}).
-		SetDoneFunc(func(i int, label string) {
+		SetDoneFunc(func(_ int, label string) {
 			if label == "Yes" {
 				ok, err := t.Facade.DeleteBinary(context.Background(), file.ID)
 				if !ok || err != nil {

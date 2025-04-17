@@ -1,4 +1,4 @@
-//nolint:dupl
+//nolint:dupl,exhaustruct
 package storage_test
 
 import (
@@ -120,7 +120,7 @@ func TestRegisterUser(t *testing.T) {
 
 func TestGetUser(t *testing.T) {
 	t.Parallel()
-	
+
 	tests := []struct {
 		name          string
 		username      string
@@ -205,7 +205,7 @@ func TestGetUserById(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		userId        pgtype.UUID
+		userID        pgtype.UUID
 		mock          func(mock pgxmock.PgxPoolIface)
 		want          *db.User
 		wantErr       bool
@@ -213,7 +213,7 @@ func TestGetUserById(t *testing.T) {
 	}{
 		{
 			name:   "successful user retrieval by ID",
-			userId: userUUID,
+			userID: userUUID,
 			mock: func(mock pgxmock.PgxPoolIface) {
 				rows := pgxmock.NewRows([]string{"id", "username", "email", "password", "encryption_key"}).
 					AddRow(userUUID, testUsername, testEmail, testPassword, testEncKey)
@@ -232,7 +232,7 @@ func TestGetUserById(t *testing.T) {
 		},
 		{
 			name:   "user not found by ID",
-			userId: userUUID,
+			userID: userUUID,
 			mock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectQuery("SELECT").
 					WithArgs(userUUID).
@@ -244,7 +244,7 @@ func TestGetUserById(t *testing.T) {
 		},
 		{
 			name:   "database error",
-			userId: userUUID,
+			userID: userUUID,
 			mock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectQuery("SELECT").
 					WithArgs(userUUID).
@@ -263,7 +263,7 @@ func TestGetUserById(t *testing.T) {
 			storage, mock := testutils.SetupDBStorage(t)
 			tt.mock(mock)
 
-			result, err := storage.GetUserByID(t.Context(), tt.userId)
+			result, err := storage.GetUserByID(t.Context(), tt.userID)
 
 			if tt.wantErr {
 				require.Error(t, err)

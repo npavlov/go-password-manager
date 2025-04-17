@@ -188,9 +188,9 @@ func (fa *Facade) DeleteMetainfo(ctx context.Context, id, key string) (bool, err
 }
 
 func (fa *Facade) StoreNote(ctx context.Context, content string) (string, error) {
-	noteId, err := fa.noteClient.StoreNote(ctx, content)
+	noteID, err := fa.noteClient.StoreNote(ctx, content)
 
-	return noteId, errors.Wrap(err, "error storing note")
+	return noteID, errors.Wrap(err, "error storing note")
 }
 
 func (fa *Facade) GetNote(ctx context.Context, id string) (*pb_note.NoteData, time.Time, error) {

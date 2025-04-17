@@ -1,3 +1,4 @@
+//nolint:exhaustruct
 package card_test
 
 import (
@@ -269,6 +270,7 @@ func TestEncryptCard_Success(t *testing.T) {
 	svc, _ := setupCardService(t)
 
 	encryptionKey, err := utils.GenerateRandomKey()
+	require.NoError(t, err)
 
 	encryptedCardNumber, encryptedCVV, encryptedExpiryDate, err := svc.EncryptCard(
 		encryptionKey,

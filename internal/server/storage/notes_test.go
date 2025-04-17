@@ -1,3 +1,4 @@
+//nolint:exhaustruct
 package storage_test
 
 import (
@@ -94,16 +95,16 @@ func TestGetNote(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		noteId  string
-		userId  pgtype.UUID
+		noteID  string
+		userID  pgtype.UUID
 		mock    func(mock pgxmock.PgxPoolIface)
 		want    *db.Note
 		wantErr bool
 	}{
 		{
 			name:   "successful note retrieval",
-			noteId: noteID.String(),
-			userId: userUUID,
+			noteID: noteID.String(),
+			userID: userUUID,
 			mock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{"id", "user_id", "encrypted_content", "created_at", "updated_at"}).
@@ -119,8 +120,8 @@ func TestGetNote(t *testing.T) {
 		},
 		{
 			name:   "note not found",
-			noteId: noteID.String(),
-			userId: userUUID,
+			noteID: noteID.String(),
+			userID: userUUID,
 			mock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectQuery("SELECT").
 					WithArgs(noteUUID, userUUID).
@@ -138,7 +139,7 @@ func TestGetNote(t *testing.T) {
 			storage, mock := testutils.SetupDBStorage(t)
 			tt.mock(mock)
 
-			result, err := storage.GetNote(t.Context(), tt.noteId, tt.userId)
+			result, err := storage.GetNote(t.Context(), tt.noteID, tt.userID)
 
 			if tt.wantErr {
 				require.Error(t, err)
@@ -161,14 +162,14 @@ func TestGetNotes(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		userId  string
+		userID  string
 		mock    func(mock pgxmock.PgxPoolIface)
 		want    []db.Note
 		wantErr bool
 	}{
 		{
 			name:   "successful notes retrieval",
-			userId: userID.String(),
+			userID: userID.String(),
 			mock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{"id", "user_id", "encrypted_content", "created_at", "updated_at"}).
@@ -186,7 +187,7 @@ func TestGetNotes(t *testing.T) {
 		},
 		{
 			name:   "no notes found",
-			userId: userID.String(),
+			userID: userID.String(),
 			mock: func(mock pgxmock.PgxPoolIface) {
 				rows := pgxmock.NewRows([]string{"id", "user_id", "encrypted_content", "created_at", "updated_at"})
 				mock.ExpectQuery("SELECT id, user_id, encrypted_content, created_at, updated_at FROM notes").
@@ -198,7 +199,7 @@ func TestGetNotes(t *testing.T) {
 		},
 		{
 			name:   "database error",
-			userId: userID.String(),
+			userID: userID.String(),
 			mock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectQuery("SELECT id, user_id, encrypted_content, created_at, updated_at FROM notes").
 					WithArgs(userUUID).
@@ -216,7 +217,7 @@ func TestGetNotes(t *testing.T) {
 			storage, mock := testutils.SetupDBStorage(t)
 			tt.mock(mock)
 
-			result, err := storage.GetNotes(t.Context(), tt.userId)
+			result, err := storage.GetNotes(t.Context(), tt.userID)
 
 			if tt.wantErr {
 				require.Error(t, err)
@@ -244,15 +245,15 @@ func TestDeleteNote(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		noteId  string
-		userId  pgtype.UUID
+		noteID  string
+		userID  pgtype.UUID
 		mock    func(mock pgxmock.PgxPoolIface)
 		wantErr bool
 	}{
 		{
 			name:   "successful note deletion",
-			noteId: noteID.String(),
-			userId: userUUID,
+			noteID: noteID.String(),
+			userID: userUUID,
 			mock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectExec("DELETE FROM notes").
 					WithArgs(noteUUID, userUUID).
@@ -262,8 +263,8 @@ func TestDeleteNote(t *testing.T) {
 		},
 		{
 			name:   "database error",
-			noteId: noteID.String(),
-			userId: userUUID,
+			noteID: noteID.String(),
+			userID: userUUID,
 			mock: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectExec("DELETE FROM notes").
 					WithArgs(noteUUID, userUUID).
@@ -280,7 +281,7 @@ func TestDeleteNote(t *testing.T) {
 			storage, mock := testutils.SetupDBStorage(t)
 			tt.mock(mock)
 
-			err := storage.DeleteNote(t.Context(), tt.noteId, tt.userId)
+			err := storage.DeleteNote(t.Context(), tt.noteID, tt.userID)
 
 			if tt.wantErr {
 				require.Error(t, err)

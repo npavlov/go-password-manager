@@ -79,6 +79,8 @@ services:
       - MINIO=minio:9000
       - MINIO_ACCESS_KEY=admin
       - MINIO_SECRET_KEY=adminpassword
+    volumes:
+      - ../certs:/app/certs:ro
     command: /app/server
     depends_on:
       postgres:

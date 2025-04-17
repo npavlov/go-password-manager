@@ -1,4 +1,4 @@
-//nolint:lll,dogsled
+//nolint:lll,dogsled,exhaustruct
 package note_test
 
 import (

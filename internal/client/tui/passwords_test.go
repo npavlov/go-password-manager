@@ -1,4 +1,4 @@
-//nolint:dupl,err113
+//nolint:dupl,err113,exhaustruct,forcetypeassert
 package tui_test
 
 import (
@@ -60,7 +60,7 @@ func TestShowPasswordDetails(t *testing.T) {
 
 	// Setup mock facade
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
+	mockFacade.GetMetainfoFunc = func(_ context.Context, _ string) (map[string]string, error) {
 		return map[string]string{"key": "value"}, nil
 	}
 	mockFacade.On("GetMetainfo", mock.Anything, "123").Return(map[string]string{"key": "value"}, nil)
@@ -91,7 +91,7 @@ func TestShowPasswordDetails_MetaError(t *testing.T) {
 
 	// Setup mock facade to return error
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
+	mockFacade.GetMetainfoFunc = func(_ context.Context, _ string) (map[string]string, error) {
 		return nil, errors.New("meta error")
 	}
 	mockFacade.On("GetMetainfo", mock.Anything, "123").Return(nil, errors.New("meta error"))
@@ -108,13 +108,13 @@ func TestShowAddPasswordForm_Success(t *testing.T) {
 
 	// Setup mocks
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.StorePasswordFunc = func(ctx context.Context, login, password string) (string, error) {
+	mockFacade.StorePasswordFunc = func(_ context.Context, _, _ string) (string, error) {
 		return "new-id", nil
 	}
 	mockFacade.On("StorePassword", t.Context(), "testuser", "secret").Return("new-id", nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
-	mockStorage.ProcessPasswordFunc = func(ctx context.Context, passID string, meta map[string]string) error {
+	mockStorage.ProcessPasswordFunc = func(_ context.Context, passID string, _ map[string]string) error {
 		assert.Equal(t, "new-id", passID)
 
 		return nil
@@ -140,7 +140,7 @@ func TestShowAddPasswordForm_Error(t *testing.T) {
 
 	// Setup mock to return error
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.StorePasswordFunc = func(ctx context.Context, login, password string) (string, error) {
+	mockFacade.StorePasswordFunc = func(_ context.Context, _, _ string) (string, error) {
 		return "", errors.New("store failed")
 	}
 	mockFacade.On("StorePassword", t.Context(), "testuser", "secret").Return("", errors.New("store failed"))
@@ -180,13 +180,13 @@ func TestShowChangePasswordForm_Success(t *testing.T) {
 
 	// Setup mocks
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.UpdatePasswordFunc = func(ctx context.Context, id, login, password string) error {
+	mockFacade.UpdatePasswordFunc = func(_ context.Context, _, _, _ string) error {
 		return nil
 	}
 	mockFacade.On("UpdatePassword", t.Context(), "123", "newuser", "newsecret").Return(nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
-	mockStorage.ProcessPasswordFunc = func(ctx context.Context, passID string, meta map[string]string) error {
+	mockStorage.ProcessPasswordFunc = func(_ context.Context, passID string, _ map[string]string) error {
 		assert.Equal(t, "123", passID)
 
 		return nil
@@ -219,7 +219,7 @@ func TestShowRemovePasswordForm_Confirm(t *testing.T) {
 
 	// Setup mocks
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.DeletePasswordFunc = func(ctx context.Context, passID string) (bool, error) {
+	mockFacade.DeletePasswordFunc = func(_ context.Context, _ string) (bool, error) {
 		return true, nil
 	}
 	mockFacade.On("DeletePassword", t.Context(), "123").Return(true, nil)
@@ -269,7 +269,7 @@ func TestShowPasswordDetails_Actions(t *testing.T) {
 
 	// Setup mock facade
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.GetMetainfoFunc = func(ctx context.Context, id string) (map[string]string, error) {
+	mockFacade.GetMetainfoFunc = func(_ context.Context, _ string) (map[string]string, error) {
 		return pass.Metadata, nil
 	}
 	mockFacade.On("GetMetainfo", mock.Anything, "123").Return(pass.Metadata, nil)

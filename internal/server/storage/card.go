@@ -24,12 +24,12 @@ func (ds *DBStorage) StoreCard(ctx context.Context, createCard db.StoreCardParam
 }
 
 // GetCard retrieves card record.
-func (ds *DBStorage) GetCard(ctx context.Context, cardId string, userId pgtype.UUID) (*db.Card, error) {
-	uuid := utils.GetIDFromString(cardId)
+func (ds *DBStorage) GetCard(ctx context.Context, cardID string, userID pgtype.UUID) (*db.Card, error) {
+	uuid := utils.GetIDFromString(cardID)
 
 	card, err := ds.Queries.GetCardByID(ctx, db.GetCardByIDParams{
 		ID:     uuid,
-		UserID: userId,
+		UserID: userID,
 	})
 	if err != nil {
 		ds.log.Error().Err(err).Msg("failed to find card")
@@ -41,8 +41,8 @@ func (ds *DBStorage) GetCard(ctx context.Context, cardId string, userId pgtype.U
 }
 
 // GetCards retrieves password record.
-func (ds *DBStorage) GetCards(ctx context.Context, userId string) ([]db.Card, error) {
-	uuid := utils.GetIDFromString(userId)
+func (ds *DBStorage) GetCards(ctx context.Context, userID string) ([]db.Card, error) {
+	uuid := utils.GetIDFromString(userID)
 
 	cards, err := ds.Queries.GetCardsByUserID(ctx, uuid)
 	if err != nil {
@@ -54,12 +54,12 @@ func (ds *DBStorage) GetCards(ctx context.Context, userId string) ([]db.Card, er
 	return cards, nil
 }
 
-func (ds *DBStorage) DeleteCard(ctx context.Context, cardId string, userId pgtype.UUID) error {
-	uuid := utils.GetIDFromString(cardId)
+func (ds *DBStorage) DeleteCard(ctx context.Context, cardID string, userID pgtype.UUID) error {
+	uuid := utils.GetIDFromString(cardID)
 
 	err := ds.Queries.DeleteCard(ctx, db.DeleteCardParams{
 		ID:     uuid,
-		UserID: userId,
+		UserID: userID,
 	})
 	if err != nil {
 		ds.log.Error().Err(err).Msg("failed to delete card")

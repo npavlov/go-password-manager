@@ -23,12 +23,12 @@ func (ds *DBStorage) StoreBinary(ctx context.Context, createBinary db.StoreBinar
 }
 
 // GetBinary retrieves binary record.
-func (ds *DBStorage) GetBinary(ctx context.Context, binaryID string, userId pgtype.UUID) (*db.BinaryEntry, error) {
+func (ds *DBStorage) GetBinary(ctx context.Context, binaryID string, userID pgtype.UUID) (*db.BinaryEntry, error) {
 	uuid := utils.GetIDFromString(binaryID)
 
 	binary, err := ds.Queries.GetBinaryEntryByID(ctx, db.GetBinaryEntryByIDParams{
 		ID:     uuid,
-		UserID: userId,
+		UserID: userID,
 	})
 	if err != nil {
 		ds.log.Error().Err(err).Msg("failed to find binary")

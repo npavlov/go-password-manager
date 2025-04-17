@@ -1,4 +1,4 @@
-//nolint:wrapcheck,err113
+//nolint:wrapcheck,err113,forcetypeassert
 package cards_test
 
 import (
@@ -29,13 +29,19 @@ type MockTokenManager struct {
 	mock.Mock
 }
 
-func (m *MockCardServiceClient) GetCards(ctx context.Context, in *card.GetCardsRequest, opts ...grpc.CallOption) (*card.GetCardsResponse, error) {
+func (m *MockCardServiceClient) GetCards(ctx context.Context,
+	in *card.GetCardsRequest,
+	_ ...grpc.CallOption,
+) (*card.GetCardsResponse, error) {
 	args := m.Called(ctx, in)
 
 	return args.Get(0).(*card.GetCardsResponse), args.Error(1)
 }
 
-func (m *MockCardServiceClient) GetCard(ctx context.Context, in *card.GetCardRequest, opts ...grpc.CallOption) (*card.GetCardResponse, error) {
+func (m *MockCardServiceClient) GetCard(ctx context.Context,
+	in *card.GetCardRequest,
+	_ ...grpc.CallOption,
+) (*card.GetCardResponse, error) {
 	args := m.Called(ctx, in)
 
 	// Safely handle nil to avoid type assertion panic
@@ -47,7 +53,10 @@ func (m *MockCardServiceClient) GetCard(ctx context.Context, in *card.GetCardReq
 	return arg, args.Error(1)
 }
 
-func (m *MockCardServiceClient) UpdateCard(ctx context.Context, in *card.UpdateCardRequest, opts ...grpc.CallOption) (*card.UpdateCardResponse, error) {
+func (m *MockCardServiceClient) UpdateCard(ctx context.Context,
+	in *card.UpdateCardRequest,
+	_ ...grpc.CallOption,
+) (*card.UpdateCardResponse, error) {
 	args := m.Called(ctx, in)
 
 	// Safely handle nil to avoid type assertion panic
@@ -59,7 +68,10 @@ func (m *MockCardServiceClient) UpdateCard(ctx context.Context, in *card.UpdateC
 	return arg, args.Error(1)
 }
 
-func (m *MockCardServiceClient) StoreCard(ctx context.Context, in *card.StoreCardRequest, opts ...grpc.CallOption) (*card.StoreCardResponse, error) {
+func (m *MockCardServiceClient) StoreCard(ctx context.Context,
+	in *card.StoreCardRequest,
+	_ ...grpc.CallOption,
+) (*card.StoreCardResponse, error) {
 	args := m.Called(ctx, in)
 
 	arg, ok := args.Get(0).(*card.StoreCardResponse)
@@ -70,7 +82,10 @@ func (m *MockCardServiceClient) StoreCard(ctx context.Context, in *card.StoreCar
 	return arg, args.Error(1)
 }
 
-func (m *MockCardServiceClient) DeleteCard(ctx context.Context, in *card.DeleteCardRequest, opts ...grpc.CallOption) (*card.DeleteCardResponse, error) {
+func (m *MockCardServiceClient) DeleteCard(ctx context.Context,
+	in *card.DeleteCardRequest,
+	_ ...grpc.CallOption,
+) (*card.DeleteCardResponse, error) {
 	args := m.Called(ctx, in)
 
 	arg, ok := args.Get(0).(*card.DeleteCardResponse)
@@ -155,7 +170,9 @@ func TestUpdateCard_Success(t *testing.T) {
 	}
 
 	mockClient.On("UpdateCard", mock.Anything, updateReq).
-		Return(&card.UpdateCardResponse{}, nil)
+		Return(&card.UpdateCardResponse{
+			CardId: "card123",
+		}, nil)
 
 	client := &cards.Client{
 		Client:       mockClient,
@@ -168,6 +185,8 @@ func TestUpdateCard_Success(t *testing.T) {
 }
 
 func TestUpdateCard_Error(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockCardServiceClient)
 	logger := zerolog.Nop()
 

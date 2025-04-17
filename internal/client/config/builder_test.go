@@ -1,3 +1,4 @@
+//nolint:exhaustruct,paralleltest
 package config_test
 
 import (

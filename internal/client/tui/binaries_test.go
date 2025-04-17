@@ -1,4 +1,4 @@
-//nolint:wrapcheck,err113,goconst
+//nolint:wrapcheck,err113,goconst,exhaustruct,forcetypeassert
 package tui_test
 
 import (
@@ -72,7 +72,7 @@ func TestShowBinaryDetails_DownloadAction(t *testing.T) {
 
 	// Setup mock facade
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.DownloadBinaryFunc = func(ctx context.Context, fileID string, writer io.Writer) error {
+	mockFacade.DownloadBinaryFunc = func(_ context.Context, _ string, writer io.Writer) error {
 		_, err := writer.Write([]byte("test content"))
 
 		return err
@@ -100,7 +100,7 @@ func TestShowBinaryDetails_RemoveAction(t *testing.T) {
 
 	// Setup mocks
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.DeleteBinaryFunc = func(ctx context.Context, fileID string) (bool, error) {
+	mockFacade.DeleteBinaryFunc = func(_ context.Context, _ string) (bool, error) {
 		return true, nil
 	}
 	mockFacade.On("DeleteBinary", t.Context(), "123").Return(true, nil)
@@ -140,13 +140,13 @@ func TestShowUploadBinaryForm_Success(t *testing.T) {
 
 	// Setup mocks
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.UploadBinaryFunc = func(ctx context.Context, filename string, reader io.Reader) (string, error) {
+	mockFacade.UploadBinaryFunc = func(_ context.Context, _ string, _ io.Reader) (string, error) {
 		return "new-id", nil
 	}
 	mockFacade.On("UploadBinary", t.Context(), filepath.Base(tmpFile.Name()), mock.Anything).Return("new-id", nil)
 
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
-	mockStorage.ProcessBinaryFunc = func(ctx context.Context, fileID string, meta map[string]string) error {
+	mockStorage.ProcessBinaryFunc = func(_ context.Context, fileID string, _ map[string]string) error {
 		assert.Equal(t, "new-id", fileID)
 
 		return nil
@@ -161,6 +161,8 @@ func TestShowUploadBinaryForm_Success(t *testing.T) {
 }
 
 func TestShowUploadBinaryForm_FileError(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 
 	form := ui.ShowUploadBinaryForm()
@@ -172,6 +174,8 @@ func TestShowUploadBinaryForm_FileError(t *testing.T) {
 }
 
 func TestShowUploadBinaryForm_UploadError(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 
 	// Create a test file
@@ -183,7 +187,7 @@ func TestShowUploadBinaryForm_UploadError(t *testing.T) {
 
 	// Setup mock to return error
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.UploadBinaryFunc = func(ctx context.Context, filename string, reader io.Reader) (string, error) {
+	mockFacade.UploadBinaryFunc = func(_ context.Context, _ string, _ io.Reader) (string, error) {
 		return "", errors.New("upload failed")
 	}
 	mockFacade.On("UploadBinary", t.Context(), filepath.Base(tmpFile.Name()), mock.Anything).
@@ -208,7 +212,7 @@ func TestShowRemoveBinaryForm_Confirm(t *testing.T) {
 
 	// Setup mocks
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.DeleteBinaryFunc = func(ctx context.Context, fileID string) (bool, error) {
+	mockFacade.DeleteBinaryFunc = func(_ context.Context, _ string) (bool, error) {
 		return true, nil
 	}
 	mockFacade.On("DeleteBinary", t.Context(), "123").Return(true, nil)
@@ -226,6 +230,8 @@ func TestShowRemoveBinaryForm_Confirm(t *testing.T) {
 }
 
 func TestShowRemoveBinaryForm_Cancel(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	file := model.BinaryItem{
 		StorageItem: model.StorageItem{ID: "123"},
@@ -240,6 +246,8 @@ func TestShowRemoveBinaryForm_Cancel(t *testing.T) {
 }
 
 func TestShowBinaryDetails_MetadataActions(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	file := model.BinaryItem{
 		StorageItem: model.StorageItem{

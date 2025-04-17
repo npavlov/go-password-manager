@@ -169,6 +169,8 @@ func TestEdgeCases(t *testing.T) {
 	})
 
 	t.Run("decrypt with wrong key size", func(t *testing.T) {
+		t.Parallel()
+
 		// Create a key with wrong size (not 32 bytes)
 		wrongKey := base64.StdEncoding.EncodeToString([]byte("short key"))
 

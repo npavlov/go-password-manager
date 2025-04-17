@@ -1,3 +1,4 @@
+//nolint:exhaustruct
 package meta_test
 
 import (
@@ -23,6 +24,7 @@ func setupMetadataService(t *testing.T) (*meta.Service, *testutils.MockDBStorage
 	logger := zerolog.New(nil)
 	masterKey, _ := utils.GenerateRandomKey()
 	storage := testutils.SetupMockUserStorage(masterKey)
+	//nolint:exhaustruct
 	cfg := &config.Config{}
 	// Create test user
 	userID := uuid.New()
@@ -43,9 +45,9 @@ func TestAddMetaInfo_Success(t *testing.T) {
 
 	svc, mockStorage, ctx := setupMetadataService(t)
 
-	userId := testutils.GetUserIDFromContext(ctx)
+	userID := testutils.GetUserIDFromContext(ctx)
 	userIDPG := pgtype.UUID{
-		Bytes: uuid.MustParse(userId),
+		Bytes: uuid.MustParse(userID),
 		Valid: true,
 	}
 
@@ -157,9 +159,9 @@ func TestGetMetaInfo_Empty(t *testing.T) {
 
 	svc, mockStorage, ctx := setupMetadataService(t)
 
-	userId := testutils.GetUserIDFromContext(ctx)
+	userID := testutils.GetUserIDFromContext(ctx)
 	userIDPG := pgtype.UUID{
-		Bytes: uuid.MustParse(userId),
+		Bytes: uuid.MustParse(userID),
 		Valid: true,
 	}
 

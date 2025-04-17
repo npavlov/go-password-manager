@@ -1,4 +1,4 @@
-//nolint:wrapcheck
+//nolint:wrapcheck,ireturn,lll
 package interceptors
 
 import (
@@ -33,6 +33,8 @@ func NewAuthInterceptor(cfg config.Config, tokenManager auth.ITokenManager) *Aut
 	return &AuthInterceptor{
 		config:       cfg,
 		tokenManager: tokenManager,
+		mu:           sync.Mutex{},
+		AuthClient:   nil,
 	}
 }
 

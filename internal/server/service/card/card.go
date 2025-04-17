@@ -1,3 +1,4 @@
+//nolint:exhaustruct
 package card
 
 import (
@@ -175,6 +176,11 @@ func (ns *Service) GetCard(ctx context.Context, req *pb.GetCardRequest) (*pb.Get
 	}
 
 	userUUID, decryptedUserKey, err := utils.GetDecryptionKey(ctx, ns.storage, ns.cfg.SecuredMasterKey.Get())
+	if err != nil {
+		ns.logger.Error().Err(err).Msg("error getting decrypted user UUID")
+
+		return nil, errors.Wrap(err, "error getting decrypted user UUID")
+	}
 
 	Card, err := ns.storage.GetCard(ctx, req.GetCardId(), userUUID)
 	if err != nil {
@@ -215,7 +221,7 @@ func (ns *Service) GetCard(ctx context.Context, req *pb.GetCardRequest) (*pb.Get
 	}, nil
 }
 
-func (ns *Service) GetCards(ctx context.Context, req *pb.GetCardsRequest) (*pb.GetCardsResponse, error) {
+func (ns *Service) GetCards(_ context.Context, req *pb.GetCardsRequest) (*pb.GetCardsResponse, error) {
 	if err := ns.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -231,6 +237,11 @@ func (ns *Service) DeleteCard(ctx context.Context, req *pb.DeleteCardRequest) (*
 	}
 
 	userUUID, _, err := utils.GetDecryptionKey(ctx, ns.storage, ns.cfg.SecuredMasterKey.Get())
+	if err != nil {
+		ns.logger.Error().Err(err).Msg("error getting user id")
+
+		return nil, errors.Wrap(err, "error getting user id")
+	}
 
 	err = ns.storage.DeleteCard(ctx, req.GetCardId(), userUUID)
 	if err != nil {

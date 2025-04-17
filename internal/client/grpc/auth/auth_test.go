@@ -1,4 +1,4 @@
-//nolint:goconst
+//nolint:goconst,forcetypeassert,wrapcheck
 package auth_test
 
 import (
@@ -20,19 +20,28 @@ type MockAuthServiceClient struct {
 	mock.Mock
 }
 
-func (m *MockAuthServiceClient) RefreshToken(ctx context.Context, in *pb.RefreshTokenRequest, opts ...grpc.CallOption) (*pb.RefreshTokenResponse, error) {
+func (m *MockAuthServiceClient) RefreshToken(ctx context.Context,
+	in *pb.RefreshTokenRequest,
+	_ ...grpc.CallOption,
+) (*pb.RefreshTokenResponse, error) {
 	args := m.Called(ctx, in)
 
 	return args.Get(0).(*pb.RefreshTokenResponse), args.Error(1)
 }
 
-func (m *MockAuthServiceClient) Register(ctx context.Context, in *pb.RegisterRequest, opts ...grpc.CallOption) (*pb.RegisterResponse, error) {
+func (m *MockAuthServiceClient) Register(ctx context.Context,
+	in *pb.RegisterRequest,
+	_ ...grpc.CallOption,
+) (*pb.RegisterResponse, error) {
 	args := m.Called(ctx, in)
 
 	return args.Get(0).(*pb.RegisterResponse), args.Error(1)
 }
 
-func (m *MockAuthServiceClient) Login(ctx context.Context, in *pb.LoginRequest, opts ...grpc.CallOption) (*pb.LoginResponse, error) {
+func (m *MockAuthServiceClient) Login(ctx context.Context,
+	in *pb.LoginRequest,
+	_ ...grpc.CallOption,
+) (*pb.LoginResponse, error) {
 	args := m.Called(ctx, in)
 
 	return args.Get(0).(*pb.LoginResponse), args.Error(1)
@@ -107,6 +116,8 @@ func TestLogin_Success(t *testing.T) {
 }
 
 func TestRegister_TokenUpdateFails(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockAuthServiceClient)
 	mockTokenManager := new(testutils.MockTokenManager)
 	logger := zerolog.Nop()

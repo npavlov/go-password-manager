@@ -1,4 +1,4 @@
-//nolint:wrapcheck,lll,err113,dogsled
+//nolint:wrapcheck,lll,err113,dogsled,exhaustruct
 package file_test
 
 import (
@@ -99,23 +99,23 @@ type MockUploadStream struct {
 	ContextFunc      func() context.Context
 }
 
-func (m *MockUploadStream) SetHeader(md metadata.MD) error {
+func (m *MockUploadStream) SetHeader(_ metadata.MD) error {
 	panic("implement me")
 }
 
-func (m *MockUploadStream) SendHeader(md metadata.MD) error {
+func (m *MockUploadStream) SendHeader(_ metadata.MD) error {
 	panic("implement me")
 }
 
-func (m *MockUploadStream) SetTrailer(md metadata.MD) {
+func (m *MockUploadStream) SetTrailer(_ metadata.MD) {
 	panic("implement me")
 }
 
-func (m *MockUploadStream) SendMsg(m2 any) error {
+func (m *MockUploadStream) SendMsg(_ any) error {
 	panic("implement me")
 }
 
-func (m *MockUploadStream) RecvMsg(m1 any) error {
+func (m *MockUploadStream) RecvMsg(_ any) error {
 	panic("implement me")
 }
 
@@ -173,7 +173,7 @@ func TestUploadFile_Success(t *testing.T) {
 		},
 	}
 
-	mockS3.PutObjectFunc = func(ctx context.Context, bucketName string, objectName string, reader io.Reader, objectSize int64, opts minio.PutObjectOptions) (minio.UploadInfo, error) {
+	mockS3.PutObjectFunc = func(_ context.Context, _ string, _ string, _ io.Reader, _ int64, _ minio.PutObjectOptions) (minio.UploadInfo, error) {
 		return minio.UploadInfo{}, nil
 	}
 
@@ -223,7 +223,7 @@ func TestUploadFile_S3UploadFailure(t *testing.T) {
 		},
 	}
 
-	mockS3.PutObjectFunc = func(ctx context.Context, bucketName string, objectName string, reader io.Reader, objectSize int64, opts minio.PutObjectOptions) (minio.UploadInfo, error) {
+	mockS3.PutObjectFunc = func(_ context.Context, _ string, _ string, _ io.Reader, _ int64, _ minio.PutObjectOptions) (minio.UploadInfo, error) {
 		return minio.UploadInfo{}, errors.New("S3 upload failed")
 	}
 
@@ -291,7 +291,7 @@ func TestDownloadFile_Success(t *testing.T) {
 	mockReader := io.NopCloser(bytes.NewReader(encryptedData))
 
 	// Mock the S3 GetObject to return our test reader
-	mockS3.GetObjectFunc = func(ctx context.Context, bucketName string, objectName string, opts minio.GetObjectOptions) (io.ReadCloser, error) {
+	mockS3.GetObjectFunc = func(_ context.Context, _ string, _ string, _ minio.GetObjectOptions) (io.ReadCloser, error) {
 		return mockReader, nil
 	}
 
@@ -356,7 +356,7 @@ func TestDeleteFile_Success(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	mockS3.RemoveObjectFunc = func(ctx context.Context, bucketName string, objectName string, opts minio.RemoveObjectOptions) error {
+	mockS3.RemoveObjectFunc = func(_ context.Context, _ string, _ string, _ minio.RemoveObjectOptions) error {
 		return nil
 	}
 
@@ -436,7 +436,7 @@ func TestUploadFile_EmptyFile(t *testing.T) {
 		},
 	}
 
-	mockS3.PutObjectFunc = func(ctx context.Context, bucketName string, objectName string, reader io.Reader, objectSize int64, opts minio.PutObjectOptions) (minio.UploadInfo, error) {
+	mockS3.PutObjectFunc = func(_ context.Context, _ string, _ string, _ io.Reader, _ int64, _ minio.PutObjectOptions) (minio.UploadInfo, error) {
 		return minio.UploadInfo{}, nil
 	}
 
@@ -481,7 +481,7 @@ func TestUploadFile_LargeFile(t *testing.T) {
 		},
 	}
 
-	mockS3.PutObjectFunc = func(ctx context.Context, bucketName string, objectName string, reader io.Reader, objectSize int64, opts minio.PutObjectOptions) (minio.UploadInfo, error) {
+	mockS3.PutObjectFunc = func(_ context.Context, _ string, _ string, reader io.Reader, _ int64, _ minio.PutObjectOptions) (minio.UploadInfo, error) {
 		defer wg.Done()
 		cursor, err := io.Copy(io.Discard, reader)
 		if err != nil {
@@ -589,7 +589,7 @@ func TestDownloadFile_DecryptionError(t *testing.T) {
 	mockReader := io.NopCloser(bytes.NewReader(plaintextBlocks))
 
 	// Mock the S3 GetObject to return our test reader
-	mockS3.GetObjectFunc = func(ctx context.Context, bucketName string, objectName string, opts minio.GetObjectOptions) (io.ReadCloser, error) {
+	mockS3.GetObjectFunc = func(_ context.Context, _ string, _ string, _ minio.GetObjectOptions) (io.ReadCloser, error) {
 		return mockReader, nil
 	}
 
@@ -775,22 +775,22 @@ func (m *MockDownloadStream) Context() context.Context {
 }
 
 // The following are required by the gRPC stream interface but not used in your test.
-func (m *MockDownloadStream) SetHeader(md metadata.MD) error {
+func (m *MockDownloadStream) SetHeader(_ metadata.MD) error {
 	panic("implement me")
 }
 
-func (m *MockDownloadStream) SendHeader(md metadata.MD) error {
+func (m *MockDownloadStream) SendHeader(_ metadata.MD) error {
 	panic("implement me")
 }
 
-func (m *MockDownloadStream) SetTrailer(md metadata.MD) {
+func (m *MockDownloadStream) SetTrailer(_ metadata.MD) {
 	panic("implement me")
 }
 
-func (m *MockDownloadStream) SendMsg(msg any) error {
+func (m *MockDownloadStream) SendMsg(_ any) error {
 	panic("implement me")
 }
 
-func (m *MockDownloadStream) RecvMsg(msg any) error {
+func (m *MockDownloadStream) RecvMsg(_ any) error {
 	panic("implement me")
 }

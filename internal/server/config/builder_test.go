@@ -1,3 +1,4 @@
+//nolint:exhaustruct
 package config_test
 
 import (

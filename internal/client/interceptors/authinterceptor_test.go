@@ -1,4 +1,4 @@
-//nolint:wrapcheck,lll,err113
+//nolint:wrapcheck,lll,err113,exhaustruct,forcetypeassert,ireturn
 package interceptors_test
 
 import (
@@ -26,7 +26,10 @@ type MockAuthServiceClient struct {
 	mock.Mock
 }
 
-func (m *MockAuthServiceClient) RefreshToken(ctx context.Context, in *auth.RefreshTokenRequest, opts ...grpc.CallOption) (*auth.RefreshTokenResponse, error) {
+func (m *MockAuthServiceClient) RefreshToken(ctx context.Context,
+	in *auth.RefreshTokenRequest,
+	_ ...grpc.CallOption,
+) (*auth.RefreshTokenResponse, error) {
 	args := m.Called(ctx, in)
 
 	if args.Get(0) == nil {
@@ -85,6 +88,8 @@ func TestSetAuthClient(t *testing.T) {
 }
 
 func TestUnaryInterceptor_SkipAuthMethods(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		method string
 	}{
@@ -95,6 +100,8 @@ func TestUnaryInterceptor_SkipAuthMethods(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.method, func(t *testing.T) {
+			t.Parallel()
+
 			cfg := config.Config{}
 			tm := new(testutils.MockTokenManager)
 			interceptor := interceptors.NewAuthInterceptor(cfg, tm)
@@ -111,6 +118,8 @@ func TestUnaryInterceptor_SkipAuthMethods(t *testing.T) {
 }
 
 func TestUnaryInterceptor_Success(t *testing.T) {
+	t.Parallel()
+
 	cfg := config.Config{}
 	tm := new(testutils.MockTokenManager)
 	tm.On("GetAccessToken").Return("valid_token")

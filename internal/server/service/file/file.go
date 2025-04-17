@@ -1,4 +1,4 @@
-//nolint:wrapcheck
+//nolint:wrapcheck,exhaustruct,revive
 package file
 
 import (
@@ -29,8 +29,8 @@ const (
 type Storage interface {
 	StoreBinary(ctx context.Context, createBinary db.StoreBinaryEntryParams) (*db.BinaryEntry, error)
 	DeleteBinary(ctx context.Context, arg db.DeleteBinaryEntryParams) error
-	GetBinaries(ctx context.Context, userId string) ([]db.BinaryEntry, error)
-	GetBinary(ctx context.Context, binaryId string, userId pgtype.UUID) (*db.BinaryEntry, error)
+	GetBinaries(ctx context.Context, userID string) ([]db.BinaryEntry, error)
+	GetBinary(ctx context.Context, binaryID string, userID pgtype.UUID) (*db.BinaryEntry, error)
 	GetUserByID(ctx context.Context, id pgtype.UUID) (*db.User, error)
 }
 
@@ -108,6 +108,7 @@ func (fs *Service) UploadFile(stream grpc.ClientStreamingServer[pb.UploadFileReq
 
 		_, err := fs.minio.PutObject(
 			uploadCtx, fs.cfg.Bucket, objectName, pipeReader, -1,
+			//nolint:exhaustruct
 			minio.PutObjectOptions{ContentType: "application/octet-stream"},
 		)
 		if err != nil {
@@ -205,7 +206,7 @@ func (fs *Service) DeleteFile(ctx context.Context, req *pb.DeleteFileRequest) (*
 	}, nil
 }
 
-//nolint:cyclop,funlen
+//nolint:cyclop,funlen,lll
 func (fs *Service) DownloadFile(req *pb.DownloadFileRequest, str grpc.ServerStreamingServer[pb.DownloadFileResponse]) error {
 	ctx := str.Context()
 
@@ -235,6 +236,7 @@ func (fs *Service) DownloadFile(req *pb.DownloadFileRequest, str grpc.ServerStre
 
 	// Fetch encrypted file from MinIO
 	objectName := fileEntry.FileUrl
+	//nolint:exhaustruct
 	reader, err := fs.minio.GetObject(ctx, fs.cfg.Bucket, objectName, minio.GetObjectOptions{})
 	if err != nil {
 		fs.logger.Error().Err(err).Msg("failed to fetch file from MinIO")

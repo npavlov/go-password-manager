@@ -125,7 +125,7 @@ func (t *TUI) ShowRemoveNoteForm(note model.NoteItem) *tview.Modal {
 	confirmation := tview.NewModal().
 		SetText(fmt.Sprintf("Are you sure you want to delete the note titled '%s'?", note.Content)).
 		AddButtons([]string{"Yes", "No"}).
-		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+		SetDoneFunc(func(_ int, buttonLabel string) {
 			if buttonLabel == "Yes" {
 				ok, err := t.Facade.DeleteNote(context.Background(), note.ID)
 				if !ok || err != nil {

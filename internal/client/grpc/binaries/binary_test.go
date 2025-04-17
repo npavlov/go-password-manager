@@ -1,4 +1,4 @@
-//nolint:wrapcheck,err113
+//nolint:wrapcheck,err113,lll,exhaustruct,forcetypeassert,ireturn,revive
 package binary_test
 
 import (
@@ -45,7 +45,7 @@ func (m *MockFileServiceClient) GetFiles(ctx context.Context, _ *pb.GetFilesRequ
 	return args.Get(0).(*pb.GetFilesResponse), args.Error(1)
 }
 
-func (m *MockFileServiceClient) UploadFile(ctx context.Context, opts ...grpc.CallOption) (pb.FileService_UploadFileClient, error) {
+func (m *MockFileServiceClient) UploadFile(ctx context.Context, _ ...grpc.CallOption) (pb.FileService_UploadFileClient, error) {
 	args := m.Called(ctx)
 
 	// Safely handle nil to avoid type assertion panic
@@ -57,13 +57,13 @@ func (m *MockFileServiceClient) UploadFile(ctx context.Context, opts ...grpc.Cal
 	return stream, args.Error(1)
 }
 
-func (m *MockFileServiceClient) DownloadFile(ctx context.Context, req *pb.DownloadFileRequest, opts ...grpc.CallOption) (pb.FileService_DownloadFileClient, error) {
+func (m *MockFileServiceClient) DownloadFile(ctx context.Context, req *pb.DownloadFileRequest, _ ...grpc.CallOption) (pb.FileService_DownloadFileClient, error) {
 	args := m.Called(ctx, req)
 
 	return args.Get(0).(pb.FileService_DownloadFileClient), args.Error(1)
 }
 
-func (m *MockFileServiceClient) DeleteFile(ctx context.Context, req *pb.DeleteFileRequest, opts ...grpc.CallOption) (*pb.DeleteFileResponse, error) {
+func (m *MockFileServiceClient) DeleteFile(ctx context.Context, req *pb.DeleteFileRequest, _ ...grpc.CallOption) (*pb.DeleteFileResponse, error) {
 	args := m.Called(ctx, req)
 
 	return args.Get(0).(*pb.DeleteFileResponse), args.Error(1)

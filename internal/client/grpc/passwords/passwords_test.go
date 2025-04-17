@@ -1,4 +1,4 @@
-//nolint:err113,wrapcheck
+//nolint:err113,wrapcheck,lll,forcetypeassert,exhaustruct
 package passwords_test
 
 import (

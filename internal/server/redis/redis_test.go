@@ -1,4 +1,4 @@
-//nolint:err113,goconst
+//nolint:err113,goconst,exhaustruct
 package redis_test
 
 import (
@@ -17,6 +17,8 @@ import (
 )
 
 func TestNewRStorage(t *testing.T) {
+	t.Parallel()
+
 	logger := zerolog.New(nil)
 	cfg := config.Config{
 		Redis: "localhost:6379",

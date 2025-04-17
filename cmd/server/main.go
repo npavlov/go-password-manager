@@ -137,6 +137,7 @@ func setupStorage(
 }
 
 func setupMinIO(ctx context.Context, cfg *config.Config, log *zerolog.Logger) *minio.Client {
+	//nolint:exhaustruct
 	client, err := minio.New(cfg.Minio, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.MinioAccessKey, cfg.MinioSecretKey, ""),
 		Secure: false, // Set to `true` if using HTTPS
@@ -156,6 +157,7 @@ func setupMinIO(ctx context.Context, cfg *config.Config, log *zerolog.Logger) *m
 		log.Fatal().Err(err).Msg("Failed to check MinIO bucket")
 	}
 	if !exists {
+		//nolint:exhaustruct
 		if err := client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{}); err != nil {
 			log.Fatal().Err(err).Msg("Failed to create MinIO bucket")
 		}

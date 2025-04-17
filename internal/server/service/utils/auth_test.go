@@ -1,3 +1,4 @@
+//nolint:exhaustruct,revive,staticcheck,forcetypeassert,wrapcheck
 package utils_test
 
 import (

@@ -1,4 +1,4 @@
-//nolint:err113
+//nolint:err113,forcetypeassert
 package tui_test
 
 import (
@@ -26,6 +26,8 @@ func setupTUI() *tui.TUI {
 }
 
 func TestMainMenu_Authorized(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 	mockToken := ui.TokenMgr.(*testutils.MockTokenManager)
 	mockToken.Authorized = true
@@ -59,11 +61,11 @@ func TestHandleLogin_Success(t *testing.T) {
 	mockFacade := ui.Facade.(*testutils.MockFacade)
 	mockStorage := ui.Storage.(*testutils.MockStorageManager)
 
-	mockStorage.SyncItemsFunc = func(ctx context.Context) error {
+	mockStorage.SyncItemsFunc = func(_ context.Context) error {
 		return nil
 	}
 
-	mockFacade.LoginFunc = func(username, password string) error {
+	mockFacade.LoginFunc = func(_, _ string) error {
 		return nil
 	}
 
@@ -81,10 +83,12 @@ func TestHandleLogin_Success(t *testing.T) {
 }
 
 func TestHandleLogin_Failure(t *testing.T) {
+	t.Parallel()
+
 	ui := setupTUI()
 
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.LoginFunc = func(username, password string) error {
+	mockFacade.LoginFunc = func(_, _ string) error {
 		return errors.New("error")
 	}
 	mockFacade.On("Login", "user", "wrongpass").Return(errors.New("invalid"))
@@ -102,7 +106,7 @@ func TestHandleRegister_Success(t *testing.T) {
 	ui := setupTUI()
 
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.RegisterFunc = func(username, password, email string) (string, error) {
+	mockFacade.RegisterFunc = func(_, _, _ string) (string, error) {
 		return "", nil
 	}
 	mockFacade.On("Register", "user", "pass", "email@example.com").Return("user-id-123", nil)
@@ -123,7 +127,7 @@ func TestResetToLoginScreen(t *testing.T) {
 	ui := setupTUI()
 	called := false
 
-	ui.SetRoot = func(p tview.Primitive, fullscreen bool) *tview.Application {
+	ui.SetRoot = func(_ tview.Primitive, _ bool) *tview.Application {
 		called = true
 
 		return ui.App
@@ -141,7 +145,7 @@ func TestShowRegisterForm(t *testing.T) {
 
 	ui := setupTUI()
 	mockFacade := ui.Facade.(*testutils.MockFacade)
-	mockFacade.RegisterFunc = func(username, password, email string) (string, error) {
+	mockFacade.RegisterFunc = func(_, _, _ string) (string, error) {
 		return "", nil
 	}
 	mockFacade.On("Register", "testuser", "secret", "test@example.com").Return("user-id-123", nil)

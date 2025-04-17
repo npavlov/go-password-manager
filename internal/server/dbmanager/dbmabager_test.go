@@ -1,4 +1,4 @@
-//nolint:wrapcheck,err113
+//nolint:wrapcheck,err113,exhaustruct
 package dbmanager_test
 
 import (

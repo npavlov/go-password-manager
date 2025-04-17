@@ -23,6 +23,8 @@ func generateTestKey(t *testing.T) string {
 }
 
 func TestEncryptor_Write_Success(t *testing.T) {
+	t.Parallel()
+
 	// Arrange
 	var buf bytes.Buffer
 	key := generateTestKey(t)
@@ -43,6 +45,8 @@ func TestEncryptor_Write_Success(t *testing.T) {
 }
 
 func TestEncryptor_Write_LongInput(t *testing.T) {
+	t.Parallel()
+
 	// Arrange
 	var buf bytes.Buffer
 	key := generateTestKey(t)
@@ -65,6 +69,7 @@ func TestEncryptor_Write_LongInput(t *testing.T) {
 }
 
 func TestEncryptor_InvalidKey(t *testing.T) {
+	t.Parallel()
 	// Arrange
 	var buf bytes.Buffer
 

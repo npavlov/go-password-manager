@@ -1,4 +1,4 @@
-//nolint:lll
+//nolint:lll,exhaustruct
 package password_test
 
 import (

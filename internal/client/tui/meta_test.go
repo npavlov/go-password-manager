@@ -1,4 +1,4 @@
-//nolint:err113
+//nolint:err113,exhaustruct,forcetypeassert
 package tui_test
 
 import (
@@ -29,7 +29,7 @@ func TestShowAddMetadataForm(t *testing.T) {
 			itemType: model.ItemTypeCard,
 			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
 				f.On("SetMetainfo", t.Context(), "123", mock.Anything).Return(true, nil)
-				s.ProcessCardFunc = func(ctx context.Context, id string, meta map[string]string) error {
+				s.ProcessCardFunc = func(_ context.Context, _ string, _ map[string]string) error {
 					return nil
 				}
 			},
@@ -40,7 +40,7 @@ func TestShowAddMetadataForm(t *testing.T) {
 			itemType: model.ItemTypeNote,
 			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
 				f.On("SetMetainfo", t.Context(), "123", mock.Anything).Return(true, nil)
-				s.ProcessNoteFunc = func(ctx context.Context, id string, meta map[string]string) error {
+				s.ProcessNoteFunc = func(_ context.Context, _ string, _ map[string]string) error {
 					return nil
 				}
 			},
@@ -51,7 +51,7 @@ func TestShowAddMetadataForm(t *testing.T) {
 			itemType: model.ItemTypePassword,
 			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
 				f.On("SetMetainfo", t.Context(), "123", mock.Anything).Return(true, nil)
-				s.ProcessPasswordFunc = func(ctx context.Context, id string, meta map[string]string) error {
+				s.ProcessPasswordFunc = func(_ context.Context, _ string, _ map[string]string) error {
 					return nil
 				}
 			},
@@ -60,7 +60,7 @@ func TestShowAddMetadataForm(t *testing.T) {
 		{
 			name:     "SetMetainfo Failure",
 			itemType: model.ItemTypePassword,
-			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
+			setupMock: func(f *testutils.MockFacade, _ *testutils.MockStorageManager) {
 				f.On("SetMetainfo", t.Context(), "123", mock.Anything).Return(false, errors.New("failed"))
 			},
 			expectSuccess: false,
@@ -70,7 +70,7 @@ func TestShowAddMetadataForm(t *testing.T) {
 			itemType: model.ItemTypePassword,
 			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
 				f.On("SetMetainfo", t.Context(), "123", mock.Anything).Return(true, nil)
-				s.ProcessPasswordFunc = func(ctx context.Context, id string, meta map[string]string) error {
+				s.ProcessPasswordFunc = func(_ context.Context, _ string, _ map[string]string) error {
 					return errors.New("failed")
 				}
 			},
@@ -105,11 +105,11 @@ func TestShowAddMetadataForm(t *testing.T) {
 			form.GetFormItem(1).(*tview.InputField).SetText("testvalue")
 
 			if tt.expectSuccess {
-				mockFacade.SetMetainfoFunc = func(ctx context.Context, id string, meta map[string]string) (bool, error) {
+				mockFacade.SetMetainfoFunc = func(_ context.Context, _ string, _ map[string]string) (bool, error) {
 					return true, nil
 				}
 			} else {
-				mockFacade.SetMetainfoFunc = func(ctx context.Context, id string, meta map[string]string) (bool, error) {
+				mockFacade.SetMetainfoFunc = func(_ context.Context, _ string, _ map[string]string) (bool, error) {
 					return false, errors.New("failed")
 				}
 			}
@@ -147,7 +147,7 @@ func TestShowRemoveMetadataForm(t *testing.T) {
 			itemType: model.ItemTypeCard,
 			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
 				f.On("DeleteMetainfo", t.Context(), "123", "testkey").Return(true, nil)
-				s.ProcessCardFunc = func(ctx context.Context, id string, meta map[string]string) error {
+				s.ProcessCardFunc = func(_ context.Context, _ string, _ map[string]string) error {
 					return nil
 				}
 			},
@@ -158,7 +158,7 @@ func TestShowRemoveMetadataForm(t *testing.T) {
 			itemType: model.ItemTypeNote,
 			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
 				f.On("DeleteMetainfo", t.Context(), "123", "testkey").Return(true, nil)
-				s.ProcessNoteFunc = func(ctx context.Context, id string, meta map[string]string) error {
+				s.ProcessNoteFunc = func(_ context.Context, _ string, _ map[string]string) error {
 					return nil
 				}
 			},
@@ -169,7 +169,7 @@ func TestShowRemoveMetadataForm(t *testing.T) {
 			itemType: model.ItemTypePassword,
 			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
 				f.On("DeleteMetainfo", t.Context(), "123", "testkey").Return(true, nil)
-				s.ProcessPasswordFunc = func(ctx context.Context, id string, meta map[string]string) error {
+				s.ProcessPasswordFunc = func(_ context.Context, _ string, _ map[string]string) error {
 					return nil
 				}
 			},
@@ -178,7 +178,7 @@ func TestShowRemoveMetadataForm(t *testing.T) {
 		{
 			name:     "DeleteMetainfo Failure",
 			itemType: model.ItemTypePassword,
-			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
+			setupMock: func(f *testutils.MockFacade, _ *testutils.MockStorageManager) {
 				f.On("DeleteMetainfo", t.Context(), "123", "testkey").Return(false, errors.New("failed"))
 			},
 			expectSuccess: false,
@@ -188,7 +188,7 @@ func TestShowRemoveMetadataForm(t *testing.T) {
 			itemType: model.ItemTypePassword,
 			setupMock: func(f *testutils.MockFacade, s *testutils.MockStorageManager) {
 				f.On("DeleteMetainfo", t.Context(), "123", "testkey").Return(true, nil)
-				s.ProcessPasswordFunc = func(ctx context.Context, id string, meta map[string]string) error {
+				s.ProcessPasswordFunc = func(_ context.Context, _ string, _ map[string]string) error {
 					return errors.New("failed")
 				}
 			},
@@ -221,11 +221,11 @@ func TestShowRemoveMetadataForm(t *testing.T) {
 			assert.Equal(t, "🗑 Remove Metadata", form.GetTitle())
 
 			if tt.expectSuccess {
-				mockFacade.DeleteMetainfoFunc = func(ctx context.Context, id, key string) (bool, error) {
+				mockFacade.DeleteMetainfoFunc = func(_ context.Context, _, _ string) (bool, error) {
 					return true, nil
 				}
 			} else {
-				mockFacade.DeleteMetainfoFunc = func(ctx context.Context, id, key string) (bool, error) {
+				mockFacade.DeleteMetainfoFunc = func(_ context.Context, _, _ string) (bool, error) {
 					return false, errors.New("failed")
 				}
 			}

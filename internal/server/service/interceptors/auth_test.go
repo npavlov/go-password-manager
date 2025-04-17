@@ -1,4 +1,4 @@
-//nolint:wrapcheck
+//nolint:wrapcheck,exhaustruct
 package interceptors_test
 
 import (
@@ -66,14 +66,14 @@ func TestTokenInterceptor(t *testing.T) {
 			name:          "skip public method",
 			method:        pb.AuthService_Register_FullMethodName,
 			token:         "",
-			mockSetup:     func(m *MockMemStorage) {},
+			mockSetup:     func(_ *MockMemStorage) {},
 			expectedError: false,
 		},
 		{
 			name:          "missing metadata",
 			method:        "/service.privateMethod",
 			token:         "",
-			mockSetup:     func(m *MockMemStorage) {},
+			mockSetup:     func(_ *MockMemStorage) {},
 			expectedError: true,
 			expectedCode:  codes.Unauthenticated,
 		},
@@ -106,7 +106,7 @@ func TestTokenInterceptor(t *testing.T) {
 			}
 
 			// Mock handler that checks for user_id in context
-			handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+			handler := func(ctx context.Context, _ interface{}) (interface{}, error) {
 				if tt.expectedError {
 					t.Error("Handler should not be called for error cases")
 
@@ -146,6 +146,8 @@ func TestTokenInterceptor(t *testing.T) {
 }
 
 func TestStreamTokenInterceptor(t *testing.T) {
+	t.Parallel()
+
 	logger := zerolog.New(nil)
 	jwtSecret := "test-secret"
 	validToken, _ := utils.GenerateJWT("user-123", jwtSecret, time.Now().Add(time.Hour).Unix())
@@ -172,14 +174,14 @@ func TestStreamTokenInterceptor(t *testing.T) {
 			name:          "skip reflection",
 			method:        "/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
 			token:         "",
-			mockSetup:     func(m *MockMemStorage) {},
+			mockSetup:     func(_ *MockMemStorage) {},
 			expectedError: false,
 		},
 		{
 			name:          "missing metadata",
 			method:        "/service.StreamMethod",
 			token:         "",
-			mockSetup:     func(m *MockMemStorage) {},
+			mockSetup:     func(_ *MockMemStorage) {},
 			expectedError: true,
 			expectedCode:  codes.Unauthenticated,
 		},
@@ -205,7 +207,7 @@ func TestStreamTokenInterceptor(t *testing.T) {
 			mockStream := &mockServerStream{ctx: ctx}
 
 			// Mock handler that checks for user_id in context
-			handler := func(srv interface{}, stream grpc.ServerStream) error {
+			handler := func(_ interface{}, stream grpc.ServerStream) error {
 				if tt.expectedError {
 					t.Error("Handler should not be called for error cases")
 
@@ -277,14 +279,14 @@ func TestAuthenticateToken(t *testing.T) {
 		{
 			name:          "missing metadata",
 			token:         "",
-			mockSetup:     func(m *MockMemStorage) {},
+			mockSetup:     func(_ *MockMemStorage) {},
 			expectedError: true,
 			expectedCode:  codes.Unauthenticated,
 		},
 		{
 			name:          "invalid token format",
 			token:         "badformat",
-			mockSetup:     func(m *MockMemStorage) {},
+			mockSetup:     func(_ *MockMemStorage) {},
 			expectedError: true,
 			expectedCode:  codes.Unauthenticated,
 		},

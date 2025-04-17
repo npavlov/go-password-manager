@@ -6,6 +6,7 @@ import (
 
 // InjectUserToContext adds userID and encryptionKey into context — for tests or middleware.
 func InjectUserToContext(ctx context.Context, userID string) context.Context {
+	//nolint:revive,staticcheck
 	ctx = context.WithValue(ctx, "user_id", userID)
 
 	return ctx

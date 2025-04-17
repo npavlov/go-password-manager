@@ -1,3 +1,4 @@
+//nolint:exhaustruct
 package password
 
 import (
@@ -19,9 +20,9 @@ import (
 
 type Storage interface {
 	StorePassword(ctx context.Context, createPassword db.CreatePasswordEntryParams) (*db.Password, error)
-	GetPassword(ctx context.Context, passwordId string, userId pgtype.UUID) (*db.Password, error)
+	GetPassword(ctx context.Context, passwordID string, userID pgtype.UUID) (*db.Password, error)
 	UpdatePassword(ctx context.Context, updatePassword db.UpdatePasswordEntryParams) (*db.Password, error)
-	DeletePassword(ctx context.Context, passwordId string, userId pgtype.UUID) error
+	DeletePassword(ctx context.Context, passwordID string, userID pgtype.UUID) error
 	GetUserByID(ctx context.Context, id pgtype.UUID) (*db.User, error)
 }
 
@@ -117,12 +118,14 @@ func (ps *Service) GetPassword(ctx context.Context, req *pb.GetPasswordRequest) 
 	}, nil
 }
 
-func (ps *Service) GetPasswords(ctx context.Context, req *pb.GetPasswordsRequest) (*pb.GetPasswordsResponse, error) {
+func (ps *Service) GetPasswords(_ context.Context, req *pb.GetPasswordsRequest) (*pb.GetPasswordsResponse, error) {
 	if err := ps.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	return &pb.GetPasswordsResponse{}, nil
+	return &pb.GetPasswordsResponse{
+		Passwords: []*pb.PasswordData{},
+	}, nil
 }
 
 func (ps *Service) UpdatePassword(

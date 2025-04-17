@@ -19,7 +19,7 @@ type MockStorageManager struct {
 	ProcessItemFunc         func(ctx context.Context, item *pb.ItemData) bool
 	ProcessPasswordFunc     func(ctx context.Context, passwordId string, meta map[string]string) error
 	ProcessNoteFunc         func(ctx context.Context, noteId string, meta map[string]string) error
-	ProcessCardFunc         func(ctx context.Context, cardId string, meta map[string]string) error
+	ProcessCardFunc         func(ctx context.Context, cardID string, meta map[string]string) error
 	ProcessBinaryFunc       func(ctx context.Context, fileID string, meta map[string]string) error
 	StartBackgroundSyncFunc func(ctx context.Context)
 	SyncItemsFunc           func(ctx context.Context) error
@@ -71,34 +71,34 @@ func (m *MockStorageManager) ProcessItem(ctx context.Context, item *pb.ItemData)
 	return false
 }
 
-func (m *MockStorageManager) ProcessPassword(ctx context.Context, passwordId string, meta map[string]string) error {
+func (m *MockStorageManager) ProcessPassword(ctx context.Context, passwordID string, meta map[string]string) error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
 	if m.ProcessPasswordFunc != nil {
-		return m.ProcessPasswordFunc(ctx, passwordId, meta)
+		return m.ProcessPasswordFunc(ctx, passwordID, meta)
 	}
 
 	return errors.New("ProcessPasswordFunc not implemented")
 }
 
-func (m *MockStorageManager) ProcessNote(ctx context.Context, noteId string, meta map[string]string) error {
+func (m *MockStorageManager) ProcessNote(ctx context.Context, noteID string, meta map[string]string) error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
 	if m.ProcessNoteFunc != nil {
-		return m.ProcessNoteFunc(ctx, noteId, meta)
+		return m.ProcessNoteFunc(ctx, noteID, meta)
 	}
 
 	return errors.New("ProcessNoteFunc not implemented")
 }
 
-func (m *MockStorageManager) ProcessCard(ctx context.Context, cardId string, meta map[string]string) error {
+func (m *MockStorageManager) ProcessCard(ctx context.Context, cardID string, meta map[string]string) error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
 	if m.ProcessCardFunc != nil {
-		return m.ProcessCardFunc(ctx, cardId, meta)
+		return m.ProcessCardFunc(ctx, cardID, meta)
 	}
 
 	return errors.New("ProcessCardFunc not implemented")
@@ -182,50 +182,50 @@ func (m *MockStorageManager) GetCards() map[string]model.CardItem {
 	return m.Cards
 }
 
-func (m *MockStorageManager) DeleteBinary(Id string) {
+func (m *MockStorageManager) DeleteBinary(id string) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
 	if m.DeleteBinaryFunc != nil {
-		m.DeleteBinaryFunc(Id)
+		m.DeleteBinaryFunc(id)
 
 		return
 	}
-	delete(m.Binaries, Id)
+	delete(m.Binaries, id)
 }
 
-func (m *MockStorageManager) DeleteCards(Id string) {
+func (m *MockStorageManager) DeleteCards(id string) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
 	if m.DeleteCardsFunc != nil {
-		m.DeleteCardsFunc(Id)
+		m.DeleteCardsFunc(id)
 
 		return
 	}
-	delete(m.Cards, Id)
+	delete(m.Cards, id)
 }
 
-func (m *MockStorageManager) DeleteNotes(Id string) {
+func (m *MockStorageManager) DeleteNotes(id string) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
 	if m.DeleteNotesFunc != nil {
-		m.DeleteNotesFunc(Id)
+		m.DeleteNotesFunc(id)
 
 		return
 	}
-	delete(m.Notes, Id)
+	delete(m.Notes, id)
 }
 
-func (m *MockStorageManager) DeletePassword(Id string) {
+func (m *MockStorageManager) DeletePassword(id string) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
 	if m.DeletePasswordFunc != nil {
-		m.DeletePasswordFunc(Id)
+		m.DeletePasswordFunc(id)
 
 		return
 	}
-	delete(m.Passwords, Id)
+	delete(m.Passwords, id)
 }

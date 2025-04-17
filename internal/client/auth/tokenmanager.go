@@ -54,7 +54,10 @@ func (tm *TokenManager) LoadTokens() error {
 	}
 	defer file.Close()
 
-	dataObj := DataObject{}
+	dataObj := DataObject{
+		AccessToken:  "",
+		RefreshToken: "",
+	}
 
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&dataObj); err != nil {
@@ -64,6 +67,7 @@ func (tm *TokenManager) LoadTokens() error {
 	tm.isAuthorized = dataObj.AccessToken != "" && dataObj.RefreshToken != ""
 	tm.AccessToken = utils.NewString(dataObj.AccessToken)
 	tm.RefreshToken = utils.NewString(dataObj.RefreshToken)
+	tm.isAuthorized = true
 
 	return nil
 }
@@ -121,7 +125,6 @@ func (tm *TokenManager) HandleAuthFailure() {
 func (tm *TokenManager) SetAuthFailCallback(callback func()) {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
-	tm.isAuthorized = false
 	tm.onAuthFail = callback
 }
 

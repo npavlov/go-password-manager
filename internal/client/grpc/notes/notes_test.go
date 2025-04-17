@@ -1,4 +1,4 @@
-//nolint:err113,wrapcheck
+//nolint:err113,wrapcheck,forcetypeassert
 package notes_test
 
 import (
@@ -29,7 +29,10 @@ type MockTokenManager struct {
 	mock.Mock
 }
 
-func (m *MockNoteServiceClient) GetNote(ctx context.Context, in *note.GetNoteRequest, opts ...grpc.CallOption) (*note.GetNoteResponse, error) {
+func (m *MockNoteServiceClient) GetNote(ctx context.Context,
+	in *note.GetNoteRequest,
+	_ ...grpc.CallOption,
+) (*note.GetNoteResponse, error) {
 	args := m.Called(ctx, in)
 
 	// Safely handle nil to avoid type assertion panic
@@ -41,13 +44,19 @@ func (m *MockNoteServiceClient) GetNote(ctx context.Context, in *note.GetNoteReq
 	return arg, args.Error(1)
 }
 
-func (m *MockNoteServiceClient) GetNotes(ctx context.Context, in *note.GetNotesRequest, opts ...grpc.CallOption) (*note.GetNotesResponse, error) {
+func (m *MockNoteServiceClient) GetNotes(ctx context.Context,
+	in *note.GetNotesRequest,
+	_ ...grpc.CallOption,
+) (*note.GetNotesResponse, error) {
 	args := m.Called(ctx, in)
 
 	return args.Get(0).(*note.GetNotesResponse), args.Error(1)
 }
 
-func (m *MockNoteServiceClient) StoreNote(ctx context.Context, in *note.StoreNoteRequest, opts ...grpc.CallOption) (*note.StoreNoteResponse, error) {
+func (m *MockNoteServiceClient) StoreNote(ctx context.Context,
+	in *note.StoreNoteRequest,
+	_ ...grpc.CallOption,
+) (*note.StoreNoteResponse, error) {
 	args := m.Called(ctx, in)
 
 	arg, ok := args.Get(0).(*note.StoreNoteResponse)
@@ -58,7 +67,10 @@ func (m *MockNoteServiceClient) StoreNote(ctx context.Context, in *note.StoreNot
 	return arg, args.Error(1)
 }
 
-func (m *MockNoteServiceClient) DeleteNote(ctx context.Context, in *note.DeleteNoteRequest, opts ...grpc.CallOption) (*note.DeleteNoteResponse, error) {
+func (m *MockNoteServiceClient) DeleteNote(ctx context.Context,
+	in *note.DeleteNoteRequest,
+	_ ...grpc.CallOption,
+) (*note.DeleteNoteResponse, error) {
 	args := m.Called(ctx, in)
 
 	arg, ok := args.Get(0).(*note.DeleteNoteResponse)
@@ -178,6 +190,8 @@ func TestStoreNote_Error(t *testing.T) {
 }
 
 func TestDeleteNote_Success(t *testing.T) {
+	t.Parallel()
+
 	mockClient := new(MockNoteServiceClient)
 	logger := zerolog.Nop()
 
