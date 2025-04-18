@@ -410,6 +410,8 @@ func TestStorePassword_Validation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			_, err := svc.StorePasswordV1(ctx, tc.req)
 			require.Error(t, err)
 			require.Contains(t, err.Error(), tc.expectedErr)
@@ -445,6 +447,8 @@ func TestGetPassword_Validation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			_, err := svc.GetPasswordV1(ctx, tc.req)
 			require.Error(t, err)
 			require.Contains(t, err.Error(), tc.expectedErr)
