@@ -56,7 +56,7 @@ func TestStoreCard_Success(t *testing.T) {
 
 	svc, _, ctx := setupCardService(t)
 
-	req := &pb.StoreCardRequest{
+	req := &pb.StoreCardV1Request{
 		Card: &pb.CardData{
 			CardNumber:     "4111111111111111",
 			Cvv:            "123",
@@ -65,7 +65,7 @@ func TestStoreCard_Success(t *testing.T) {
 		},
 	}
 
-	resp, err := svc.StoreCard(ctx, req)
+	resp, err := svc.StoreCardV1(ctx, req)
 	require.NoError(t, err)
 	require.NotEmpty(t, resp.GetCardId())
 }
@@ -75,11 +75,11 @@ func TestStoreCard_InvalidInput(t *testing.T) {
 
 	svc, _, ctx := setupCardService(t)
 
-	req := &pb.StoreCardRequest{
+	req := &pb.StoreCardV1Request{
 		Card: &pb.CardData{}, // Missing required fields
 	}
 
-	_, err := svc.StoreCard(ctx, req)
+	_, err := svc.StoreCardV1(ctx, req)
 	require.Error(t, err)
 }
 
@@ -88,7 +88,7 @@ func TestGetCard_Success(t *testing.T) {
 
 	svc, _, ctx := setupCardService(t)
 
-	card, err := svc.StoreCard(ctx, &pb.StoreCardRequest{
+	card, err := svc.StoreCardV1(ctx, &pb.StoreCardV1Request{
 		Card: &pb.CardData{
 			CardNumber:     "4111111111111111",
 			Cvv:            "123",
@@ -98,11 +98,11 @@ func TestGetCard_Success(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	req := &pb.GetCardRequest{
+	req := &pb.GetCardV1Request{
 		CardId: card.GetCardId(),
 	}
 
-	resp, err := svc.GetCard(ctx, req)
+	resp, err := svc.GetCardV1(ctx, req)
 	require.NoError(t, err)
 	require.Equal(t, "4111111111111111", resp.GetCard().GetCardNumber())
 	require.Equal(t, "123", resp.GetCard().GetCvv())
@@ -115,7 +115,7 @@ func TestDeleteCard_Success(t *testing.T) {
 
 	svc, _, ctx := setupCardService(t)
 
-	created, err := svc.StoreCard(ctx, &pb.StoreCardRequest{
+	created, err := svc.StoreCardV1(ctx, &pb.StoreCardV1Request{
 		Card: &pb.CardData{
 			CardNumber:     "4111111111111111",
 			Cvv:            "123",
@@ -125,8 +125,8 @@ func TestDeleteCard_Success(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	req := &pb.DeleteCardRequest{CardId: created.GetCardId()}
-	resp, err := svc.DeleteCard(ctx, req)
+	req := &pb.DeleteCardV1Request{CardId: created.GetCardId()}
+	resp, err := svc.DeleteCardV1(ctx, req)
 	require.NoError(t, err)
 	require.True(t, resp.GetOk())
 }
@@ -136,7 +136,7 @@ func TestUpdateCard_Success(t *testing.T) {
 
 	svc, _, ctx := setupCardService(t)
 
-	created, err := svc.StoreCard(ctx, &pb.StoreCardRequest{
+	created, err := svc.StoreCardV1(ctx, &pb.StoreCardV1Request{
 		Card: &pb.CardData{
 			CardNumber:     "4111111111111111",
 			Cvv:            "123",
@@ -146,7 +146,7 @@ func TestUpdateCard_Success(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	updateReq := &pb.UpdateCardRequest{
+	updateReq := &pb.UpdateCardV1Request{
 		CardId: created.GetCardId(),
 		Data: &pb.CardData{
 			CardNumber:     "4000000000000002",
@@ -156,12 +156,12 @@ func TestUpdateCard_Success(t *testing.T) {
 		},
 	}
 
-	resp, err := svc.UpdateCard(ctx, updateReq)
+	resp, err := svc.UpdateCardV1(ctx, updateReq)
 	require.NoError(t, err)
 	require.Equal(t, created.GetCardId(), resp.GetCardId())
 
 	// Optionally verify updated data
-	card, err := svc.GetCard(ctx, &pb.GetCardRequest{CardId: created.GetCardId()})
+	card, err := svc.GetCardV1(ctx, &pb.GetCardV1Request{CardId: created.GetCardId()})
 	require.NoError(t, err)
 	require.Equal(t, "4000000000000002", card.GetCard().GetCardNumber())
 	require.Equal(t, "999", card.GetCard().GetCvv())
@@ -174,12 +174,12 @@ func TestUpdateCard_Invalid(t *testing.T) {
 
 	svc, _, ctx := setupCardService(t)
 
-	req := &pb.UpdateCardRequest{
+	req := &pb.UpdateCardV1Request{
 		CardId: "invalid-uuid",
 		Data:   &pb.CardData{}, // invalid data
 	}
 
-	_, err := svc.UpdateCard(ctx, req)
+	_, err := svc.UpdateCardV1(ctx, req)
 	require.Error(t, err)
 }
 
@@ -188,8 +188,8 @@ func TestGetCards_Empty(t *testing.T) {
 
 	svc, _, ctx := setupCardService(t)
 
-	req := &pb.GetCardsRequest{}
-	resp, err := svc.GetCards(ctx, req)
+	req := &pb.GetCardsV1Request{}
+	resp, err := svc.GetCardsV1(ctx, req)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 }
@@ -199,7 +199,7 @@ func TestStoreCard_MissingContext(t *testing.T) {
 
 	svc, _, _ := setupCardService(t)
 
-	req := &pb.StoreCardRequest{
+	req := &pb.StoreCardV1Request{
 		Card: &pb.CardData{
 			CardNumber:     "4111111111111111",
 			Cvv:            "123",
@@ -208,7 +208,7 @@ func TestStoreCard_MissingContext(t *testing.T) {
 		},
 	}
 
-	_, err := svc.StoreCard(t.Context(), req) // no user context
+	_, err := svc.StoreCardV1(t.Context(), req) // no user context
 	require.Error(t, err)
 }
 
@@ -217,8 +217,8 @@ func TestDeleteCard_InvalidId(t *testing.T) {
 
 	svc, _, ctx := setupCardService(t)
 
-	req := &pb.DeleteCardRequest{CardId: "invalid-id"}
-	_, err := svc.DeleteCard(ctx, req)
+	req := &pb.DeleteCardV1Request{CardId: "invalid-id"}
+	_, err := svc.DeleteCardV1(ctx, req)
 	require.Error(t, err)
 }
 
@@ -227,7 +227,7 @@ func TestUpdateCard_GetUserIdFailure(t *testing.T) {
 
 	svc, _, _ := setupCardService(t)
 
-	req := &pb.UpdateCardRequest{
+	req := &pb.UpdateCardV1Request{
 		CardId: uuid.NewString(),
 		Data: &pb.CardData{
 			CardNumber:     "4111111111111111",
@@ -237,7 +237,7 @@ func TestUpdateCard_GetUserIdFailure(t *testing.T) {
 		},
 	}
 
-	_, err := svc.UpdateCard(t.Context(), req) // no user context
+	_, err := svc.UpdateCardV1(t.Context(), req) // no user context
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error getting decrypted user UUID")
 }
@@ -247,7 +247,7 @@ func TestGetCards_ValidEmpty(t *testing.T) {
 
 	svc, _, ctx := setupCardService(t)
 
-	resp, err := svc.GetCards(ctx, &pb.GetCardsRequest{})
+	resp, err := svc.GetCardsV1(ctx, &pb.GetCardsV1Request{})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	require.Empty(t, resp.GetCards())
@@ -258,7 +258,7 @@ func TestDeleteCard_InvalidUUID(t *testing.T) {
 
 	svc, _, ctx := setupCardService(t)
 
-	_, err := svc.DeleteCard(ctx, &pb.DeleteCardRequest{
+	_, err := svc.DeleteCardV1(ctx, &pb.DeleteCardV1Request{
 		CardId: "not-a-uuid",
 	})
 	require.Error(t, err)
@@ -290,7 +290,7 @@ func TestStoreCard_DuplicateCardNumber(t *testing.T) {
 
 	svc, _, ctx := setupCardService(t)
 
-	req := &pb.StoreCardRequest{
+	req := &pb.StoreCardV1Request{
 		Card: &pb.CardData{
 			CardNumber:     "4111111111111111",
 			Cvv:            "123",
@@ -300,11 +300,11 @@ func TestStoreCard_DuplicateCardNumber(t *testing.T) {
 	}
 
 	// First store should succeed
-	_, err := svc.StoreCard(ctx, req)
+	_, err := svc.StoreCardV1(ctx, req)
 	require.NoError(t, err)
 
 	// Second store with same card number should fail
-	_, err = svc.StoreCard(ctx, req)
+	_, err = svc.StoreCardV1(ctx, req)
 	require.Error(t, err)
 }
 
@@ -313,11 +313,11 @@ func TestGetCard_NotFound(t *testing.T) {
 
 	svc, _, ctx := setupCardService(t)
 
-	req := &pb.GetCardRequest{
+	req := &pb.GetCardV1Request{
 		CardId: uuid.NewString(), // Non-existent ID
 	}
 
-	_, err := svc.GetCard(ctx, req)
+	_, err := svc.GetCardV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "not found")
 }
@@ -328,7 +328,7 @@ func TestGetCard_WrongUser(t *testing.T) {
 	svc, storage, ctx := setupCardService(t)
 
 	// Create card for first user
-	card, err := svc.StoreCard(ctx, &pb.StoreCardRequest{
+	card, err := svc.StoreCardV1(ctx, &pb.StoreCardV1Request{
 		Card: &pb.CardData{
 			CardNumber:     "4111111111111111",
 			Cvv:            "123",
@@ -350,8 +350,8 @@ func TestGetCard_WrongUser(t *testing.T) {
 	ctx2 := testutils.InjectUserToContext(t.Context(), user2.ID.String())
 
 	// Try to access first user's card with second user
-	req := &pb.GetCardRequest{CardId: card.GetCardId()}
-	_, err = svc.GetCard(ctx2, req)
+	req := &pb.GetCardV1Request{CardId: card.GetCardId()}
+	_, err = svc.GetCardV1(ctx2, req)
 	require.Error(t, err)
 }
 
@@ -360,7 +360,7 @@ func TestUpdateCard_NotFound(t *testing.T) {
 
 	svc, _, ctx := setupCardService(t)
 
-	req := &pb.UpdateCardRequest{
+	req := &pb.UpdateCardV1Request{
 		CardId: uuid.NewString(), // Non-existent ID
 		Data: &pb.CardData{
 			CardNumber:     "4000000000000002",
@@ -370,7 +370,7 @@ func TestUpdateCard_NotFound(t *testing.T) {
 		},
 	}
 
-	_, err := svc.UpdateCard(ctx, req)
+	_, err := svc.UpdateCardV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "not found")
 }
@@ -380,11 +380,11 @@ func TestDeleteCard_NotFound(t *testing.T) {
 
 	svc, _, ctx := setupCardService(t)
 
-	req := &pb.DeleteCardRequest{
+	req := &pb.DeleteCardV1Request{
 		CardId: uuid.NewString(), // Non-existent ID
 	}
 
-	_, err := svc.DeleteCard(ctx, req)
+	_, err := svc.DeleteCardV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "not found")
 }
@@ -413,7 +413,7 @@ func TestStoreCard_EncryptionFailure(t *testing.T) {
 	//nolint:revive,staticcheck
 	ctx = context.WithValue(ctx, "user_id", uuid.NewString())
 
-	req := &pb.StoreCardRequest{
+	req := &pb.StoreCardV1Request{
 		Card: &pb.CardData{
 			CardNumber:     "4111111111111111",
 			Cvv:            "123",
@@ -422,7 +422,7 @@ func TestStoreCard_EncryptionFailure(t *testing.T) {
 		},
 	}
 
-	_, err := svc.StoreCard(ctx, req)
+	_, err := svc.StoreCardV1(ctx, req)
 	require.Error(t, err)
 }
 
@@ -432,7 +432,7 @@ func TestGetCard_DecryptionFailure(t *testing.T) {
 	svc, storage, ctx := setupCardService(t)
 
 	// Store card normally
-	card, err := svc.StoreCard(ctx, &pb.StoreCardRequest{
+	card, err := svc.StoreCardV1(ctx, &pb.StoreCardV1Request{
 		Card: &pb.CardData{
 			CardNumber:     "4111111111111111",
 			Cvv:            "123",
@@ -455,8 +455,8 @@ func TestGetCard_DecryptionFailure(t *testing.T) {
 	user.EncryptionKey, _ = utils.Encrypt(newKey, newMasterKey)
 	storage.UsersByID[userGUID] = user
 
-	req := &pb.GetCardRequest{CardId: card.GetCardId()}
-	_, err = svc.GetCard(ctx, req)
+	req := &pb.GetCardV1Request{CardId: card.GetCardId()}
+	_, err = svc.GetCardV1(ctx, req)
 	require.Error(t, err)
 }
 
@@ -588,8 +588,8 @@ func TestCardValidation(t *testing.T) {
 			t.Parallel()
 
 			// Test StoreCard validation
-			storeReq := &pb.StoreCardRequest{Card: tc.card}
-			_, err := svc.StoreCard(ctx, storeReq)
+			storeReq := &pb.StoreCardV1Request{Card: tc.card}
+			_, err := svc.StoreCardV1(ctx, storeReq)
 
 			if tc.shouldError {
 				require.Error(t, err)
@@ -601,7 +601,7 @@ func TestCardValidation(t *testing.T) {
 			// Test UpdateCard validation (only if we have a valid card to update)
 			if !tc.shouldError {
 				// First create a card to update
-				storeResp, err := svc.StoreCard(ctx, &pb.StoreCardRequest{
+				storeResp, err := svc.StoreCardV1(ctx, &pb.StoreCardV1Request{
 					Card: &pb.CardData{
 						CardNumber:     "5555555555554444", // Different card number
 						Cvv:            "321",
@@ -612,11 +612,11 @@ func TestCardValidation(t *testing.T) {
 				require.NoError(t, err)
 
 				// Now try to update with test case data
-				updateReq := &pb.UpdateCardRequest{
+				updateReq := &pb.UpdateCardV1Request{
 					CardId: storeResp.GetCardId(),
 					Data:   tc.card,
 				}
-				_, err = svc.UpdateCard(ctx, updateReq)
+				_, err = svc.UpdateCardV1(ctx, updateReq)
 
 				if tc.shouldError {
 					require.Error(t, err)

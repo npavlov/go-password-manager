@@ -25,9 +25,9 @@ func TokenInterceptor(log *zerolog.Logger, jwtSecret string, memSt redis.MemStor
 	) (interface{}, error) {
 		// List of methods that should bypass token verification
 		skipMethods := map[string]bool{
-			pb.AuthService_Register_FullMethodName:     true,
-			pb.AuthService_Login_FullMethodName:        true,
-			pb.AuthService_RefreshToken_FullMethodName: true,
+			pb.AuthService_RegisterV1_FullMethodName:     true,
+			pb.AuthService_LoginV1_FullMethodName:        true,
+			pb.AuthService_RefreshTokenV1_FullMethodName: true,
 		}
 
 		// Skip authentication for specified methods

@@ -19,22 +19,30 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PasswordService_StorePassword_FullMethodName  = "/proto.password.PasswordService/StorePassword"
-	PasswordService_GetPassword_FullMethodName    = "/proto.password.PasswordService/GetPassword"
-	PasswordService_GetPasswords_FullMethodName   = "/proto.password.PasswordService/GetPasswords"
-	PasswordService_UpdatePassword_FullMethodName = "/proto.password.PasswordService/UpdatePassword"
-	PasswordService_DeletePassword_FullMethodName = "/proto.password.PasswordService/DeletePassword"
+	PasswordService_StorePasswordV1_FullMethodName  = "/proto.password.PasswordService/StorePasswordV1"
+	PasswordService_GetPasswordV1_FullMethodName    = "/proto.password.PasswordService/GetPasswordV1"
+	PasswordService_GetPasswordsV1_FullMethodName   = "/proto.password.PasswordService/GetPasswordsV1"
+	PasswordService_UpdatePasswordV1_FullMethodName = "/proto.password.PasswordService/UpdatePasswordV1"
+	PasswordService_DeletePasswordV1_FullMethodName = "/proto.password.PasswordService/DeletePasswordV1"
 )
 
 // PasswordServiceClient is the client API for PasswordService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// PasswordService provides methods for securely managing user passwords,
+// including storing, retrieving, updating, and deleting password entries.
 type PasswordServiceClient interface {
-	StorePassword(ctx context.Context, in *StorePasswordRequest, opts ...grpc.CallOption) (*StorePasswordResponse, error)
-	GetPassword(ctx context.Context, in *GetPasswordRequest, opts ...grpc.CallOption) (*GetPasswordResponse, error)
-	GetPasswords(ctx context.Context, in *GetPasswordsRequest, opts ...grpc.CallOption) (*GetPasswordsResponse, error)
-	UpdatePassword(ctx context.Context, in *UpdatePasswordRequest, opts ...grpc.CallOption) (*UpdatePasswordResponse, error)
-	DeletePassword(ctx context.Context, in *DeletePasswordRequest, opts ...grpc.CallOption) (*DeletePasswordResponse, error)
+	// Store a new password entry.
+	StorePasswordV1(ctx context.Context, in *StorePasswordV1Request, opts ...grpc.CallOption) (*StorePasswordV1Response, error)
+	// Retrieve a single password entry by its ID.
+	GetPasswordV1(ctx context.Context, in *GetPasswordV1Request, opts ...grpc.CallOption) (*GetPasswordV1Response, error)
+	// Retrieve all stored password entries.
+	GetPasswordsV1(ctx context.Context, in *GetPasswordsV1Request, opts ...grpc.CallOption) (*GetPasswordsV1Response, error)
+	// Update an existing password entry.
+	UpdatePasswordV1(ctx context.Context, in *UpdatePasswordV1Request, opts ...grpc.CallOption) (*UpdatePasswordV1Response, error)
+	// Delete a password entry by its ID.
+	DeletePasswordV1(ctx context.Context, in *DeletePasswordV1Request, opts ...grpc.CallOption) (*DeletePasswordV1Response, error)
 }
 
 type passwordServiceClient struct {
@@ -45,50 +53,50 @@ func NewPasswordServiceClient(cc grpc.ClientConnInterface) PasswordServiceClient
 	return &passwordServiceClient{cc}
 }
 
-func (c *passwordServiceClient) StorePassword(ctx context.Context, in *StorePasswordRequest, opts ...grpc.CallOption) (*StorePasswordResponse, error) {
+func (c *passwordServiceClient) StorePasswordV1(ctx context.Context, in *StorePasswordV1Request, opts ...grpc.CallOption) (*StorePasswordV1Response, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(StorePasswordResponse)
-	err := c.cc.Invoke(ctx, PasswordService_StorePassword_FullMethodName, in, out, cOpts...)
+	out := new(StorePasswordV1Response)
+	err := c.cc.Invoke(ctx, PasswordService_StorePasswordV1_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *passwordServiceClient) GetPassword(ctx context.Context, in *GetPasswordRequest, opts ...grpc.CallOption) (*GetPasswordResponse, error) {
+func (c *passwordServiceClient) GetPasswordV1(ctx context.Context, in *GetPasswordV1Request, opts ...grpc.CallOption) (*GetPasswordV1Response, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetPasswordResponse)
-	err := c.cc.Invoke(ctx, PasswordService_GetPassword_FullMethodName, in, out, cOpts...)
+	out := new(GetPasswordV1Response)
+	err := c.cc.Invoke(ctx, PasswordService_GetPasswordV1_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *passwordServiceClient) GetPasswords(ctx context.Context, in *GetPasswordsRequest, opts ...grpc.CallOption) (*GetPasswordsResponse, error) {
+func (c *passwordServiceClient) GetPasswordsV1(ctx context.Context, in *GetPasswordsV1Request, opts ...grpc.CallOption) (*GetPasswordsV1Response, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetPasswordsResponse)
-	err := c.cc.Invoke(ctx, PasswordService_GetPasswords_FullMethodName, in, out, cOpts...)
+	out := new(GetPasswordsV1Response)
+	err := c.cc.Invoke(ctx, PasswordService_GetPasswordsV1_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *passwordServiceClient) UpdatePassword(ctx context.Context, in *UpdatePasswordRequest, opts ...grpc.CallOption) (*UpdatePasswordResponse, error) {
+func (c *passwordServiceClient) UpdatePasswordV1(ctx context.Context, in *UpdatePasswordV1Request, opts ...grpc.CallOption) (*UpdatePasswordV1Response, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UpdatePasswordResponse)
-	err := c.cc.Invoke(ctx, PasswordService_UpdatePassword_FullMethodName, in, out, cOpts...)
+	out := new(UpdatePasswordV1Response)
+	err := c.cc.Invoke(ctx, PasswordService_UpdatePasswordV1_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *passwordServiceClient) DeletePassword(ctx context.Context, in *DeletePasswordRequest, opts ...grpc.CallOption) (*DeletePasswordResponse, error) {
+func (c *passwordServiceClient) DeletePasswordV1(ctx context.Context, in *DeletePasswordV1Request, opts ...grpc.CallOption) (*DeletePasswordV1Response, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(DeletePasswordResponse)
-	err := c.cc.Invoke(ctx, PasswordService_DeletePassword_FullMethodName, in, out, cOpts...)
+	out := new(DeletePasswordV1Response)
+	err := c.cc.Invoke(ctx, PasswordService_DeletePasswordV1_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -98,12 +106,20 @@ func (c *passwordServiceClient) DeletePassword(ctx context.Context, in *DeletePa
 // PasswordServiceServer is the server API for PasswordService service.
 // All implementations must embed UnimplementedPasswordServiceServer
 // for forward compatibility.
+//
+// PasswordService provides methods for securely managing user passwords,
+// including storing, retrieving, updating, and deleting password entries.
 type PasswordServiceServer interface {
-	StorePassword(context.Context, *StorePasswordRequest) (*StorePasswordResponse, error)
-	GetPassword(context.Context, *GetPasswordRequest) (*GetPasswordResponse, error)
-	GetPasswords(context.Context, *GetPasswordsRequest) (*GetPasswordsResponse, error)
-	UpdatePassword(context.Context, *UpdatePasswordRequest) (*UpdatePasswordResponse, error)
-	DeletePassword(context.Context, *DeletePasswordRequest) (*DeletePasswordResponse, error)
+	// Store a new password entry.
+	StorePasswordV1(context.Context, *StorePasswordV1Request) (*StorePasswordV1Response, error)
+	// Retrieve a single password entry by its ID.
+	GetPasswordV1(context.Context, *GetPasswordV1Request) (*GetPasswordV1Response, error)
+	// Retrieve all stored password entries.
+	GetPasswordsV1(context.Context, *GetPasswordsV1Request) (*GetPasswordsV1Response, error)
+	// Update an existing password entry.
+	UpdatePasswordV1(context.Context, *UpdatePasswordV1Request) (*UpdatePasswordV1Response, error)
+	// Delete a password entry by its ID.
+	DeletePasswordV1(context.Context, *DeletePasswordV1Request) (*DeletePasswordV1Response, error)
 	mustEmbedUnimplementedPasswordServiceServer()
 }
 
@@ -114,20 +130,20 @@ type PasswordServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedPasswordServiceServer struct{}
 
-func (UnimplementedPasswordServiceServer) StorePassword(context.Context, *StorePasswordRequest) (*StorePasswordResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method StorePassword not implemented")
+func (UnimplementedPasswordServiceServer) StorePasswordV1(context.Context, *StorePasswordV1Request) (*StorePasswordV1Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StorePasswordV1 not implemented")
 }
-func (UnimplementedPasswordServiceServer) GetPassword(context.Context, *GetPasswordRequest) (*GetPasswordResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetPassword not implemented")
+func (UnimplementedPasswordServiceServer) GetPasswordV1(context.Context, *GetPasswordV1Request) (*GetPasswordV1Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPasswordV1 not implemented")
 }
-func (UnimplementedPasswordServiceServer) GetPasswords(context.Context, *GetPasswordsRequest) (*GetPasswordsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetPasswords not implemented")
+func (UnimplementedPasswordServiceServer) GetPasswordsV1(context.Context, *GetPasswordsV1Request) (*GetPasswordsV1Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPasswordsV1 not implemented")
 }
-func (UnimplementedPasswordServiceServer) UpdatePassword(context.Context, *UpdatePasswordRequest) (*UpdatePasswordResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdatePassword not implemented")
+func (UnimplementedPasswordServiceServer) UpdatePasswordV1(context.Context, *UpdatePasswordV1Request) (*UpdatePasswordV1Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdatePasswordV1 not implemented")
 }
-func (UnimplementedPasswordServiceServer) DeletePassword(context.Context, *DeletePasswordRequest) (*DeletePasswordResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeletePassword not implemented")
+func (UnimplementedPasswordServiceServer) DeletePasswordV1(context.Context, *DeletePasswordV1Request) (*DeletePasswordV1Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeletePasswordV1 not implemented")
 }
 func (UnimplementedPasswordServiceServer) mustEmbedUnimplementedPasswordServiceServer() {}
 func (UnimplementedPasswordServiceServer) testEmbeddedByValue()                         {}
@@ -150,92 +166,92 @@ func RegisterPasswordServiceServer(s grpc.ServiceRegistrar, srv PasswordServiceS
 	s.RegisterService(&PasswordService_ServiceDesc, srv)
 }
 
-func _PasswordService_StorePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StorePasswordRequest)
+func _PasswordService_StorePasswordV1_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StorePasswordV1Request)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PasswordServiceServer).StorePassword(ctx, in)
+		return srv.(PasswordServiceServer).StorePasswordV1(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PasswordService_StorePassword_FullMethodName,
+		FullMethod: PasswordService_StorePasswordV1_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PasswordServiceServer).StorePassword(ctx, req.(*StorePasswordRequest))
+		return srv.(PasswordServiceServer).StorePasswordV1(ctx, req.(*StorePasswordV1Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PasswordService_GetPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetPasswordRequest)
+func _PasswordService_GetPasswordV1_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPasswordV1Request)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PasswordServiceServer).GetPassword(ctx, in)
+		return srv.(PasswordServiceServer).GetPasswordV1(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PasswordService_GetPassword_FullMethodName,
+		FullMethod: PasswordService_GetPasswordV1_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PasswordServiceServer).GetPassword(ctx, req.(*GetPasswordRequest))
+		return srv.(PasswordServiceServer).GetPasswordV1(ctx, req.(*GetPasswordV1Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PasswordService_GetPasswords_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetPasswordsRequest)
+func _PasswordService_GetPasswordsV1_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPasswordsV1Request)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PasswordServiceServer).GetPasswords(ctx, in)
+		return srv.(PasswordServiceServer).GetPasswordsV1(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PasswordService_GetPasswords_FullMethodName,
+		FullMethod: PasswordService_GetPasswordsV1_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PasswordServiceServer).GetPasswords(ctx, req.(*GetPasswordsRequest))
+		return srv.(PasswordServiceServer).GetPasswordsV1(ctx, req.(*GetPasswordsV1Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PasswordService_UpdatePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdatePasswordRequest)
+func _PasswordService_UpdatePasswordV1_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdatePasswordV1Request)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PasswordServiceServer).UpdatePassword(ctx, in)
+		return srv.(PasswordServiceServer).UpdatePasswordV1(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PasswordService_UpdatePassword_FullMethodName,
+		FullMethod: PasswordService_UpdatePasswordV1_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PasswordServiceServer).UpdatePassword(ctx, req.(*UpdatePasswordRequest))
+		return srv.(PasswordServiceServer).UpdatePasswordV1(ctx, req.(*UpdatePasswordV1Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PasswordService_DeletePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeletePasswordRequest)
+func _PasswordService_DeletePasswordV1_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeletePasswordV1Request)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PasswordServiceServer).DeletePassword(ctx, in)
+		return srv.(PasswordServiceServer).DeletePasswordV1(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PasswordService_DeletePassword_FullMethodName,
+		FullMethod: PasswordService_DeletePasswordV1_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PasswordServiceServer).DeletePassword(ctx, req.(*DeletePasswordRequest))
+		return srv.(PasswordServiceServer).DeletePasswordV1(ctx, req.(*DeletePasswordV1Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -248,24 +264,24 @@ var PasswordService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*PasswordServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "StorePassword",
-			Handler:    _PasswordService_StorePassword_Handler,
+			MethodName: "StorePasswordV1",
+			Handler:    _PasswordService_StorePasswordV1_Handler,
 		},
 		{
-			MethodName: "GetPassword",
-			Handler:    _PasswordService_GetPassword_Handler,
+			MethodName: "GetPasswordV1",
+			Handler:    _PasswordService_GetPasswordV1_Handler,
 		},
 		{
-			MethodName: "GetPasswords",
-			Handler:    _PasswordService_GetPasswords_Handler,
+			MethodName: "GetPasswordsV1",
+			Handler:    _PasswordService_GetPasswordsV1_Handler,
 		},
 		{
-			MethodName: "UpdatePassword",
-			Handler:    _PasswordService_UpdatePassword_Handler,
+			MethodName: "UpdatePasswordV1",
+			Handler:    _PasswordService_UpdatePasswordV1_Handler,
 		},
 		{
-			MethodName: "DeletePassword",
-			Handler:    _PasswordService_DeletePassword_Handler,
+			MethodName: "DeletePasswordV1",
+			Handler:    _PasswordService_DeletePasswordV1_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

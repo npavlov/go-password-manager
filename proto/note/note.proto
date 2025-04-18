@@ -2,51 +2,99 @@ syntax = "proto3";
 
 package proto.note;
 
-option go_package = "github.com/npavlov/go-password-manager/proto/note";
+// Go package option for generated code
+option go_package = "github.com/npavlov/go-password-manager/gen/note";
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 
+//
+// NoteService provides operations for storing, retrieving,
+// listing, and deleting secure notes.
+//
 service NoteService {
-    rpc StoreNote (StoreNoteRequest) returns (StoreNoteResponse);
-    rpc GetNote (GetNoteRequest) returns (GetNoteResponse);
-    rpc GetNotes (GetNotesRequest) returns (GetNotesResponse);
-    rpc DeleteNote (DeleteNoteRequest) returns (DeleteNoteResponse);
+    // Store a new note or update an existing one.
+    rpc StoreNoteV1 (StoreNoteV1Request) returns (StoreNoteV1Response);
+
+    // Retrieve a single note by its ID.
+    rpc GetNoteV1 (GetNoteV1Request) returns (GetNoteV1Response);
+
+    // Retrieve all stored notes.
+    rpc GetNotesV1 (GetNotesV1Request) returns (GetNotesV1Response);
+
+    // Delete a note by its ID.
+    rpc DeleteNoteV1 (DeleteNoteV1Request) returns (DeleteNoteV1Response);
 }
 
-message StoreNoteRequest {
+//
+// Request to store or update a secure note.
+//
+message StoreNoteV1Request {
+    // Note data to store.
     NoteData note = 1;
 }
 
-message StoreNoteResponse {
+//
+// Response after storing a note.
+//
+message StoreNoteV1Response {
+    // ID of the newly created or updated note.
     string note_id = 1;
 }
 
-message GetNotesRequest {
+//
+// Request to get all stored notes.
+//
+message GetNotesV1Request {
 }
 
-message GetNotesResponse {
+//
+// Response containing a list of all stored notes.
+//
+message GetNotesV1Response {
+    // List of notes.
     repeated NoteData notes = 1;
 }
 
-
-message GetNoteRequest {
-    string note_id = 1  [(buf.validate.field).string.uuid = true];
+//
+// Request to retrieve a single note.
+//
+message GetNoteV1Request {
+    // ID of the note to retrieve (UUID format).
+    string note_id = 1 [(buf.validate.field).string.uuid = true];
 }
 
-message GetNoteResponse {
+//
+// Response containing the note and its last update timestamp.
+//
+message GetNoteV1Response {
+    // Retrieved note data.
     NoteData note = 1;
+
+    // Timestamp of the most recent update.
     google.protobuf.Timestamp last_update = 2;
 }
 
-message DeleteNoteRequest {
-    string note_id = 1  [(buf.validate.field).string.uuid = true];
+//
+// Request to delete a note.
+//
+message DeleteNoteV1Request {
+    // ID of the note to delete (UUID format).
+    string note_id = 1 [(buf.validate.field).string.uuid = true];
 }
 
-message DeleteNoteResponse {
+//
+// Response after deleting a note.
+//
+message DeleteNoteV1Response {
+    // True if the note was successfully deleted.
     bool ok = 1;
 }
 
+//
+// Data structure representing a secure note.
+//
 message NoteData {
+    // Content of the note (minimum 3 characters).
     string content = 1 [(buf.validate.field).string.min_len = 3];
 }

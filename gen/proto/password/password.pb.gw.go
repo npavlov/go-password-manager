@@ -35,123 +35,123 @@ var (
 	_ = metadata.Join
 )
 
-func request_PasswordService_StorePassword_0(ctx context.Context, marshaler runtime.Marshaler, client PasswordServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_PasswordService_StorePasswordV1_0(ctx context.Context, marshaler runtime.Marshaler, client PasswordServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq StorePasswordRequest
+		protoReq StorePasswordV1Request
 		metadata runtime.ServerMetadata
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	msg, err := client.StorePassword(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.StorePasswordV1(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
 
-func local_request_PasswordService_StorePassword_0(ctx context.Context, marshaler runtime.Marshaler, server PasswordServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_PasswordService_StorePasswordV1_0(ctx context.Context, marshaler runtime.Marshaler, server PasswordServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq StorePasswordRequest
+		protoReq StorePasswordV1Request
 		metadata runtime.ServerMetadata
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	msg, err := server.StorePassword(ctx, &protoReq)
+	msg, err := server.StorePasswordV1(ctx, &protoReq)
 	return msg, metadata, err
 }
 
-func request_PasswordService_GetPassword_0(ctx context.Context, marshaler runtime.Marshaler, client PasswordServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_PasswordService_GetPasswordV1_0(ctx context.Context, marshaler runtime.Marshaler, client PasswordServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq GetPasswordRequest
+		protoReq GetPasswordV1Request
 		metadata runtime.ServerMetadata
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	msg, err := client.GetPassword(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.GetPasswordV1(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
 
-func local_request_PasswordService_GetPassword_0(ctx context.Context, marshaler runtime.Marshaler, server PasswordServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_PasswordService_GetPasswordV1_0(ctx context.Context, marshaler runtime.Marshaler, server PasswordServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq GetPasswordRequest
+		protoReq GetPasswordV1Request
 		metadata runtime.ServerMetadata
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	msg, err := server.GetPassword(ctx, &protoReq)
+	msg, err := server.GetPasswordV1(ctx, &protoReq)
 	return msg, metadata, err
 }
 
-func request_PasswordService_GetPasswords_0(ctx context.Context, marshaler runtime.Marshaler, client PasswordServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_PasswordService_GetPasswordsV1_0(ctx context.Context, marshaler runtime.Marshaler, client PasswordServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq GetPasswordsRequest
+		protoReq GetPasswordsV1Request
 		metadata runtime.ServerMetadata
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	msg, err := client.GetPasswords(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.GetPasswordsV1(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
 
-func local_request_PasswordService_GetPasswords_0(ctx context.Context, marshaler runtime.Marshaler, server PasswordServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_PasswordService_GetPasswordsV1_0(ctx context.Context, marshaler runtime.Marshaler, server PasswordServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq GetPasswordsRequest
+		protoReq GetPasswordsV1Request
 		metadata runtime.ServerMetadata
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	msg, err := server.GetPasswords(ctx, &protoReq)
+	msg, err := server.GetPasswordsV1(ctx, &protoReq)
 	return msg, metadata, err
 }
 
-func request_PasswordService_UpdatePassword_0(ctx context.Context, marshaler runtime.Marshaler, client PasswordServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_PasswordService_UpdatePasswordV1_0(ctx context.Context, marshaler runtime.Marshaler, client PasswordServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq UpdatePasswordRequest
+		protoReq UpdatePasswordV1Request
 		metadata runtime.ServerMetadata
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	msg, err := client.UpdatePassword(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.UpdatePasswordV1(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
 
-func local_request_PasswordService_UpdatePassword_0(ctx context.Context, marshaler runtime.Marshaler, server PasswordServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_PasswordService_UpdatePasswordV1_0(ctx context.Context, marshaler runtime.Marshaler, server PasswordServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq UpdatePasswordRequest
+		protoReq UpdatePasswordV1Request
 		metadata runtime.ServerMetadata
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	msg, err := server.UpdatePassword(ctx, &protoReq)
+	msg, err := server.UpdatePasswordV1(ctx, &protoReq)
 	return msg, metadata, err
 }
 
-func request_PasswordService_DeletePassword_0(ctx context.Context, marshaler runtime.Marshaler, client PasswordServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_PasswordService_DeletePasswordV1_0(ctx context.Context, marshaler runtime.Marshaler, client PasswordServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq DeletePasswordRequest
+		protoReq DeletePasswordV1Request
 		metadata runtime.ServerMetadata
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	msg, err := client.DeletePassword(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.DeletePasswordV1(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
 
-func local_request_PasswordService_DeletePassword_0(ctx context.Context, marshaler runtime.Marshaler, server PasswordServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_PasswordService_DeletePasswordV1_0(ctx context.Context, marshaler runtime.Marshaler, server PasswordServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq DeletePasswordRequest
+		protoReq DeletePasswordV1Request
 		metadata runtime.ServerMetadata
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	msg, err := server.DeletePassword(ctx, &protoReq)
+	msg, err := server.DeletePasswordV1(ctx, &protoReq)
 	return msg, metadata, err
 }
 
@@ -161,105 +161,105 @@ func local_request_PasswordService_DeletePassword_0(ctx context.Context, marshal
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterPasswordServiceHandlerFromEndpoint instead.
 // GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterPasswordServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server PasswordServiceServer) error {
-	mux.Handle(http.MethodPost, pattern_PasswordService_StorePassword_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_PasswordService_StorePasswordV1_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/proto.password.PasswordService/StorePassword", runtime.WithHTTPPathPattern("/proto.password.PasswordService/StorePassword"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/proto.password.PasswordService/StorePasswordV1", runtime.WithHTTPPathPattern("/proto.password.PasswordService/StorePasswordV1"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PasswordService_StorePassword_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PasswordService_StorePasswordV1_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_PasswordService_StorePassword_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PasswordService_StorePasswordV1_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
-	mux.Handle(http.MethodPost, pattern_PasswordService_GetPassword_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_PasswordService_GetPasswordV1_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/proto.password.PasswordService/GetPassword", runtime.WithHTTPPathPattern("/proto.password.PasswordService/GetPassword"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/proto.password.PasswordService/GetPasswordV1", runtime.WithHTTPPathPattern("/proto.password.PasswordService/GetPasswordV1"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PasswordService_GetPassword_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PasswordService_GetPasswordV1_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_PasswordService_GetPassword_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PasswordService_GetPasswordV1_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
-	mux.Handle(http.MethodPost, pattern_PasswordService_GetPasswords_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_PasswordService_GetPasswordsV1_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/proto.password.PasswordService/GetPasswords", runtime.WithHTTPPathPattern("/proto.password.PasswordService/GetPasswords"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/proto.password.PasswordService/GetPasswordsV1", runtime.WithHTTPPathPattern("/proto.password.PasswordService/GetPasswordsV1"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PasswordService_GetPasswords_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PasswordService_GetPasswordsV1_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_PasswordService_GetPasswords_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PasswordService_GetPasswordsV1_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
-	mux.Handle(http.MethodPost, pattern_PasswordService_UpdatePassword_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_PasswordService_UpdatePasswordV1_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/proto.password.PasswordService/UpdatePassword", runtime.WithHTTPPathPattern("/proto.password.PasswordService/UpdatePassword"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/proto.password.PasswordService/UpdatePasswordV1", runtime.WithHTTPPathPattern("/proto.password.PasswordService/UpdatePasswordV1"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PasswordService_UpdatePassword_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PasswordService_UpdatePasswordV1_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_PasswordService_UpdatePassword_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PasswordService_UpdatePasswordV1_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
-	mux.Handle(http.MethodPost, pattern_PasswordService_DeletePassword_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_PasswordService_DeletePasswordV1_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/proto.password.PasswordService/DeletePassword", runtime.WithHTTPPathPattern("/proto.password.PasswordService/DeletePassword"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/proto.password.PasswordService/DeletePasswordV1", runtime.WithHTTPPathPattern("/proto.password.PasswordService/DeletePasswordV1"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PasswordService_DeletePassword_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PasswordService_DeletePasswordV1_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_PasswordService_DeletePassword_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PasswordService_DeletePasswordV1_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
 
 	return nil
@@ -301,106 +301,106 @@ func RegisterPasswordServiceHandler(ctx context.Context, mux *runtime.ServeMux, 
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
 // "PasswordServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterPasswordServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client PasswordServiceClient) error {
-	mux.Handle(http.MethodPost, pattern_PasswordService_StorePassword_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_PasswordService_StorePasswordV1_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/proto.password.PasswordService/StorePassword", runtime.WithHTTPPathPattern("/proto.password.PasswordService/StorePassword"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/proto.password.PasswordService/StorePasswordV1", runtime.WithHTTPPathPattern("/proto.password.PasswordService/StorePasswordV1"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_PasswordService_StorePassword_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PasswordService_StorePasswordV1_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_PasswordService_StorePassword_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PasswordService_StorePasswordV1_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
-	mux.Handle(http.MethodPost, pattern_PasswordService_GetPassword_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_PasswordService_GetPasswordV1_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/proto.password.PasswordService/GetPassword", runtime.WithHTTPPathPattern("/proto.password.PasswordService/GetPassword"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/proto.password.PasswordService/GetPasswordV1", runtime.WithHTTPPathPattern("/proto.password.PasswordService/GetPasswordV1"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_PasswordService_GetPassword_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PasswordService_GetPasswordV1_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_PasswordService_GetPassword_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PasswordService_GetPasswordV1_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
-	mux.Handle(http.MethodPost, pattern_PasswordService_GetPasswords_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_PasswordService_GetPasswordsV1_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/proto.password.PasswordService/GetPasswords", runtime.WithHTTPPathPattern("/proto.password.PasswordService/GetPasswords"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/proto.password.PasswordService/GetPasswordsV1", runtime.WithHTTPPathPattern("/proto.password.PasswordService/GetPasswordsV1"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_PasswordService_GetPasswords_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PasswordService_GetPasswordsV1_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_PasswordService_GetPasswords_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PasswordService_GetPasswordsV1_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
-	mux.Handle(http.MethodPost, pattern_PasswordService_UpdatePassword_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_PasswordService_UpdatePasswordV1_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/proto.password.PasswordService/UpdatePassword", runtime.WithHTTPPathPattern("/proto.password.PasswordService/UpdatePassword"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/proto.password.PasswordService/UpdatePasswordV1", runtime.WithHTTPPathPattern("/proto.password.PasswordService/UpdatePasswordV1"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_PasswordService_UpdatePassword_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PasswordService_UpdatePasswordV1_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_PasswordService_UpdatePassword_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PasswordService_UpdatePasswordV1_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
-	mux.Handle(http.MethodPost, pattern_PasswordService_DeletePassword_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_PasswordService_DeletePasswordV1_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/proto.password.PasswordService/DeletePassword", runtime.WithHTTPPathPattern("/proto.password.PasswordService/DeletePassword"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/proto.password.PasswordService/DeletePasswordV1", runtime.WithHTTPPathPattern("/proto.password.PasswordService/DeletePasswordV1"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_PasswordService_DeletePassword_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PasswordService_DeletePasswordV1_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_PasswordService_DeletePassword_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PasswordService_DeletePasswordV1_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
 	return nil
 }
 
 var (
-	pattern_PasswordService_StorePassword_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"proto.password.PasswordService", "StorePassword"}, ""))
-	pattern_PasswordService_GetPassword_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"proto.password.PasswordService", "GetPassword"}, ""))
-	pattern_PasswordService_GetPasswords_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"proto.password.PasswordService", "GetPasswords"}, ""))
-	pattern_PasswordService_UpdatePassword_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"proto.password.PasswordService", "UpdatePassword"}, ""))
-	pattern_PasswordService_DeletePassword_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"proto.password.PasswordService", "DeletePassword"}, ""))
+	pattern_PasswordService_StorePasswordV1_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"proto.password.PasswordService", "StorePasswordV1"}, ""))
+	pattern_PasswordService_GetPasswordV1_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"proto.password.PasswordService", "GetPasswordV1"}, ""))
+	pattern_PasswordService_GetPasswordsV1_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"proto.password.PasswordService", "GetPasswordsV1"}, ""))
+	pattern_PasswordService_UpdatePasswordV1_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"proto.password.PasswordService", "UpdatePasswordV1"}, ""))
+	pattern_PasswordService_DeletePasswordV1_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"proto.password.PasswordService", "DeletePasswordV1"}, ""))
 )
 
 var (
-	forward_PasswordService_StorePassword_0  = runtime.ForwardResponseMessage
-	forward_PasswordService_GetPassword_0    = runtime.ForwardResponseMessage
-	forward_PasswordService_GetPasswords_0   = runtime.ForwardResponseMessage
-	forward_PasswordService_UpdatePassword_0 = runtime.ForwardResponseMessage
-	forward_PasswordService_DeletePassword_0 = runtime.ForwardResponseMessage
+	forward_PasswordService_StorePasswordV1_0  = runtime.ForwardResponseMessage
+	forward_PasswordService_GetPasswordV1_0    = runtime.ForwardResponseMessage
+	forward_PasswordService_GetPasswordsV1_0   = runtime.ForwardResponseMessage
+	forward_PasswordService_UpdatePasswordV1_0 = runtime.ForwardResponseMessage
+	forward_PasswordService_DeletePasswordV1_0 = runtime.ForwardResponseMessage
 )

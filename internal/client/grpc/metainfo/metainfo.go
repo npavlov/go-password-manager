@@ -31,7 +31,7 @@ func NewMetainfoClient(conn *grpc.ClientConn, tokenManager auth.ITokenManager, l
 
 // GetMetainfo sends a register request to the server.
 func (as *Client) GetMetainfo(ctx context.Context, id string) (map[string]string, error) {
-	resp, err := as.Client.GetMetaInfo(ctx, &pb.GetMetaInfoRequest{
+	resp, err := as.Client.GetMetaInfoV1(ctx, &pb.GetMetaInfoV1Request{
 		ItemId: id,
 	})
 	if err != nil {
@@ -45,7 +45,7 @@ func (as *Client) GetMetainfo(ctx context.Context, id string) (map[string]string
 
 // SetMetainfo sets meta information for the record.
 func (as *Client) SetMetainfo(ctx context.Context, id string, meta map[string]string) (bool, error) {
-	data, err := as.Client.AddMetaInfo(ctx, &pb.AddMetaInfoRequest{
+	data, err := as.Client.AddMetaInfoV1(ctx, &pb.AddMetaInfoV1Request{
 		ItemId:   id,
 		Metadata: meta,
 	})
@@ -60,7 +60,7 @@ func (as *Client) SetMetainfo(ctx context.Context, id string, meta map[string]st
 
 // DeleteMetainfo deletes meta information for the record.
 func (as *Client) DeleteMetainfo(ctx context.Context, id, key string) (bool, error) {
-	data, err := as.Client.RemoveMetaInfo(ctx, &pb.RemoveMetaInfoRequest{
+	data, err := as.Client.RemoveMetaInfoV1(ctx, &pb.RemoveMetaInfoV1Request{
 		ItemId: id,
 		Key:    key,
 	})

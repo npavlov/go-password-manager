@@ -94,8 +94,8 @@ func (m *MockS3Storage) RemoveObject(ctx context.Context, bucketName string, obj
 }
 
 type MockUploadStream struct {
-	RecvFunc         func() (*pb.UploadFileRequest, error)
-	SendAndCloseFunc func(*pb.UploadFileResponse) error
+	RecvFunc         func() (*pb.UploadFileV1Request, error)
+	SendAndCloseFunc func(*pb.UploadFileV1Response) error
 	ContextFunc      func() context.Context
 }
 
@@ -119,7 +119,7 @@ func (m *MockUploadStream) RecvMsg(_ any) error {
 	panic("implement me")
 }
 
-func (m *MockUploadStream) Recv() (*pb.UploadFileRequest, error) {
+func (m *MockUploadStream) Recv() (*pb.UploadFileV1Request, error) {
 	if m.RecvFunc != nil {
 		return m.RecvFunc()
 	}
@@ -127,7 +127,7 @@ func (m *MockUploadStream) Recv() (*pb.UploadFileRequest, error) {
 	return nil, io.EOF
 }
 
-func (m *MockUploadStream) SendAndClose(resp *pb.UploadFileResponse) error {
+func (m *MockUploadStream) SendAndClose(resp *pb.UploadFileV1Response) error {
 	if m.SendAndCloseFunc != nil {
 		return m.SendAndCloseFunc(resp)
 	}
@@ -149,14 +149,14 @@ func TestUploadFile_Success(t *testing.T) {
 	svc, storage, mockS3, ctx, _ := setupFileService(t)
 
 	mockStream := &MockUploadStream{
-		RecvFunc: func() func() (*pb.UploadFileRequest, error) {
+		RecvFunc: func() func() (*pb.UploadFileV1Request, error) {
 			calls := 0
 
-			return func() (*pb.UploadFileRequest, error) {
+			return func() (*pb.UploadFileV1Request, error) {
 				if calls == 0 {
 					calls++
 
-					return &pb.UploadFileRequest{
+					return &pb.UploadFileV1Request{
 						Filename: "test.txt",
 						Data:     []byte("test data"),
 					}, nil
@@ -165,7 +165,7 @@ func TestUploadFile_Success(t *testing.T) {
 				return nil, io.EOF
 			}
 		}(),
-		SendAndCloseFunc: func(*pb.UploadFileResponse) error {
+		SendAndCloseFunc: func(*pb.UploadFileV1Response) error {
 			return nil
 		},
 		ContextFunc: func() context.Context {
@@ -177,7 +177,7 @@ func TestUploadFile_Success(t *testing.T) {
 		return minio.UploadInfo{}, nil
 	}
 
-	err := svc.UploadFile(mockStream)
+	err := svc.UploadFileV1(mockStream)
 	require.NoError(t, err)
 
 	// Verify the binary was stored
@@ -194,15 +194,15 @@ func TestUploadFile_InvalidMetadata(t *testing.T) {
 	svc, _, _, ctx, _ := setupFileService(t)
 
 	mockStream := &MockUploadStream{
-		RecvFunc: func() (*pb.UploadFileRequest, error) {
-			return &pb.UploadFileRequest{}, nil // Missing required filename
+		RecvFunc: func() (*pb.UploadFileV1Request, error) {
+			return &pb.UploadFileV1Request{}, nil // Missing required filename
 		},
 		ContextFunc: func() context.Context {
 			return ctx
 		},
 	}
 
-	err := svc.UploadFile(mockStream)
+	err := svc.UploadFileV1(mockStream)
 	require.Error(t, err)
 }
 
@@ -212,8 +212,8 @@ func TestUploadFile_S3UploadFailure(t *testing.T) {
 	svc, _, mockS3, ctx, _ := setupFileService(t)
 
 	mockStream := &MockUploadStream{
-		RecvFunc: func() (*pb.UploadFileRequest, error) {
-			return &pb.UploadFileRequest{
+		RecvFunc: func() (*pb.UploadFileV1Request, error) {
+			return &pb.UploadFileV1Request{
 				Filename: "test.txt",
 				Data:     []byte("test data"),
 			}, nil
@@ -227,7 +227,7 @@ func TestUploadFile_S3UploadFailure(t *testing.T) {
 		return minio.UploadInfo{}, errors.New("S3 upload failed")
 	}
 
-	err := svc.UploadFile(mockStream)
+	err := svc.UploadFileV1(mockStream)
 	require.Error(t, err)
 }
 
@@ -300,7 +300,7 @@ func TestDownloadFile_Success(t *testing.T) {
 	var receivedData []byte
 
 	mockStream := &MockDownloadStream{
-		SendFunc: func(resp *pb.DownloadFileResponse) error {
+		SendFunc: func(resp *pb.DownloadFileV1Response) error {
 			sendCount++
 			receivedData = append(receivedData, resp.GetData()...)
 
@@ -311,7 +311,7 @@ func TestDownloadFile_Success(t *testing.T) {
 		},
 	}
 
-	err = svc.DownloadFile(&pb.DownloadFileRequest{FileId: binary.ID.String()}, mockStream)
+	err = svc.DownloadFileV1(&pb.DownloadFileV1Request{FileId: binary.ID.String()}, mockStream)
 	require.NoError(t, err)
 
 	// Verify the data was sent correctly
@@ -336,7 +336,7 @@ func TestDownloadFile_NotFound(t *testing.T) {
 		},
 	}
 
-	err := svc.DownloadFile(&pb.DownloadFileRequest{FileId: uuid.NewString()}, mockStream)
+	err := svc.DownloadFileV1(&pb.DownloadFileV1Request{FileId: uuid.NewString()}, mockStream)
 	require.Error(t, err)
 	require.Equal(t, codes.NotFound, status.Code(err))
 }
@@ -360,7 +360,7 @@ func TestDeleteFile_Success(t *testing.T) {
 		return nil
 	}
 
-	resp, err := svc.DeleteFile(ctx, &pb.DeleteFileRequest{FileId: binary.ID.String()})
+	resp, err := svc.DeleteFileV1(ctx, &pb.DeleteFileV1Request{FileId: binary.ID.String()})
 	require.NoError(t, err)
 	require.True(t, resp.GetOk())
 
@@ -384,7 +384,7 @@ func TestGetFile_Success(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	resp, err := svc.GetFile(ctx, &pb.GetFileRequest{FileId: binary.ID.String()})
+	resp, err := svc.GetFileV1(ctx, &pb.GetFileV1Request{FileId: binary.ID.String()})
 	require.NoError(t, err)
 	require.Equal(t, binary.ID.String(), resp.GetFile().GetId())
 	require.Equal(t, "test.txt", resp.GetFile().GetFileName())
@@ -415,7 +415,7 @@ func TestGetFiles_Success(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	_, err = svc.GetFiles(ctx, &pb.GetFilesRequest{})
+	_, err = svc.GetFilesV1(ctx, &pb.GetFilesV1Request{})
 	require.NoError(t, err)
 }
 
@@ -425,8 +425,8 @@ func TestUploadFile_EmptyFile(t *testing.T) {
 	svc, _, mockS3, ctx, _ := setupFileService(t)
 
 	mockStream := &MockUploadStream{
-		RecvFunc: func() (*pb.UploadFileRequest, error) {
-			return &pb.UploadFileRequest{
+		RecvFunc: func() (*pb.UploadFileV1Request, error) {
+			return &pb.UploadFileV1Request{
 				Filename: "empty.txt",
 				Data:     []byte{},
 			}, io.EOF
@@ -440,7 +440,7 @@ func TestUploadFile_EmptyFile(t *testing.T) {
 		return minio.UploadInfo{}, nil
 	}
 
-	err := svc.UploadFile(mockStream)
+	err := svc.UploadFileV1(mockStream)
 	require.Error(t, err)
 }
 
@@ -457,11 +457,11 @@ func TestUploadFile_LargeFile(t *testing.T) {
 	// Simulate a 5MB file in chunks
 	chunkCount := 0
 	mockStream := &MockUploadStream{
-		RecvFunc: func() (*pb.UploadFileRequest, error) {
+		RecvFunc: func() (*pb.UploadFileV1Request, error) {
 			if chunkCount == 0 {
 				chunkCount++
 
-				return &pb.UploadFileRequest{
+				return &pb.UploadFileV1Request{
 					Filename: "large.bin",
 				}, nil
 			}
@@ -469,7 +469,7 @@ func TestUploadFile_LargeFile(t *testing.T) {
 				chunkCount++
 				data := make([]byte, 100*1024) // 100KB chunk
 
-				return &pb.UploadFileRequest{
+				return &pb.UploadFileV1Request{
 					Data: data,
 				}, nil
 			}
@@ -494,7 +494,7 @@ func TestUploadFile_LargeFile(t *testing.T) {
 		return minio.UploadInfo{}, nil
 	}
 
-	err := svc.UploadFile(mockStream)
+	err := svc.UploadFileV1(mockStream)
 	require.NoError(t, err)
 
 	// Wait for the S3 upload to complete
@@ -514,8 +514,8 @@ func TestUploadFile_StorageFailureAfterS3Upload(t *testing.T) {
 	storage.CallError = errors.New("database failure")
 
 	mockStream := &MockUploadStream{
-		RecvFunc: func() (*pb.UploadFileRequest, error) {
-			return &pb.UploadFileRequest{
+		RecvFunc: func() (*pb.UploadFileV1Request, error) {
+			return &pb.UploadFileV1Request{
 				Filename: "test.txt",
 				Data:     []byte("test data"),
 			}, io.EOF
@@ -525,7 +525,7 @@ func TestUploadFile_StorageFailureAfterS3Upload(t *testing.T) {
 		},
 	}
 
-	err := svc.UploadFile(mockStream)
+	err := svc.UploadFileV1(mockStream)
 	require.Error(t, err)
 }
 
@@ -545,8 +545,8 @@ func TestUploadFile_EncryptionError(t *testing.T) {
 	storage.UsersByID[userIDPG] = user
 
 	mockStream := &MockUploadStream{
-		RecvFunc: func() (*pb.UploadFileRequest, error) {
-			return &pb.UploadFileRequest{
+		RecvFunc: func() (*pb.UploadFileV1Request, error) {
+			return &pb.UploadFileV1Request{
 				Filename: "test.txt",
 				Data:     []byte("test data"),
 			}, nil
@@ -556,7 +556,7 @@ func TestUploadFile_EncryptionError(t *testing.T) {
 		},
 	}
 
-	err := svc.UploadFile(mockStream)
+	err := svc.UploadFileV1(mockStream)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error getting user id")
 }
@@ -598,7 +598,7 @@ func TestDownloadFile_DecryptionError(t *testing.T) {
 	var receivedData []byte
 
 	mockStream := &MockDownloadStream{
-		SendFunc: func(resp *pb.DownloadFileResponse) error {
+		SendFunc: func(resp *pb.DownloadFileV1Response) error {
 			sendCount++
 			receivedData = append(receivedData, resp.GetData()...)
 
@@ -609,7 +609,7 @@ func TestDownloadFile_DecryptionError(t *testing.T) {
 		},
 	}
 
-	err = svc.DownloadFile(&pb.DownloadFileRequest{FileId: binary.ID.String()}, mockStream)
+	err = svc.DownloadFileV1(&pb.DownloadFileV1Request{FileId: binary.ID.String()}, mockStream)
 	require.Error(t, err)
 	require.Equal(t, codes.Internal, status.Code(err))
 }
@@ -635,7 +635,7 @@ func TestDownloadFile_UnauthorizedAccess(t *testing.T) {
 		},
 	}
 
-	err = svc.DownloadFile(&pb.DownloadFileRequest{FileId: binary.ID.String()}, mockStream)
+	err = svc.DownloadFileV1(&pb.DownloadFileV1Request{FileId: binary.ID.String()}, mockStream)
 	require.Error(t, err)
 }
 
@@ -644,7 +644,7 @@ func TestDeleteFile_NotFound(t *testing.T) {
 
 	svc, _, _, ctx, _ := setupFileService(t)
 
-	resp, err := svc.DeleteFile(ctx, &pb.DeleteFileRequest{FileId: uuid.NewString()})
+	resp, err := svc.DeleteFileV1(ctx, &pb.DeleteFileV1Request{FileId: uuid.NewString()})
 	require.Error(t, err)
 	require.False(t, resp.GetOk())
 }
@@ -664,7 +664,7 @@ func TestDeleteFile_Unauthorized(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	resp, err := svc.DeleteFile(ctx, &pb.DeleteFileRequest{FileId: binary.ID.String()})
+	resp, err := svc.DeleteFileV1(ctx, &pb.DeleteFileV1Request{FileId: binary.ID.String()})
 	require.Error(t, err)
 	require.False(t, resp.GetOk())
 }
@@ -686,7 +686,7 @@ func TestDeleteFile_S3DeleteFailure(t *testing.T) {
 
 	storage.CallError = errors.New("error deleting file")
 
-	resp, err := svc.DeleteFile(ctx, &pb.DeleteFileRequest{FileId: binary.ID.String()})
+	resp, err := svc.DeleteFileV1(ctx, &pb.DeleteFileV1Request{FileId: binary.ID.String()})
 	require.Error(t, err)
 	require.False(t, resp.GetOk())
 }
@@ -696,7 +696,7 @@ func TestGetFile_NotFound(t *testing.T) {
 
 	svc, _, _, ctx, _ := setupFileService(t)
 
-	resp, err := svc.GetFile(ctx, &pb.GetFileRequest{FileId: uuid.NewString()})
+	resp, err := svc.GetFileV1(ctx, &pb.GetFileV1Request{FileId: uuid.NewString()})
 	require.Error(t, err)
 	require.Nil(t, resp)
 }
@@ -716,7 +716,7 @@ func TestGetFile_Unauthorized(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	resp, err := svc.GetFile(ctx, &pb.GetFileRequest{FileId: binary.ID.String()})
+	resp, err := svc.GetFileV1(ctx, &pb.GetFileV1Request{FileId: binary.ID.String()})
 	require.Error(t, err)
 	require.Nil(t, resp)
 }
@@ -726,7 +726,7 @@ func TestGetFiles_EmptyResult(t *testing.T) {
 
 	svc, _, _, ctx, _ := setupFileService(t)
 
-	resp, err := svc.GetFiles(ctx, &pb.GetFilesRequest{})
+	resp, err := svc.GetFilesV1(ctx, &pb.GetFilesV1Request{})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 }
@@ -748,17 +748,17 @@ func TestGetFiles_WithPagination(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	resp, err := svc.GetFiles(ctx, &pb.GetFilesRequest{})
+	resp, err := svc.GetFilesV1(ctx, &pb.GetFilesV1Request{})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 }
 
 type MockDownloadStream struct {
-	SendFunc    func(*pb.DownloadFileResponse) error
+	SendFunc    func(*pb.DownloadFileV1Response) error
 	ContextFunc func() context.Context
 }
 
-func (m *MockDownloadStream) Send(resp *pb.DownloadFileResponse) error {
+func (m *MockDownloadStream) Send(resp *pb.DownloadFileV1Response) error {
 	if m.SendFunc != nil {
 		return m.SendFunc(resp)
 	}

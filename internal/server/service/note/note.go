@@ -50,7 +50,7 @@ func (ns *Service) RegisterService(grpcServer *grpc.Server) {
 	pb.RegisterNoteServiceServer(grpcServer, ns)
 }
 
-func (ns *Service) StoreNote(ctx context.Context, req *pb.StoreNoteRequest) (*pb.StoreNoteResponse, error) {
+func (ns *Service) StoreNoteV1(ctx context.Context, req *pb.StoreNoteV1Request) (*pb.StoreNoteV1Response, error) {
 	if err := ns.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -77,12 +77,12 @@ func (ns *Service) StoreNote(ctx context.Context, req *pb.StoreNoteRequest) (*pb
 		return nil, errors.Wrap(err, "failed to store password")
 	}
 
-	return &pb.StoreNoteResponse{
+	return &pb.StoreNoteV1Response{
 		NoteId: note.ID.String(),
 	}, nil
 }
 
-func (ns *Service) GetNote(ctx context.Context, req *pb.GetNoteRequest) (*pb.GetNoteResponse, error) {
+func (ns *Service) GetNoteV1(ctx context.Context, req *pb.GetNoteV1Request) (*pb.GetNoteV1Response, error) {
 	if err := ns.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -106,7 +106,7 @@ func (ns *Service) GetNote(ctx context.Context, req *pb.GetNoteRequest) (*pb.Get
 		return nil, errors.Wrap(err, "error decrypting password")
 	}
 
-	return &pb.GetNoteResponse{
+	return &pb.GetNoteV1Response{
 		Note: &pb.NoteData{
 			Content: content,
 		},
@@ -114,17 +114,17 @@ func (ns *Service) GetNote(ctx context.Context, req *pb.GetNoteRequest) (*pb.Get
 	}, nil
 }
 
-func (ns *Service) GetNotes(_ context.Context, req *pb.GetNotesRequest) (*pb.GetNotesResponse, error) {
+func (ns *Service) GetNotesV1(_ context.Context, req *pb.GetNotesV1Request) (*pb.GetNotesV1Response, error) {
 	if err := ns.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	return &pb.GetNotesResponse{
+	return &pb.GetNotesV1Response{
 		Notes: make([]*pb.NoteData, 0),
 	}, nil
 }
 
-func (ns *Service) DeleteNote(ctx context.Context, req *pb.DeleteNoteRequest) (*pb.DeleteNoteResponse, error) {
+func (ns *Service) DeleteNoteV1(ctx context.Context, req *pb.DeleteNoteV1Request) (*pb.DeleteNoteV1Response, error) {
 	if err := ns.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -143,7 +143,7 @@ func (ns *Service) DeleteNote(ctx context.Context, req *pb.DeleteNoteRequest) (*
 		return nil, errors.Wrap(err, "error deleting note")
 	}
 
-	return &pb.DeleteNoteResponse{
+	return &pb.DeleteNoteV1Response{
 		Ok: true,
 	}, nil
 }

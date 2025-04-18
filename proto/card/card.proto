@@ -2,63 +2,129 @@ syntax = "proto3";
 
 package proto.card;
 
-option go_package = "github.com/npavlov/go-password-manager/proto/card";
+// Go package option for generated code
+option go_package = "github.com/npavlov/go-password-manager/gen/card";
 
 import "google/protobuf/timestamp.proto";
 import "buf/validate/validate.proto";
 
+//
+// CardService provides CRUD operations for securely storing and managing payment card data.
+//
 service CardService {
-  rpc StoreCard (StoreCardRequest) returns (StoreCardResponse);
-  rpc GetCards (GetCardsRequest) returns (GetCardsResponse);
-  rpc GetCard (GetCardRequest) returns (GetCardResponse);
-  rpc UpdateCard (UpdateCardRequest) returns (UpdateCardResponse);
-  rpc DeleteCard (DeleteCardRequest) returns (DeleteCardResponse);
+  // Store a new card in the system.
+  rpc StoreCardV1 (StoreCardV1Request) returns (StoreCardV1Response);
+
+  // Retrieve a list of all stored cards.
+  rpc GetCardsV1 (GetCardsV1Request) returns (GetCardsV1Response);
+
+  // Retrieve a specific card by its unique ID.
+  rpc GetCardV1 (GetCardV1Request) returns (GetCardV1Response);
+
+  // Update an existing card's data.
+  rpc UpdateCardV1 (UpdateCardV1Request) returns (UpdateCardV1Response);
+
+  // Delete a card by its unique ID.
+  rpc DeleteCardV1 (DeleteCardV1Request) returns (DeleteCardV1Response);
 }
 
-message StoreCardRequest {
+//
+// Request to store a new card.
+//
+message StoreCardV1Request {
+  // Card data to be stored.
   CardData card = 1;
 }
 
-message StoreCardResponse {
+//
+// Response after storing a card.
+//
+message StoreCardV1Response {
+  // ID of the newly stored card.
   string card_id = 1;
 }
 
-message GetCardsRequest {
+//
+// Request to retrieve all stored cards.
+//
+message GetCardsV1Request {
 }
 
-message GetCardsResponse {
+//
+// Response containing all stored cards.
+//
+message GetCardsV1Response {
+  // List of cards.
   repeated CardData cards = 1;
 }
 
-message GetCardRequest {
+//
+// Request to retrieve a specific card.
+//
+message GetCardV1Request {
+  // Unique card ID (UUID format).
   string card_id = 1 [(buf.validate.field).string.uuid = true];
 }
 
-message GetCardResponse {
+//
+// Response containing a single card and its last update timestamp.
+//
+message GetCardV1Response {
+  // Card data.
   CardData card = 1;
+
+  // Timestamp of the last update.
   google.protobuf.Timestamp last_update = 2;
 }
 
-message DeleteCardRequest {
+//
+// Request to delete a card.
+//
+message DeleteCardV1Request {
+  // Unique card ID (UUID format).
   string card_id = 1 [(buf.validate.field).string.uuid = true];
 }
 
-message DeleteCardResponse {
+//
+// Response after attempting to delete a card.
+//
+message DeleteCardV1Response {
+  // Status of the delete operation.
   bool ok = 1;
 }
 
-message UpdateCardRequest {
-  string card_id = 1  [(buf.validate.field).string.uuid = true];
+//
+// Request to update a card.
+//
+message UpdateCardV1Request {
+  // Unique card ID (UUID format).
+  string card_id = 1 [(buf.validate.field).string.uuid = true];
+
+  // Updated card data.
   CardData data = 2;
 }
 
-message UpdateCardResponse {
+//
+// Response after updating a card.
+//
+message UpdateCardV1Response {
+  // ID of the updated card.
   string card_id = 1;
 }
 
+//
+// Represents the data structure for a payment card.
+//
 message CardData {
-  string card_number = 1 [(buf.validate.field).string = {pattern: "^[0-9]{13,19}$"}]; // Validate card number (13-19 digits)
-  string expiry_date = 2 [(buf.validate.field).string = {pattern: "^(0[1-9]|1[0-2])\\/[0-9]{2}$"}]; // Validate expiry date (MM/YY format)
-  string cvv = 3 [(buf.validate.field).string = {pattern: "^[0-9]{3,4}$"}]; // Validate CVV (3 or 4 digits)
-  string cardholder_name = 4 [(buf.validate.field).string = {min_len: 1, max_len: 100}]; // Validate cardholder name (1-100 characters)
+  // Card number (13 to 19 digits).
+  string card_number = 1 [(buf.validate.field).string = {pattern: "^[0-9]{13,19}$"}];
+
+  // Card expiry date in MM/YY format.
+  string expiry_date = 2 [(buf.validate.field).string = {pattern: "^(0[1-9]|1[0-2])\\/[0-9]{2}$"}];
+
+  // Card security code (CVV), 3 or 4 digits.
+  string cvv = 3 [(buf.validate.field).string = {pattern: "^[0-9]{3,4}$"}];
+
+  // Name of the cardholder (1 to 100 characters).
+  string cardholder_name = 4 [(buf.validate.field).string = {min_len: 1, max_len: 100}];
 }

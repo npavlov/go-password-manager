@@ -19,16 +19,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ItemService_GetItems_FullMethodName = "/proto.item.ItemService/GetItems"
+	ItemService_GetItemsV1_FullMethodName = "/proto.item.ItemService/GetItemsV1"
 )
 
 // ItemServiceClient is the client API for ItemService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// ItemService provides methods to retrieve stored items.
+// ItemService provides methods to retrieve a list of user-stored items,
+// supporting pagination and filtering by item type.
 type ItemServiceClient interface {
-	GetItems(ctx context.Context, in *GetItemsRequest, opts ...grpc.CallOption) (*GetItemsResponse, error)
+	// Retrieve a paginated list of all stored items.
+	GetItemsV1(ctx context.Context, in *GetItemsV1Request, opts ...grpc.CallOption) (*GetItemsV1Response, error)
 }
 
 type itemServiceClient struct {
@@ -39,10 +41,10 @@ func NewItemServiceClient(cc grpc.ClientConnInterface) ItemServiceClient {
 	return &itemServiceClient{cc}
 }
 
-func (c *itemServiceClient) GetItems(ctx context.Context, in *GetItemsRequest, opts ...grpc.CallOption) (*GetItemsResponse, error) {
+func (c *itemServiceClient) GetItemsV1(ctx context.Context, in *GetItemsV1Request, opts ...grpc.CallOption) (*GetItemsV1Response, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetItemsResponse)
-	err := c.cc.Invoke(ctx, ItemService_GetItems_FullMethodName, in, out, cOpts...)
+	out := new(GetItemsV1Response)
+	err := c.cc.Invoke(ctx, ItemService_GetItemsV1_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -53,9 +55,11 @@ func (c *itemServiceClient) GetItems(ctx context.Context, in *GetItemsRequest, o
 // All implementations must embed UnimplementedItemServiceServer
 // for forward compatibility.
 //
-// ItemService provides methods to retrieve stored items.
+// ItemService provides methods to retrieve a list of user-stored items,
+// supporting pagination and filtering by item type.
 type ItemServiceServer interface {
-	GetItems(context.Context, *GetItemsRequest) (*GetItemsResponse, error)
+	// Retrieve a paginated list of all stored items.
+	GetItemsV1(context.Context, *GetItemsV1Request) (*GetItemsV1Response, error)
 	mustEmbedUnimplementedItemServiceServer()
 }
 
@@ -66,8 +70,8 @@ type ItemServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedItemServiceServer struct{}
 
-func (UnimplementedItemServiceServer) GetItems(context.Context, *GetItemsRequest) (*GetItemsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetItems not implemented")
+func (UnimplementedItemServiceServer) GetItemsV1(context.Context, *GetItemsV1Request) (*GetItemsV1Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetItemsV1 not implemented")
 }
 func (UnimplementedItemServiceServer) mustEmbedUnimplementedItemServiceServer() {}
 func (UnimplementedItemServiceServer) testEmbeddedByValue()                     {}
@@ -90,20 +94,20 @@ func RegisterItemServiceServer(s grpc.ServiceRegistrar, srv ItemServiceServer) {
 	s.RegisterService(&ItemService_ServiceDesc, srv)
 }
 
-func _ItemService_GetItems_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetItemsRequest)
+func _ItemService_GetItemsV1_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetItemsV1Request)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ItemServiceServer).GetItems(ctx, in)
+		return srv.(ItemServiceServer).GetItemsV1(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ItemService_GetItems_FullMethodName,
+		FullMethod: ItemService_GetItemsV1_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ItemServiceServer).GetItems(ctx, req.(*GetItemsRequest))
+		return srv.(ItemServiceServer).GetItemsV1(ctx, req.(*GetItemsV1Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -116,8 +120,8 @@ var ItemService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ItemServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetItems",
-			Handler:    _ItemService_GetItems_Handler,
+			MethodName: "GetItemsV1",
+			Handler:    _ItemService_GetItemsV1_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

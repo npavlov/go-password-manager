@@ -47,8 +47,8 @@ func (ms *Service) RegisterService(grpcServer *grpc.Server) {
 	pb.RegisterMetadataServiceServer(grpcServer, ms)
 }
 
-// AddMetaInfo Add metadata to an item.
-func (ms *Service) AddMetaInfo(ctx context.Context, req *pb.AddMetaInfoRequest) (*pb.AddMetaInfoResponse, error) {
+// AddMetaInfoV1 Add metadata to an item.
+func (ms *Service) AddMetaInfoV1(ctx context.Context, req *pb.AddMetaInfoV1Request) (*pb.AddMetaInfoV1Response, error) {
 	if err := ms.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -60,13 +60,13 @@ func (ms *Service) AddMetaInfo(ctx context.Context, req *pb.AddMetaInfoRequest) 
 		}
 	}
 
-	return &pb.AddMetaInfoResponse{Success: true}, nil
+	return &pb.AddMetaInfoV1Response{Success: true}, nil
 }
 
-// RemoveMetaInfo Remove a metadata key from an item.
-func (ms *Service) RemoveMetaInfo(ctx context.Context,
-	req *pb.RemoveMetaInfoRequest,
-) (*pb.RemoveMetaInfoResponse, error) {
+// RemoveMetaInfoV1 Remove a metadata key from an item.
+func (ms *Service) RemoveMetaInfoV1(ctx context.Context,
+	req *pb.RemoveMetaInfoV1Request,
+) (*pb.RemoveMetaInfoV1Response, error) {
 	if err := ms.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -78,11 +78,11 @@ func (ms *Service) RemoveMetaInfo(ctx context.Context,
 		return nil, errors.Wrap(err, "failed to remove meta info")
 	}
 
-	return &pb.RemoveMetaInfoResponse{Success: true}, nil
+	return &pb.RemoveMetaInfoV1Response{Success: true}, nil
 }
 
-// GetMetaInfo Get all metadata for an item.
-func (ms *Service) GetMetaInfo(ctx context.Context, req *pb.GetMetaInfoRequest) (*pb.GetMetaInfoResponse, error) {
+// GetMetaInfoV1 Get all metadata for an item.
+func (ms *Service) GetMetaInfoV1(ctx context.Context, req *pb.GetMetaInfoV1Request) (*pb.GetMetaInfoV1Response, error) {
 	if err := ms.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -97,5 +97,5 @@ func (ms *Service) GetMetaInfo(ctx context.Context, req *pb.GetMetaInfoRequest) 
 		metadata[row.Key] = row.Value
 	}
 
-	return &pb.GetMetaInfoResponse{Metadata: metadata}, nil
+	return &pb.GetMetaInfoV1Response{Metadata: metadata}, nil
 }

@@ -1,4 +1,4 @@
-//nolint:ireturn,exhaustruct
+//nolint:exhaustruct,ireturn
 package auth_test
 
 import (

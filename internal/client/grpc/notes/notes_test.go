@@ -29,14 +29,14 @@ type MockTokenManager struct {
 	mock.Mock
 }
 
-func (m *MockNoteServiceClient) GetNote(ctx context.Context,
-	in *note.GetNoteRequest,
+func (m *MockNoteServiceClient) GetNoteV1(ctx context.Context,
+	in *note.GetNoteV1Request,
 	_ ...grpc.CallOption,
-) (*note.GetNoteResponse, error) {
+) (*note.GetNoteV1Response, error) {
 	args := m.Called(ctx, in)
 
 	// Safely handle nil to avoid type assertion panic
-	arg, ok := args.Get(0).(*note.GetNoteResponse)
+	arg, ok := args.Get(0).(*note.GetNoteV1Response)
 	if !ok && args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -44,22 +44,22 @@ func (m *MockNoteServiceClient) GetNote(ctx context.Context,
 	return arg, args.Error(1)
 }
 
-func (m *MockNoteServiceClient) GetNotes(ctx context.Context,
-	in *note.GetNotesRequest,
+func (m *MockNoteServiceClient) GetNotesV1(ctx context.Context,
+	in *note.GetNotesV1Request,
 	_ ...grpc.CallOption,
-) (*note.GetNotesResponse, error) {
+) (*note.GetNotesV1Response, error) {
 	args := m.Called(ctx, in)
 
-	return args.Get(0).(*note.GetNotesResponse), args.Error(1)
+	return args.Get(0).(*note.GetNotesV1Response), args.Error(1)
 }
 
-func (m *MockNoteServiceClient) StoreNote(ctx context.Context,
-	in *note.StoreNoteRequest,
+func (m *MockNoteServiceClient) StoreNoteV1(ctx context.Context,
+	in *note.StoreNoteV1Request,
 	_ ...grpc.CallOption,
-) (*note.StoreNoteResponse, error) {
+) (*note.StoreNoteV1Response, error) {
 	args := m.Called(ctx, in)
 
-	arg, ok := args.Get(0).(*note.StoreNoteResponse)
+	arg, ok := args.Get(0).(*note.StoreNoteV1Response)
 	if !ok && args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -67,13 +67,13 @@ func (m *MockNoteServiceClient) StoreNote(ctx context.Context,
 	return arg, args.Error(1)
 }
 
-func (m *MockNoteServiceClient) DeleteNote(ctx context.Context,
-	in *note.DeleteNoteRequest,
+func (m *MockNoteServiceClient) DeleteNoteV1(ctx context.Context,
+	in *note.DeleteNoteV1Request,
 	_ ...grpc.CallOption,
-) (*note.DeleteNoteResponse, error) {
+) (*note.DeleteNoteV1Response, error) {
 	args := m.Called(ctx, in)
 
-	arg, ok := args.Get(0).(*note.DeleteNoteResponse)
+	arg, ok := args.Get(0).(*note.DeleteNoteV1Response)
 	if !ok && args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -98,9 +98,9 @@ func TestGetNote_Success(t *testing.T) {
 	}
 	expectedTime := time.Now()
 
-	mockClient.On("GetNote", mock.Anything, &note.GetNoteRequest{
+	mockClient.On("GetNoteV1", mock.Anything, &note.GetNoteV1Request{
 		NoteId: "note123",
-	}).Return(&note.GetNoteResponse{
+	}).Return(&note.GetNoteV1Response{
 		Note:       expectedNote,
 		LastUpdate: timestamppb.New(expectedTime),
 	}, nil)
@@ -122,7 +122,7 @@ func TestGetNote_Error(t *testing.T) {
 	mockClient := new(MockNoteServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("GetNote", mock.Anything, &note.GetNoteRequest{
+	mockClient.On("GetNoteV1", mock.Anything, &note.GetNoteV1Request{
 		NoteId: "note123",
 	}).Return(nil, errors.New("get note failed"))
 
@@ -145,11 +145,11 @@ func TestStoreNote_Success(t *testing.T) {
 
 	content := "This is a test note content"
 
-	mockClient.On("StoreNote", mock.Anything, &note.StoreNoteRequest{
+	mockClient.On("StoreNoteV1", mock.Anything, &note.StoreNoteV1Request{
 		Note: &note.NoteData{
 			Content: content,
 		},
-	}).Return(&note.StoreNoteResponse{
+	}).Return(&note.StoreNoteV1Response{
 		NoteId: "new-note-123",
 	}, nil)
 
@@ -172,7 +172,7 @@ func TestStoreNote_Error(t *testing.T) {
 
 	content := "This is a test note content"
 
-	mockClient.On("StoreNote", mock.Anything, &note.StoreNoteRequest{
+	mockClient.On("StoreNoteV1", mock.Anything, &note.StoreNoteV1Request{
 		Note: &note.NoteData{
 			Content: content,
 		},
@@ -195,9 +195,9 @@ func TestDeleteNote_Success(t *testing.T) {
 	mockClient := new(MockNoteServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("DeleteNote", mock.Anything, &note.DeleteNoteRequest{
+	mockClient.On("DeleteNoteV1", mock.Anything, &note.DeleteNoteV1Request{
 		NoteId: "note123",
-	}).Return(&note.DeleteNoteResponse{
+	}).Return(&note.DeleteNoteV1Response{
 		Ok: true,
 	}, nil)
 
@@ -218,7 +218,7 @@ func TestDeleteNote_Error(t *testing.T) {
 	mockClient := new(MockNoteServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("DeleteNote", mock.Anything, &note.DeleteNoteRequest{
+	mockClient.On("DeleteNoteV1", mock.Anything, &note.DeleteNoteV1Request{
 		NoteId: "note123",
 	}).Return(nil, errors.New("delete note failed"))
 
@@ -239,9 +239,9 @@ func TestDeleteNote_NotSuccessful(t *testing.T) {
 	mockClient := new(MockNoteServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("DeleteNote", mock.Anything, &note.DeleteNoteRequest{
+	mockClient.On("DeleteNoteV1", mock.Anything, &note.DeleteNoteV1Request{
 		NoteId: "note123",
-	}).Return(&note.DeleteNoteResponse{
+	}).Return(&note.DeleteNoteV1Response{
 		Ok: false,
 	}, nil)
 

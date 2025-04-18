@@ -31,7 +31,7 @@ func NewItemsClient(conn *grpc.ClientConn, tokenManager auth.ITokenManager, log 
 
 // GetItems sends a register request to the server.
 func (as *Client) GetItems(ctx context.Context, page, pageSize int32) ([]*pb.ItemData, int32, error) {
-	resp, err := as.Client.GetItems(ctx, &pb.GetItemsRequest{
+	resp, err := as.Client.GetItemsV1(ctx, &pb.GetItemsV1Request{
 		Page:     page,
 		PageSize: pageSize,
 	})

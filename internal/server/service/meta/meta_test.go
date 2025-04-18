@@ -54,7 +54,7 @@ func TestAddMetaInfo_Success(t *testing.T) {
 	newItem, err := mockStorage.StoreItem(ctx, userIDPG, db.ItemTypeCard)
 	require.NoError(t, err)
 
-	req := &pb.AddMetaInfoRequest{
+	req := &pb.AddMetaInfoV1Request{
 		ItemId: newItem.ID.String(),
 		Metadata: map[string]string{
 			"category": "finance",
@@ -62,7 +62,7 @@ func TestAddMetaInfo_Success(t *testing.T) {
 		},
 	}
 
-	resp, err := svc.AddMetaInfo(t.Context(), req)
+	resp, err := svc.AddMetaInfoV1(t.Context(), req)
 	require.NoError(t, err)
 	require.True(t, resp.GetSuccess())
 
@@ -79,14 +79,14 @@ func TestAddMetaInfo_InvalidItem(t *testing.T) {
 
 	svc, _, ctx := setupMetadataService(t)
 
-	req := &pb.AddMetaInfoRequest{
+	req := &pb.AddMetaInfoV1Request{
 		ItemId: "invalid-item-id",
 		Metadata: map[string]string{
 			"key": "value",
 		},
 	}
 
-	_, err := svc.AddMetaInfo(ctx, req)
+	_, err := svc.AddMetaInfoV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error validating input")
 }
@@ -101,12 +101,12 @@ func TestRemoveMetaInfo_Success(t *testing.T) {
 	_, err := mockStorage.AddMeta(ctx, itemID, "category", "finance")
 	require.NoError(t, err)
 
-	req := &pb.RemoveMetaInfoRequest{
+	req := &pb.RemoveMetaInfoV1Request{
 		ItemId: itemID,
 		Key:    "category",
 	}
 
-	resp, err := svc.RemoveMetaInfo(ctx, req)
+	resp, err := svc.RemoveMetaInfoV1(ctx, req)
 	require.NoError(t, err)
 	require.True(t, resp.GetSuccess())
 
@@ -121,12 +121,12 @@ func TestRemoveMetaInfo_NotFound(t *testing.T) {
 
 	svc, _, ctx := setupMetadataService(t)
 
-	req := &pb.RemoveMetaInfoRequest{
+	req := &pb.RemoveMetaInfoV1Request{
 		ItemId: uuid.New().String(),
 		Key:    "category",
 	}
 
-	_, err := svc.RemoveMetaInfo(ctx, req)
+	_, err := svc.RemoveMetaInfoV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "failed to remove meta info")
 }
@@ -143,11 +143,11 @@ func TestGetMetaInfo_Success(t *testing.T) {
 	_, err = mockStorage.AddMeta(ctx, itemID, "priority", "high")
 	require.NoError(t, err)
 
-	req := &pb.GetMetaInfoRequest{
+	req := &pb.GetMetaInfoV1Request{
 		ItemId: itemID,
 	}
 
-	resp, err := svc.GetMetaInfo(t.Context(), req)
+	resp, err := svc.GetMetaInfoV1(t.Context(), req)
 	require.NoError(t, err)
 	require.Len(t, resp.GetMetadata(), 2)
 	require.Equal(t, "finance", resp.GetMetadata()["category"])
@@ -168,11 +168,11 @@ func TestGetMetaInfo_Empty(t *testing.T) {
 	newItem, err := mockStorage.StoreItem(ctx, userIDPG, db.ItemTypeCard)
 	require.NoError(t, err)
 
-	req := &pb.GetMetaInfoRequest{
+	req := &pb.GetMetaInfoV1Request{
 		ItemId: newItem.ID.String(),
 	}
 
-	resp, err := svc.GetMetaInfo(ctx, req)
+	resp, err := svc.GetMetaInfoV1(ctx, req)
 	require.NoError(t, err)
 	require.Empty(t, resp.GetMetadata())
 }

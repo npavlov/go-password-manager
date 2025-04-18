@@ -32,7 +32,7 @@ func NewPasswordClient(conn *grpc.ClientConn, tokenManager auth.ITokenManager, l
 
 // GetPassword sends a register request to the server.
 func (as *Client) GetPassword(ctx context.Context, id string) (*pb.PasswordData, time.Time, error) {
-	resp, err := as.Client.GetPassword(ctx, &pb.GetPasswordRequest{
+	resp, err := as.Client.GetPasswordV1(ctx, &pb.GetPasswordV1Request{
 		PasswordId: id,
 	})
 	if err != nil {
@@ -45,7 +45,7 @@ func (as *Client) GetPassword(ctx context.Context, id string) (*pb.PasswordData,
 }
 
 func (as *Client) UpdatePassword(ctx context.Context, id, login, password string) error {
-	_, err := as.Client.UpdatePassword(ctx, &pb.UpdatePasswordRequest{
+	_, err := as.Client.UpdatePasswordV1(ctx, &pb.UpdatePasswordV1Request{
 		PasswordId: id,
 		Data: &pb.PasswordData{
 			Login:    login,
@@ -63,7 +63,7 @@ func (as *Client) UpdatePassword(ctx context.Context, id, login, password string
 }
 
 func (as *Client) StorePassword(ctx context.Context, login, password string) (string, error) {
-	resp, err := as.Client.StorePassword(ctx, &pb.StorePasswordRequest{
+	resp, err := as.Client.StorePasswordV1(ctx, &pb.StorePasswordV1Request{
 		Password: &pb.PasswordData{
 			Login:    login,
 			Password: password,
@@ -80,7 +80,7 @@ func (as *Client) StorePassword(ctx context.Context, login, password string) (st
 }
 
 func (as *Client) DeletePassword(ctx context.Context, id string) (bool, error) {
-	resp, err := as.Client.DeletePassword(ctx, &pb.DeletePasswordRequest{
+	resp, err := as.Client.DeletePasswordV1(ctx, &pb.DeletePasswordV1Request{
 		PasswordId: id,
 	})
 	if err != nil {

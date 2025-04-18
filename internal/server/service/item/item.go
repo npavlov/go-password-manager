@@ -46,7 +46,7 @@ func (is *Service) RegisterService(grpcServer *grpc.Server) {
 	pb.RegisterItemServiceServer(grpcServer, is)
 }
 
-func (is *Service) GetItems(ctx context.Context, req *pb.GetItemsRequest) (*pb.GetItemsResponse, error) {
+func (is *Service) GetItemsV1(ctx context.Context, req *pb.GetItemsV1Request) (*pb.GetItemsV1Response, error) {
 	if err := is.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -92,7 +92,7 @@ func (is *Service) GetItems(ctx context.Context, req *pb.GetItemsRequest) (*pb.G
 		}
 	}
 
-	return &pb.GetItemsResponse{
+	return &pb.GetItemsV1Response{
 		Items:      items,
 		TotalCount: totalCount,
 	}, nil

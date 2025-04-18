@@ -29,23 +29,23 @@ type MockTokenManager struct {
 	mock.Mock
 }
 
-func (m *MockCardServiceClient) GetCards(ctx context.Context,
-	in *card.GetCardsRequest,
+func (m *MockCardServiceClient) GetCardsV1(ctx context.Context,
+	in *card.GetCardsV1Request,
 	_ ...grpc.CallOption,
-) (*card.GetCardsResponse, error) {
+) (*card.GetCardsV1Response, error) {
 	args := m.Called(ctx, in)
 
-	return args.Get(0).(*card.GetCardsResponse), args.Error(1)
+	return args.Get(0).(*card.GetCardsV1Response), args.Error(1)
 }
 
-func (m *MockCardServiceClient) GetCard(ctx context.Context,
-	in *card.GetCardRequest,
+func (m *MockCardServiceClient) GetCardV1(ctx context.Context,
+	in *card.GetCardV1Request,
 	_ ...grpc.CallOption,
-) (*card.GetCardResponse, error) {
+) (*card.GetCardV1Response, error) {
 	args := m.Called(ctx, in)
 
 	// Safely handle nil to avoid type assertion panic
-	arg, ok := args.Get(0).(*card.GetCardResponse)
+	arg, ok := args.Get(0).(*card.GetCardV1Response)
 	if !ok && args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -53,14 +53,14 @@ func (m *MockCardServiceClient) GetCard(ctx context.Context,
 	return arg, args.Error(1)
 }
 
-func (m *MockCardServiceClient) UpdateCard(ctx context.Context,
-	in *card.UpdateCardRequest,
+func (m *MockCardServiceClient) UpdateCardV1(ctx context.Context,
+	in *card.UpdateCardV1Request,
 	_ ...grpc.CallOption,
-) (*card.UpdateCardResponse, error) {
+) (*card.UpdateCardV1Response, error) {
 	args := m.Called(ctx, in)
 
 	// Safely handle nil to avoid type assertion panic
-	arg, ok := args.Get(0).(*card.UpdateCardResponse)
+	arg, ok := args.Get(0).(*card.UpdateCardV1Response)
 	if !ok && args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -68,13 +68,13 @@ func (m *MockCardServiceClient) UpdateCard(ctx context.Context,
 	return arg, args.Error(1)
 }
 
-func (m *MockCardServiceClient) StoreCard(ctx context.Context,
-	in *card.StoreCardRequest,
+func (m *MockCardServiceClient) StoreCardV1(ctx context.Context,
+	in *card.StoreCardV1Request,
 	_ ...grpc.CallOption,
-) (*card.StoreCardResponse, error) {
+) (*card.StoreCardV1Response, error) {
 	args := m.Called(ctx, in)
 
-	arg, ok := args.Get(0).(*card.StoreCardResponse)
+	arg, ok := args.Get(0).(*card.StoreCardV1Response)
 	if !ok && args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -82,13 +82,13 @@ func (m *MockCardServiceClient) StoreCard(ctx context.Context,
 	return arg, args.Error(1)
 }
 
-func (m *MockCardServiceClient) DeleteCard(ctx context.Context,
-	in *card.DeleteCardRequest,
+func (m *MockCardServiceClient) DeleteCardV1(ctx context.Context,
+	in *card.DeleteCardV1Request,
 	_ ...grpc.CallOption,
-) (*card.DeleteCardResponse, error) {
+) (*card.DeleteCardV1Response, error) {
 	args := m.Called(ctx, in)
 
-	arg, ok := args.Get(0).(*card.DeleteCardResponse)
+	arg, ok := args.Get(0).(*card.DeleteCardV1Response)
 	if !ok && args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -116,8 +116,8 @@ func TestGetCard_Success(t *testing.T) {
 	}
 	expectedTime := time.Now()
 
-	mockClient.On("GetCard", mock.Anything, &card.GetCardRequest{CardId: "card123"}).
-		Return(&card.GetCardResponse{
+	mockClient.On("GetCardV1", mock.Anything, &card.GetCardV1Request{CardId: "card123"}).
+		Return(&card.GetCardV1Response{
 			Card:       expectedCard,
 			LastUpdate: timestamppb.New(expectedTime),
 		}, nil)
@@ -139,7 +139,7 @@ func TestGetCard_Error(t *testing.T) {
 	mockClient := new(MockCardServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("GetCard", mock.Anything, &card.GetCardRequest{CardId: "card123"}).
+	mockClient.On("GetCardV1", mock.Anything, &card.GetCardV1Request{CardId: "card123"}).
 		Return(nil, errors.New("get card failed"))
 
 	client := &cards.Client{
@@ -159,7 +159,7 @@ func TestUpdateCard_Success(t *testing.T) {
 	mockClient := new(MockCardServiceClient)
 	logger := zerolog.Nop()
 
-	updateReq := &card.UpdateCardRequest{
+	updateReq := &card.UpdateCardV1Request{
 		CardId: "card123",
 		Data: &card.CardData{
 			CardNumber:     "4111111111111111",
@@ -169,8 +169,8 @@ func TestUpdateCard_Success(t *testing.T) {
 		},
 	}
 
-	mockClient.On("UpdateCard", mock.Anything, updateReq).
-		Return(&card.UpdateCardResponse{
+	mockClient.On("UpdateCardV1", mock.Anything, updateReq).
+		Return(&card.UpdateCardV1Response{
 			CardId: "card123",
 		}, nil)
 
@@ -190,7 +190,7 @@ func TestUpdateCard_Error(t *testing.T) {
 	mockClient := new(MockCardServiceClient)
 	logger := zerolog.Nop()
 
-	updateReq := &card.UpdateCardRequest{
+	updateReq := &card.UpdateCardV1Request{
 		CardId: "card123",
 		Data: &card.CardData{
 			CardNumber:     "4111111111111111",
@@ -200,7 +200,7 @@ func TestUpdateCard_Error(t *testing.T) {
 		},
 	}
 
-	mockClient.On("UpdateCard", mock.Anything, updateReq).
+	mockClient.On("UpdateCardV1", mock.Anything, updateReq).
 		Return(nil, errors.New("update failed"))
 
 	client := &cards.Client{
@@ -220,7 +220,7 @@ func TestStoreCard_Success(t *testing.T) {
 	mockClient := new(MockCardServiceClient)
 	logger := zerolog.Nop()
 
-	storeReq := &card.StoreCardRequest{
+	storeReq := &card.StoreCardV1Request{
 		Card: &card.CardData{
 			CardNumber:     "4111111111111111",
 			ExpiryDate:     "12/25",
@@ -229,8 +229,8 @@ func TestStoreCard_Success(t *testing.T) {
 		},
 	}
 
-	mockClient.On("StoreCard", mock.Anything, storeReq).
-		Return(&card.StoreCardResponse{CardId: "new-card-123"}, nil)
+	mockClient.On("StoreCardV1", mock.Anything, storeReq).
+		Return(&card.StoreCardV1Response{CardId: "new-card-123"}, nil)
 
 	client := &cards.Client{
 		Client:       mockClient,
@@ -249,7 +249,7 @@ func TestStoreCard_Error(t *testing.T) {
 	mockClient := new(MockCardServiceClient)
 	logger := zerolog.Nop()
 
-	storeReq := &card.StoreCardRequest{
+	storeReq := &card.StoreCardV1Request{
 		Card: &card.CardData{
 			CardNumber:     "4111111111111111",
 			ExpiryDate:     "12/25",
@@ -258,7 +258,7 @@ func TestStoreCard_Error(t *testing.T) {
 		},
 	}
 
-	mockClient.On("StoreCard", mock.Anything, storeReq).
+	mockClient.On("StoreCardV1", mock.Anything, storeReq).
 		Return(nil, errors.New("store failed"))
 
 	client := &cards.Client{
@@ -278,8 +278,8 @@ func TestDeleteCard_Success(t *testing.T) {
 	mockClient := new(MockCardServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("DeleteCard", mock.Anything, &card.DeleteCardRequest{CardId: "card123"}).
-		Return(&card.DeleteCardResponse{Ok: true}, nil)
+	mockClient.On("DeleteCardV1", mock.Anything, &card.DeleteCardV1Request{CardId: "card123"}).
+		Return(&card.DeleteCardV1Response{Ok: true}, nil)
 
 	client := &cards.Client{
 		Client:       mockClient,
@@ -298,7 +298,7 @@ func TestDeleteCard_Error(t *testing.T) {
 	mockClient := new(MockCardServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("DeleteCard", mock.Anything, &card.DeleteCardRequest{CardId: "card123"}).
+	mockClient.On("DeleteCardV1", mock.Anything, &card.DeleteCardV1Request{CardId: "card123"}).
 		Return(nil, errors.New("delete failed"))
 
 	client := &cards.Client{
@@ -318,8 +318,8 @@ func TestDeleteCard_NotOk(t *testing.T) {
 	mockClient := new(MockCardServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("DeleteCard", mock.Anything, &card.DeleteCardRequest{CardId: "card123"}).
-		Return(&card.DeleteCardResponse{Ok: false}, nil)
+	mockClient.On("DeleteCardV1", mock.Anything, &card.DeleteCardV1Request{CardId: "card123"}).
+		Return(&card.DeleteCardV1Response{Ok: false}, nil)
 
 	client := &cards.Client{
 		Client:       mockClient,

@@ -32,7 +32,7 @@ func NewCardClient(conn *grpc.ClientConn, tokenManager auth.ITokenManager, log *
 
 // GetCard sends a register request to the server.
 func (as *Client) GetCard(ctx context.Context, id string) (*pb.CardData, time.Time, error) {
-	resp, err := as.Client.GetCard(ctx, &pb.GetCardRequest{
+	resp, err := as.Client.GetCardV1(ctx, &pb.GetCardV1Request{
 		CardId: id,
 	})
 	if err != nil {
@@ -45,7 +45,7 @@ func (as *Client) GetCard(ctx context.Context, id string) (*pb.CardData, time.Ti
 }
 
 func (as *Client) UpdateCard(ctx context.Context, id, cardNum, expDate, cvv, cardHolder string) error {
-	_, err := as.Client.UpdateCard(ctx, &pb.UpdateCardRequest{
+	_, err := as.Client.UpdateCardV1(ctx, &pb.UpdateCardV1Request{
 		CardId: id,
 		Data: &pb.CardData{
 			CardNumber:     cardNum,
@@ -64,7 +64,7 @@ func (as *Client) UpdateCard(ctx context.Context, id, cardNum, expDate, cvv, car
 }
 
 func (as *Client) StoreCard(ctx context.Context, cardNum, expDate, cvv, cardHolder string) (string, error) {
-	resp, err := as.Client.StoreCard(ctx, &pb.StoreCardRequest{
+	resp, err := as.Client.StoreCardV1(ctx, &pb.StoreCardV1Request{
 		Card: &pb.CardData{
 			CardNumber:     cardNum,
 			ExpiryDate:     expDate,
@@ -83,7 +83,7 @@ func (as *Client) StoreCard(ctx context.Context, cardNum, expDate, cvv, cardHold
 
 // DeleteCard delete card.
 func (as *Client) DeleteCard(ctx context.Context, id string) (bool, error) {
-	resp, err := as.Client.DeleteCard(ctx, &pb.DeleteCardRequest{
+	resp, err := as.Client.DeleteCardV1(ctx, &pb.DeleteCardV1Request{
 		CardId: id,
 	})
 	if err != nil {

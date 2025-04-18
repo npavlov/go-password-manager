@@ -32,7 +32,7 @@ func NewNoteClient(conn *grpc.ClientConn, tokenManager auth.ITokenManager, log *
 
 // GetNote sends a register request to the server.
 func (as *Client) GetNote(ctx context.Context, id string) (*pb.NoteData, time.Time, error) {
-	resp, err := as.Client.GetNote(ctx, &pb.GetNoteRequest{
+	resp, err := as.Client.GetNoteV1(ctx, &pb.GetNoteV1Request{
 		NoteId: id,
 	})
 	if err != nil {
@@ -45,7 +45,7 @@ func (as *Client) GetNote(ctx context.Context, id string) (*pb.NoteData, time.Ti
 }
 
 func (as *Client) StoreNote(ctx context.Context, content string) (string, error) {
-	resp, err := as.Client.StoreNote(ctx, &pb.StoreNoteRequest{
+	resp, err := as.Client.StoreNoteV1(ctx, &pb.StoreNoteV1Request{
 		Note: &pb.NoteData{
 			Content: content,
 		},
@@ -60,7 +60,7 @@ func (as *Client) StoreNote(ctx context.Context, content string) (string, error)
 }
 
 func (as *Client) DeleteNote(ctx context.Context, id string) (bool, error) {
-	resp, err := as.Client.DeleteNote(ctx, &pb.DeleteNoteRequest{
+	resp, err := as.Client.DeleteNoteV1(ctx, &pb.DeleteNoteV1Request{
 		NoteId: id,
 	})
 	if err != nil {

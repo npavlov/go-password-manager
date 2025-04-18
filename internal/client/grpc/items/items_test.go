@@ -27,14 +27,14 @@ type MockTokenManager struct {
 	mock.Mock
 }
 
-func (m *MockItemServiceClient) GetItems(ctx context.Context,
-	in *item.GetItemsRequest,
+func (m *MockItemServiceClient) GetItemsV1(ctx context.Context,
+	in *item.GetItemsV1Request,
 	_ ...grpc.CallOption,
-) (*item.GetItemsResponse, error) {
+) (*item.GetItemsV1Response, error) {
 	args := m.Called(ctx, in)
 
 	// Safely handle nil to avoid type assertion panic
-	arg, ok := args.Get(0).(*item.GetItemsResponse)
+	arg, ok := args.Get(0).(*item.GetItemsV1Response)
 	if !ok && args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -66,10 +66,10 @@ func TestGetItems_Success(t *testing.T) {
 	}
 	expectedTotal := int32(2)
 
-	mockClient.On("GetItems", mock.Anything, &item.GetItemsRequest{
+	mockClient.On("GetItemsV1", mock.Anything, &item.GetItemsV1Request{
 		Page:     1,
 		PageSize: 10,
-	}).Return(&item.GetItemsResponse{
+	}).Return(&item.GetItemsV1Response{
 		Items:      expectedItems,
 		TotalCount: expectedTotal,
 	}, nil)
@@ -92,10 +92,10 @@ func TestGetItems_EmptyResult(t *testing.T) {
 	mockClient := new(MockItemServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("GetItems", mock.Anything, &item.GetItemsRequest{
+	mockClient.On("GetItemsV1", mock.Anything, &item.GetItemsV1Request{
 		Page:     2,
 		PageSize: 20,
-	}).Return(&item.GetItemsResponse{
+	}).Return(&item.GetItemsV1Response{
 		Items:      []*item.ItemData{},
 		TotalCount: 0,
 	}, nil)
@@ -118,7 +118,7 @@ func TestGetItems_Error(t *testing.T) {
 	mockClient := new(MockItemServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("GetItems", mock.Anything, &item.GetItemsRequest{
+	mockClient.On("GetItemsV1", mock.Anything, &item.GetItemsV1Request{
 		Page:     1,
 		PageSize: 10,
 	}).Return(nil, errors.New("grpc error"))
@@ -145,10 +145,10 @@ func TestGetItems_InvalidPageParams(t *testing.T) {
 	logger := zerolog.Nop()
 
 	// Test with zero page size (should still make the call)
-	mockClient.On("GetItems", mock.Anything, &item.GetItemsRequest{
+	mockClient.On("GetItemsV1", mock.Anything, &item.GetItemsV1Request{
 		Page:     1,
 		PageSize: 0,
-	}).Return(&item.GetItemsResponse{
+	}).Return(&item.GetItemsV1Response{
 		Items:      []*item.ItemData{},
 		TotalCount: 0,
 	}, nil)
@@ -163,10 +163,10 @@ func TestGetItems_InvalidPageParams(t *testing.T) {
 	require.NoError(t, err) // The client doesn't validate parameters
 
 	// Test with negative page number (should still make the call)
-	mockClient.On("GetItems", mock.Anything, &item.GetItemsRequest{
+	mockClient.On("GetItemsV1", mock.Anything, &item.GetItemsV1Request{
 		Page:     -1,
 		PageSize: 10,
-	}).Return(&item.GetItemsResponse{
+	}).Return(&item.GetItemsV1Response{
 		Items:      []*item.ItemData{},
 		TotalCount: 0,
 	}, nil)

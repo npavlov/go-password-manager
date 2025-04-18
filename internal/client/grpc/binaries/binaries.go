@@ -38,13 +38,13 @@ func NewBinaryClient(conn *grpc.ClientConn, tokenManager auth.ITokenManager, log
 //
 //nolint:cyclop
 func (c *Client) UploadFile(ctx context.Context, filename string, reader io.Reader) (string, error) {
-	stream, err := c.Client.UploadFile(ctx)
+	stream, err := c.Client.UploadFileV1(ctx)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to start upload stream")
 	}
 
 	// Send metadata first
-	err = stream.Send(&pb.UploadFileRequest{
+	err = stream.Send(&pb.UploadFileV1Request{
 		Filename: filename,
 		Data:     make([]byte, 0),
 	})
@@ -61,7 +61,7 @@ func (c *Client) UploadFile(ctx context.Context, filename string, reader io.Read
 		}
 
 		if cursor > 0 {
-			err := stream.Send(&pb.UploadFileRequest{
+			err := stream.Send(&pb.UploadFileV1Request{
 				Filename: filename,
 				Data:     buf[:cursor],
 			})
@@ -87,7 +87,7 @@ func (c *Client) UploadFile(ctx context.Context, filename string, reader io.Read
 
 // DownloadFile streams file data from the server.
 func (c *Client) DownloadFile(ctx context.Context, fileID string, writer io.Writer) error {
-	stream, err := c.Client.DownloadFile(ctx, &pb.DownloadFileRequest{
+	stream, err := c.Client.DownloadFileV1(ctx, &pb.DownloadFileV1Request{
 		FileId: fileID,
 	})
 	if err != nil {
@@ -116,7 +116,7 @@ func (c *Client) DownloadFile(ctx context.Context, fileID string, writer io.Writ
 
 // DeleteFile removes a file by ID.
 func (c *Client) DeleteFile(ctx context.Context, fileID string) (bool, error) {
-	resp, err := c.Client.DeleteFile(ctx, &pb.DeleteFileRequest{
+	resp, err := c.Client.DeleteFileV1(ctx, &pb.DeleteFileV1Request{
 		FileId: fileID,
 	})
 	if err != nil {
@@ -128,7 +128,7 @@ func (c *Client) DeleteFile(ctx context.Context, fileID string) (bool, error) {
 
 // GetFile retrieves metadata for a file by ID.
 func (c *Client) GetFile(ctx context.Context, fileID string) (*pb.FileMeta, error) {
-	resp, err := c.Client.GetFile(ctx, &pb.GetFileRequest{
+	resp, err := c.Client.GetFileV1(ctx, &pb.GetFileV1Request{
 		FileId: fileID,
 	})
 	if err != nil {

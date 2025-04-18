@@ -74,8 +74,8 @@ func (fs *Service) RegisterService(grpcServer *grpc.Server) {
 	pb.RegisterFileServiceServer(grpcServer, fs)
 }
 
-//nolint:cyclop,funlen
-func (fs *Service) UploadFile(stream grpc.ClientStreamingServer[pb.UploadFileRequest, pb.UploadFileResponse]) error {
+//nolint:cyclop,funlen,lll
+func (fs *Service) UploadFileV1(stream grpc.ClientStreamingServer[pb.UploadFileV1Request, pb.UploadFileV1Response]) error {
 	ctx := stream.Context()
 
 	// First, receive metadata (filename)
@@ -168,18 +168,18 @@ func (fs *Service) UploadFile(stream grpc.ClientStreamingServer[pb.UploadFileReq
 		return errors.Wrap(err, "failed to store binary")
 	}
 
-	return stream.SendAndClose(&pb.UploadFileResponse{FileId: binary.ID.String()})
+	return stream.SendAndClose(&pb.UploadFileV1Response{FileId: binary.ID.String()})
 }
 
-func (fs *Service) GetFiles(ctx context.Context, req *pb.GetFilesRequest) (*pb.GetFilesResponse, error) {
+func (fs *Service) GetFilesV1(ctx context.Context, req *pb.GetFilesV1Request) (*pb.GetFilesV1Response, error) {
 	if err := fs.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	return &pb.GetFilesResponse{}, nil
+	return &pb.GetFilesV1Response{}, nil
 }
 
-func (fs *Service) DeleteFile(ctx context.Context, req *pb.DeleteFileRequest) (*pb.DeleteFileResponse, error) {
+func (fs *Service) DeleteFileV1(ctx context.Context, req *pb.DeleteFileV1Request) (*pb.DeleteFileV1Response, error) {
 	if err := fs.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -201,13 +201,13 @@ func (fs *Service) DeleteFile(ctx context.Context, req *pb.DeleteFileRequest) (*
 		return nil, errors.Wrap(err, "error deleting file")
 	}
 
-	return &pb.DeleteFileResponse{
+	return &pb.DeleteFileV1Response{
 		Ok: true,
 	}, nil
 }
 
 //nolint:cyclop,funlen,lll
-func (fs *Service) DownloadFile(req *pb.DownloadFileRequest, str grpc.ServerStreamingServer[pb.DownloadFileResponse]) error {
+func (fs *Service) DownloadFileV1(req *pb.DownloadFileV1Request, str grpc.ServerStreamingServer[pb.DownloadFileV1Response]) error {
 	ctx := str.Context()
 
 	userUUID, decryptedUserKey, err := utils.GetDecryptionKey(ctx, fs.storage, fs.cfg.SecuredMasterKey.Get())
@@ -262,7 +262,7 @@ func (fs *Service) DownloadFile(req *pb.DownloadFileRequest, str grpc.ServerStre
 		cursor, err := decryptor.Read(buffer) // Read a chunk
 		if cursor > 0 {
 			// Send only the exact number of bytes read
-			if err := str.Send(&pb.DownloadFileResponse{
+			if err := str.Send(&pb.DownloadFileV1Response{
 				Data:       buffer[:cursor], // Trim the buffer to actual size
 				LastUpdate: timestamppb.New(fileEntry.UpdatedAt.Time),
 			}); err != nil {
@@ -285,7 +285,7 @@ func (fs *Service) DownloadFile(req *pb.DownloadFileRequest, str grpc.ServerStre
 	return nil
 }
 
-func (fs *Service) GetFile(ctx context.Context, req *pb.GetFileRequest) (*pb.GetFileResponse, error) {
+func (fs *Service) GetFileV1(ctx context.Context, req *pb.GetFileV1Request) (*pb.GetFileV1Response, error) {
 	if err := fs.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -304,7 +304,7 @@ func (fs *Service) GetFile(ctx context.Context, req *pb.GetFileRequest) (*pb.Get
 		return nil, errors.Wrap(err, "error getting user id")
 	}
 
-	return &pb.GetFileResponse{
+	return &pb.GetFileV1Response{
 		File: &pb.FileMeta{
 			Id:       file.ID.String(),
 			FileName: file.FileName,

@@ -26,17 +26,17 @@ type MockAuthServiceClient struct {
 	mock.Mock
 }
 
-func (m *MockAuthServiceClient) RefreshToken(ctx context.Context,
-	in *auth.RefreshTokenRequest,
+func (m *MockAuthServiceClient) RefreshTokenV1(ctx context.Context,
+	in *auth.RefreshTokenV1Request,
 	_ ...grpc.CallOption,
-) (*auth.RefreshTokenResponse, error) {
+) (*auth.RefreshTokenV1Response, error) {
 	args := m.Called(ctx, in)
 
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 
-	return args.Get(0).(*auth.RefreshTokenResponse), args.Error(1)
+	return args.Get(0).(*auth.RefreshTokenV1Response), args.Error(1)
 }
 
 type MockUnaryInvoker struct {
@@ -93,9 +93,9 @@ func TestUnaryInterceptor_SkipAuthMethods(t *testing.T) {
 	tests := []struct {
 		method string
 	}{
-		{method: auth.AuthService_Register_FullMethodName},
-		{method: auth.AuthService_Login_FullMethodName},
-		{method: auth.AuthService_RefreshToken_FullMethodName},
+		{method: auth.AuthService_RegisterV1_FullMethodName},
+		{method: auth.AuthService_LoginV1_FullMethodName},
+		{method: auth.AuthService_RefreshTokenV1_FullMethodName},
 	}
 
 	for _, tt := range tests {
@@ -146,9 +146,9 @@ func TestUnaryInterceptor_UnauthenticatedError(t *testing.T) {
 
 	interceptor := interceptors.NewAuthInterceptor(cfg, tm)
 	mockAuthClient := new(MockAuthServiceClient)
-	mockAuthClient.On("RefreshToken", mock.Anything, &auth.RefreshTokenRequest{
+	mockAuthClient.On("RefreshTokenV1", mock.Anything, &auth.RefreshTokenV1Request{
 		RefreshToken: "valid_refresh",
-	}).Return(&auth.RefreshTokenResponse{
+	}).Return(&auth.RefreshTokenV1Response{
 		Token:        "new_token",
 		RefreshToken: "new_refresh",
 	}, nil)
@@ -179,7 +179,7 @@ func TestUnaryInterceptor_RefreshTokenFailure(t *testing.T) {
 
 	interceptor := interceptors.NewAuthInterceptor(cfg, tm)
 	mockAuthClient := new(MockAuthServiceClient)
-	mockAuthClient.On("RefreshToken", mock.Anything, &auth.RefreshTokenRequest{
+	mockAuthClient.On("RefreshTokenV1", mock.Anything, &auth.RefreshTokenV1Request{
 		RefreshToken: "invalid_refresh",
 	}).Return(nil, errors.New("refresh failed"))
 	interceptor.SetAuthClient(mockAuthClient)
@@ -275,9 +275,9 @@ func TestConcurrentAccess(t *testing.T) {
 
 	interceptor := interceptors.NewAuthInterceptor(cfg, tm)
 	mockAuthClient := new(MockAuthServiceClient)
-	mockAuthClient.On("RefreshToken", mock.Anything, &auth.RefreshTokenRequest{
+	mockAuthClient.On("RefreshTokenV1", mock.Anything, &auth.RefreshTokenV1Request{
 		RefreshToken: "refresh",
-	}).Return(&auth.RefreshTokenResponse{
+	}).Return(&auth.RefreshTokenV1Response{
 		Token:        "new_token",
 		RefreshToken: "new_refresh",
 	}, nil)

@@ -64,7 +64,7 @@ func TestTokenInterceptor(t *testing.T) {
 		},
 		{
 			name:          "skip public method",
-			method:        pb.AuthService_Register_FullMethodName,
+			method:        pb.AuthService_RegisterV1_FullMethodName,
 			token:         "",
 			mockSetup:     func(_ *MockMemStorage) {},
 			expectedError: false,

@@ -18,7 +18,7 @@ import (
 )
 
 type Client interface {
-	RefreshToken(ctx context.Context, in *pb.RefreshTokenRequest, opts ...grpc.CallOption) (*pb.RefreshTokenResponse, error)
+	RefreshTokenV1(ctx context.Context, in *pb.RefreshTokenV1Request, opts ...grpc.CallOption) (*pb.RefreshTokenV1Response, error)
 }
 
 type AuthInterceptor struct {
@@ -52,9 +52,9 @@ func (ai *AuthInterceptor) UnaryInterceptor(
 	invoker grpc.UnaryInvoker,
 	opts ...grpc.CallOption,
 ) error {
-	if method == pb.AuthService_Register_FullMethodName ||
-		method == pb.AuthService_Login_FullMethodName ||
-		method == pb.AuthService_RefreshToken_FullMethodName {
+	if method == pb.AuthService_RegisterV1_FullMethodName ||
+		method == pb.AuthService_LoginV1_FullMethodName ||
+		method == pb.AuthService_RefreshTokenV1_FullMethodName {
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
 
@@ -124,7 +124,7 @@ func (ai *AuthInterceptor) refreshAccessToken(ctx context.Context) (string, stri
 	defer ai.mu.Unlock()
 
 	// Call the RefreshToken gRPC endpoint
-	resp, err := ai.AuthClient.RefreshToken(ctx, &pb.RefreshTokenRequest{
+	resp, err := ai.AuthClient.RefreshTokenV1(ctx, &pb.RefreshTokenV1Request{
 		RefreshToken: ai.tokenManager.GetRefreshToken(),
 	})
 	if err != nil {

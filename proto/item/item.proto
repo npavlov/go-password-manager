@@ -2,41 +2,76 @@ syntax = "proto3";
 
 package proto.item;
 
-option go_package = "github.com/npavlov/go-password-manager/proto/item";
+// Go package option for generated code
+option go_package = "github.com/npavlov/go-password-manager/gen/item";
 
 import "google/protobuf/timestamp.proto";
 import "buf/validate/validate.proto";
 
-// ItemService provides methods to retrieve stored items.
+//
+// ItemService provides methods to retrieve a list of user-stored items,
+// supporting pagination and filtering by item type.
+//
 service ItemService {
-  rpc GetItems (GetItemsRequest) returns (GetItemsResponse);
+  // Retrieve a paginated list of all stored items.
+  rpc GetItemsV1 (GetItemsV1Request) returns (GetItemsV1Response);
 }
 
-// Enum for item types
+//
+// Enum representing the type of stored item.
+//
 enum ItemType {
+  // Default unspecified type.
   ITEM_TYPE_UNSPECIFIED = 0;
+
+  // Password record (e.g., login credentials).
   ITEM_TYPE_PASSWORD = 1;
+
+  // Secure note (e.g., free-form encrypted text).
   ITEM_TYPE_NOTE = 2;
+
+  // Credit/debit card information.
   ITEM_TYPE_CARD = 3;
+
+  // Binary file (e.g., documents, images).
   ITEM_TYPE_BINARY = 4;
 }
 
-// Request for retrieving items with pagination
-message GetItemsRequest {
-  int32 page = 1 [(buf.validate.field).int32.gte = 1];  // Page number, must be >= 1
-  int32 page_size = 2 [(buf.validate.field).int32 = {gte: 1, lte: 100}];  // Page size (1-100)
+//
+// Request to retrieve stored items, with support for pagination.
+//
+message GetItemsV1Request {
+  // Page number to retrieve (must be >= 1).
+  int32 page = 1 [(buf.validate.field).int32.gte = 1];
+
+  // Number of items per page (between 1 and 100).
+  int32 page_size = 2 [(buf.validate.field).int32 = {gte: 1, lte: 100}];
 }
 
-// Response containing paginated items
-message GetItemsResponse {
-  repeated ItemData items = 1;  // List of items
-  int32 total_count = 2;        // Total number of items (for pagination)
+//
+// Response containing a list of stored items with pagination metadata.
+//
+message GetItemsV1Response {
+  // List of retrieved items.
+  repeated ItemData items = 1;
+
+  // Total number of items available.
+  int32 total_count = 2;
 }
 
-// Unified structure for different item types
+//
+// Unified metadata structure for all supported item types.
+//
 message ItemData {
-  string id = 1 [(buf.validate.field).string.uuid = true]; // Unique item ID
-  ItemType type = 3;  // Type of the item
-  google.protobuf.Timestamp created_at = 4; // Creation timestamp
-  google.protobuf.Timestamp updated_at = 5; // Last update timestamp
+  // Unique identifier for the item (UUID format).
+  string id = 1 [(buf.validate.field).string.uuid = true];
+
+  // Type of the stored item (password, note, etc.).
+  ItemType type = 3;
+
+  // Timestamp when the item was created.
+  google.protobuf.Timestamp created_at = 4;
+
+  // Timestamp of the most recent update to the item.
+  google.protobuf.Timestamp updated_at = 5;
 }

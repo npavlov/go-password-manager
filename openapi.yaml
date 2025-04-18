@@ -1,7 +1,7 @@
 swagger: "2.0"
 info:
-  title: My API
-  description: API for My Service
+  title: Password Manager
+  description: GRPC API to store data in encrypted format
   version: 1.0.0
 schemes:
   - http

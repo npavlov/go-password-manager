@@ -58,14 +58,14 @@ func TestStorePassword_Success(t *testing.T) {
 	testLogin := "test@example.com"
 	testPassword := "securepassword123"
 
-	req := &pb.StorePasswordRequest{
+	req := &pb.StorePasswordV1Request{
 		Password: &pb.PasswordData{
 			Login:    testLogin,
 			Password: testPassword,
 		},
 	}
 
-	resp, err := svc.StorePassword(ctx, req)
+	resp, err := svc.StorePasswordV1(ctx, req)
 	require.NoError(t, err)
 	require.NotEmpty(t, resp.GetPasswordId())
 
@@ -81,13 +81,13 @@ func TestStorePassword_ValidationError(t *testing.T) {
 	svc, _, ctx, _ := setupPasswordService(t)
 
 	// Missing password data
-	req := &pb.StorePasswordRequest{
+	req := &pb.StorePasswordV1Request{
 		Password: &pb.PasswordData{
 			Login: "", // Invalid empty login
 		},
 	}
 
-	_, err := svc.StorePassword(ctx, req)
+	_, err := svc.StorePasswordV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error validating input")
 }
@@ -104,14 +104,14 @@ func TestStorePassword_EncryptionError(t *testing.T) {
 	user.EncryptionKey = "invalid-key"
 	storage.UsersByID[userIDPG] = user
 
-	req := &pb.StorePasswordRequest{
+	req := &pb.StorePasswordV1Request{
 		Password: &pb.PasswordData{
 			Login:    "test@example.com",
 			Password: "password123",
 		},
 	}
 
-	_, err := svc.StorePassword(ctx, req)
+	_, err := svc.StorePasswordV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error getting decryption key")
 }
@@ -124,14 +124,14 @@ func TestStorePassword_StorageError(t *testing.T) {
 	// Make storage return error
 	storage.CallError = errors.New("database failure")
 
-	req := &pb.StorePasswordRequest{
+	req := &pb.StorePasswordV1Request{
 		Password: &pb.PasswordData{
 			Login:    "test@example.com",
 			Password: "password123",
 		},
 	}
 
-	_, err := svc.StorePassword(ctx, req)
+	_, err := svc.StorePasswordV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "failed to store password")
 }
@@ -152,11 +152,11 @@ func TestGetPassword_Success(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	req := &pb.GetPasswordRequest{
+	req := &pb.GetPasswordV1Request{
 		PasswordId: storedPass.ID.String(),
 	}
 
-	resp, err := svc.GetPassword(ctx, req)
+	resp, err := svc.GetPasswordV1(ctx, req)
 	require.NoError(t, err)
 	require.Equal(t, testLogin, resp.GetPassword().GetLogin())
 	require.Equal(t, testPassword, resp.GetPassword().GetPassword())
@@ -168,11 +168,11 @@ func TestGetPassword_NotFound(t *testing.T) {
 
 	svc, _, ctx, _ := setupPasswordService(t)
 
-	req := &pb.GetPasswordRequest{
+	req := &pb.GetPasswordV1Request{
 		PasswordId: uuid.NewString(),
 	}
 
-	_, err := svc.GetPassword(ctx, req)
+	_, err := svc.GetPasswordV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error getting user id") // This should probably be "password not found"
 }
@@ -190,11 +190,11 @@ func TestGetPassword_DecryptionError(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	req := &pb.GetPasswordRequest{
+	req := &pb.GetPasswordV1Request{
 		PasswordId: storedPass.ID.String(),
 	}
 
-	_, err = svc.GetPassword(ctx, req)
+	_, err = svc.GetPasswordV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error decrypting password")
 }
@@ -213,11 +213,11 @@ func TestGetPassword_Unauthorized(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	req := &pb.GetPasswordRequest{
+	req := &pb.GetPasswordV1Request{
 		PasswordId: otherPass.ID.String(),
 	}
 
-	_, err = svc.GetPassword(ctx, req)
+	_, err = svc.GetPasswordV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "unauthorized access to password")
 }
@@ -227,8 +227,8 @@ func TestGetPasswords_NotImplemented(t *testing.T) {
 
 	svc, _, ctx, _ := setupPasswordService(t)
 
-	req := &pb.GetPasswordsRequest{}
-	resp, err := svc.GetPasswords(ctx, req)
+	req := &pb.GetPasswordsV1Request{}
+	resp, err := svc.GetPasswordsV1(ctx, req)
 
 	require.NoError(t, err)
 	require.NotNil(t, resp)
@@ -250,7 +250,7 @@ func TestUpdatePassword_Success(t *testing.T) {
 	newLogin := "new@example.com"
 	newPassword := "newsecurepassword123"
 
-	req := &pb.UpdatePasswordRequest{
+	req := &pb.UpdatePasswordV1Request{
 		PasswordId: initialPass.ID.String(),
 		Data: &pb.PasswordData{
 			Login:    newLogin,
@@ -258,7 +258,7 @@ func TestUpdatePassword_Success(t *testing.T) {
 		},
 	}
 
-	resp, err := svc.UpdatePassword(ctx, req)
+	resp, err := svc.UpdatePasswordV1(ctx, req)
 	require.NoError(t, err)
 	require.Equal(t, initialPass.ID.String(), resp.GetPasswordId())
 
@@ -278,12 +278,12 @@ func TestUpdatePassword_ValidationError(t *testing.T) {
 
 	svc, _, ctx, _ := setupPasswordService(t)
 
-	req := &pb.UpdatePasswordRequest{
+	req := &pb.UpdatePasswordV1Request{
 		PasswordId: uuid.NewString(),
 		Data:       &pb.PasswordData{}, // Missing required fields
 	}
 
-	_, err := svc.UpdatePassword(ctx, req)
+	_, err := svc.UpdatePasswordV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error validating input")
 }
@@ -293,7 +293,7 @@ func TestUpdatePassword_NotFound(t *testing.T) {
 
 	svc, _, ctx, _ := setupPasswordService(t)
 
-	req := &pb.UpdatePasswordRequest{
+	req := &pb.UpdatePasswordV1Request{
 		PasswordId: uuid.NewString(),
 		Data: &pb.PasswordData{
 			Login:    "test@example.com",
@@ -301,7 +301,7 @@ func TestUpdatePassword_NotFound(t *testing.T) {
 		},
 	}
 
-	_, err := svc.UpdatePassword(ctx, req)
+	_, err := svc.UpdatePasswordV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "failed to store password") // This should probably be "password not found"
 }
@@ -319,11 +319,11 @@ func TestDeletePassword_Success(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	req := &pb.DeletePasswordRequest{
+	req := &pb.DeletePasswordV1Request{
 		PasswordId: testPass.ID.String(),
 	}
 
-	resp, err := svc.DeletePassword(ctx, req)
+	resp, err := svc.DeletePasswordV1(ctx, req)
 	require.NoError(t, err)
 	require.True(t, resp.GetOk())
 
@@ -337,11 +337,11 @@ func TestDeletePassword_NotFound(t *testing.T) {
 
 	svc, _, ctx, _ := setupPasswordService(t)
 
-	req := &pb.DeletePasswordRequest{
+	req := &pb.DeletePasswordV1Request{
 		PasswordId: uuid.NewString(),
 	}
 
-	_, err := svc.DeletePassword(ctx, req)
+	_, err := svc.DeletePasswordV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error deleting password")
 }
@@ -360,11 +360,11 @@ func TestDeletePassword_Unauthorized(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	req := &pb.DeletePasswordRequest{
+	req := &pb.DeletePasswordV1Request{
 		PasswordId: otherPass.ID.String(),
 	}
 
-	_, err = svc.DeletePassword(ctx, req)
+	_, err = svc.DeletePasswordV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "unauthorized access to password")
 }

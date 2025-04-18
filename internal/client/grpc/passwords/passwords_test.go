@@ -29,16 +29,16 @@ type MockTokenManager struct {
 	mock.Mock
 }
 
-func (m *MockPasswordServiceClient) GetPasswords(ctx context.Context, in *password.GetPasswordsRequest, _ ...grpc.CallOption) (*password.GetPasswordsResponse, error) {
+func (m *MockPasswordServiceClient) GetPasswordsV1(ctx context.Context, in *password.GetPasswordsV1Request, _ ...grpc.CallOption) (*password.GetPasswordsV1Response, error) {
 	args := m.Called(ctx, in)
 
-	return args.Get(0).(*password.GetPasswordsResponse), args.Error(1)
+	return args.Get(0).(*password.GetPasswordsV1Response), args.Error(1)
 }
 
-func (m *MockPasswordServiceClient) GetPassword(ctx context.Context, in *password.GetPasswordRequest, _ ...grpc.CallOption) (*password.GetPasswordResponse, error) {
+func (m *MockPasswordServiceClient) GetPasswordV1(ctx context.Context, in *password.GetPasswordV1Request, _ ...grpc.CallOption) (*password.GetPasswordV1Response, error) {
 	args := m.Called(ctx, in)
 
-	arg, ok := args.Get(0).(*password.GetPasswordResponse)
+	arg, ok := args.Get(0).(*password.GetPasswordV1Response)
 	if !ok && args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -46,10 +46,10 @@ func (m *MockPasswordServiceClient) GetPassword(ctx context.Context, in *passwor
 	return arg, args.Error(1)
 }
 
-func (m *MockPasswordServiceClient) UpdatePassword(ctx context.Context, in *password.UpdatePasswordRequest, _ ...grpc.CallOption) (*password.UpdatePasswordResponse, error) {
+func (m *MockPasswordServiceClient) UpdatePasswordV1(ctx context.Context, in *password.UpdatePasswordV1Request, _ ...grpc.CallOption) (*password.UpdatePasswordV1Response, error) {
 	args := m.Called(ctx, in)
 
-	arg, ok := args.Get(0).(*password.UpdatePasswordResponse)
+	arg, ok := args.Get(0).(*password.UpdatePasswordV1Response)
 	if !ok && args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -57,10 +57,10 @@ func (m *MockPasswordServiceClient) UpdatePassword(ctx context.Context, in *pass
 	return arg, args.Error(1)
 }
 
-func (m *MockPasswordServiceClient) StorePassword(ctx context.Context, in *password.StorePasswordRequest, _ ...grpc.CallOption) (*password.StorePasswordResponse, error) {
+func (m *MockPasswordServiceClient) StorePasswordV1(ctx context.Context, in *password.StorePasswordV1Request, _ ...grpc.CallOption) (*password.StorePasswordV1Response, error) {
 	args := m.Called(ctx, in)
 
-	arg, ok := args.Get(0).(*password.StorePasswordResponse)
+	arg, ok := args.Get(0).(*password.StorePasswordV1Response)
 	if !ok && args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -68,10 +68,10 @@ func (m *MockPasswordServiceClient) StorePassword(ctx context.Context, in *passw
 	return arg, args.Error(1)
 }
 
-func (m *MockPasswordServiceClient) DeletePassword(ctx context.Context, in *password.DeletePasswordRequest, _ ...grpc.CallOption) (*password.DeletePasswordResponse, error) {
+func (m *MockPasswordServiceClient) DeletePasswordV1(ctx context.Context, in *password.DeletePasswordV1Request, _ ...grpc.CallOption) (*password.DeletePasswordV1Response, error) {
 	args := m.Called(ctx, in)
 
-	arg, ok := args.Get(0).(*password.DeletePasswordResponse)
+	arg, ok := args.Get(0).(*password.DeletePasswordV1Response)
 	if !ok && args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -97,9 +97,9 @@ func TestGetPassword_Success(t *testing.T) {
 	}
 	expectedTime := time.Now()
 
-	mockClient.On("GetPassword", mock.Anything, &password.GetPasswordRequest{
+	mockClient.On("GetPasswordV1", mock.Anything, &password.GetPasswordV1Request{
 		PasswordId: "pass123",
-	}).Return(&password.GetPasswordResponse{
+	}).Return(&password.GetPasswordV1Response{
 		Password:   expectedPassword,
 		LastUpdate: timestamppb.New(expectedTime),
 	}, nil)
@@ -121,7 +121,7 @@ func TestGetPassword_Error(t *testing.T) {
 	mockClient := new(MockPasswordServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("GetPassword", mock.Anything, &password.GetPasswordRequest{
+	mockClient.On("GetPasswordV1", mock.Anything, &password.GetPasswordV1Request{
 		PasswordId: "pass123",
 	}).Return(nil, errors.New("get password failed"))
 
@@ -142,8 +142,8 @@ func TestUpdatePassword_Success(t *testing.T) {
 	mockClient := new(MockPasswordServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("UpdatePassword", mock.Anything, mock.Anything).
-		Return(&password.UpdatePasswordResponse{}, nil)
+	mockClient.On("UpdatePasswordV1", mock.Anything, mock.Anything).
+		Return(&password.UpdatePasswordV1Response{}, nil)
 
 	client := &passwords.Client{
 		Client:       mockClient,
@@ -161,7 +161,7 @@ func TestUpdatePassword_Error(t *testing.T) {
 	mockClient := new(MockPasswordServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("UpdatePassword", mock.Anything, mock.Anything).
+	mockClient.On("UpdatePasswordV1", mock.Anything, mock.Anything).
 		Return(nil, errors.New("update failed"))
 
 	client := &passwords.Client{
@@ -181,8 +181,8 @@ func TestStorePassword_Success(t *testing.T) {
 	mockClient := new(MockPasswordServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("StorePassword", mock.Anything, mock.Anything).
-		Return(&password.StorePasswordResponse{
+	mockClient.On("StorePasswordV1", mock.Anything, mock.Anything).
+		Return(&password.StorePasswordV1Response{
 			PasswordId: "new-pass-456",
 		}, nil)
 
@@ -203,7 +203,7 @@ func TestStorePassword_Error(t *testing.T) {
 	mockClient := new(MockPasswordServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("StorePassword", mock.Anything, mock.Anything).
+	mockClient.On("StorePasswordV1", mock.Anything, mock.Anything).
 		Return(nil, errors.New("store failed"))
 
 	client := &passwords.Client{
@@ -223,9 +223,9 @@ func TestDeletePassword_Success(t *testing.T) {
 	mockClient := new(MockPasswordServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("DeletePassword", mock.Anything, &password.DeletePasswordRequest{
+	mockClient.On("DeletePasswordV1", mock.Anything, &password.DeletePasswordV1Request{
 		PasswordId: "pass123",
-	}).Return(&password.DeletePasswordResponse{
+	}).Return(&password.DeletePasswordV1Response{
 		Ok: true,
 	}, nil)
 
@@ -246,7 +246,7 @@ func TestDeletePassword_Error(t *testing.T) {
 	mockClient := new(MockPasswordServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("DeletePassword", mock.Anything, &password.DeletePasswordRequest{
+	mockClient.On("DeletePasswordV1", mock.Anything, &password.DeletePasswordV1Request{
 		PasswordId: "pass123",
 	}).Return(nil, errors.New("delete failed"))
 
@@ -267,9 +267,9 @@ func TestDeletePassword_NotSuccessful(t *testing.T) {
 	mockClient := new(MockPasswordServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("DeletePassword", mock.Anything, &password.DeletePasswordRequest{
+	mockClient.On("DeletePasswordV1", mock.Anything, &password.DeletePasswordV1Request{
 		PasswordId: "pass123",
-	}).Return(&password.DeletePasswordResponse{
+	}).Return(&password.DeletePasswordV1Response{
 		Ok: false,
 	}, nil)
 

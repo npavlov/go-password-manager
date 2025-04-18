@@ -59,8 +59,8 @@ func (as *Service) RegisterService(grpcServer *grpc.Server) {
 	pb.RegisterAuthServiceServer(grpcServer, as)
 }
 
-// Register a new user.
-func (as *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+// RegisterV1 a new user.
+func (as *Service) RegisterV1(ctx context.Context, req *pb.RegisterV1Request) (*pb.RegisterV1Response, error) {
 	if err := as.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -103,11 +103,11 @@ func (as *Service) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.R
 		return nil, errors.Wrap(err, "error generating token")
 	}
 
-	return &pb.RegisterResponse{Token: token, RefreshToken: refreshToken, UserKey: userKey}, nil
+	return &pb.RegisterV1Response{Token: token, RefreshToken: refreshToken, UserKey: userKey}, nil
 }
 
-// Login user and return JWT token.
-func (as *Service) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
+// LoginV1 user and return JWT token.
+func (as *Service) LoginV1(ctx context.Context, req *pb.LoginV1Request) (*pb.LoginV1Response, error) {
 	if err := as.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -134,10 +134,12 @@ func (as *Service) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginRe
 		return nil, errors.Wrap(err, "error generating token")
 	}
 
-	return &pb.LoginResponse{Token: token, RefreshToken: refreshToken}, nil
+	return &pb.LoginV1Response{Token: token, RefreshToken: refreshToken}, nil
 }
 
-func (as *Service) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
+func (as *Service) RefreshTokenV1(ctx context.Context,
+	req *pb.RefreshTokenV1Request,
+) (*pb.RefreshTokenV1Response, error) {
 	if err := as.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -167,7 +169,7 @@ func (as *Service) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest
 
 	as.logger.Info().Str("user_id", tokenRow.UserID.String()).Msg("refresh token successfully rotated")
 
-	return &pb.RefreshTokenResponse{
+	return &pb.RefreshTokenV1Response{
 		Token:        newToken,
 		RefreshToken: newRefreshToken,
 	}, nil

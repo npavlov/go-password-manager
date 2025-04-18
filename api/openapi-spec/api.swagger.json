@@ -35,84 +35,100 @@
   ],
   "paths": {},
   "definitions": {
-    "authLoginResponse": {
+    "authLoginV1Response": {
       "type": "object",
       "properties": {
         "token": {
-          "type": "string"
+          "type": "string",
+          "description": "Access token for authenticated API access."
         },
         "refreshToken": {
-          "type": "string"
+          "type": "string",
+          "description": "Refresh token for obtaining new access tokens."
         }
-      }
+      },
+      "description": "Response message after successful login."
     },
-    "authRefreshTokenResponse": {
+    "authRefreshTokenV1Response": {
       "type": "object",
       "properties": {
         "token": {
-          "type": "string"
+          "type": "string",
+          "description": "New access token."
         },
         "refreshToken": {
-          "type": "string"
+          "type": "string",
+          "description": "New refresh token."
         }
-      }
+      },
+      "description": "Response message after successful token refresh."
     },
-    "authRegisterResponse": {
+    "authRegisterV1Response": {
       "type": "object",
       "properties": {
         "token": {
-          "type": "string"
+          "type": "string",
+          "description": "Access token for authenticated API access."
         },
         "refreshToken": {
-          "type": "string"
+          "type": "string",
+          "description": "Refresh token for obtaining new access tokens."
         },
         "userKey": {
-          "type": "string"
+          "type": "string",
+          "description": "Encrypted key or identifier for the user (application-specific)."
         }
-      }
+      },
+      "description": "Response message after successful user registration."
     },
     "cardCardData": {
       "type": "object",
       "properties": {
         "cardNumber": {
           "type": "string",
-          "title": "Validate card number (13-19 digits)"
+          "description": "Card number (13 to 19 digits)."
         },
         "expiryDate": {
           "type": "string",
-          "title": "Validate expiry date (MM/YY format)"
+          "description": "Card expiry date in MM/YY format."
         },
         "cvv": {
           "type": "string",
-          "title": "Validate CVV (3 or 4 digits)"
+          "description": "Card security code (CVV), 3 or 4 digits."
         },
         "cardholderName": {
           "type": "string",
-          "title": "Validate cardholder name (1-100 characters)"
+          "description": "Name of the cardholder (1 to 100 characters)."
         }
-      }
+      },
+      "description": "Represents the data structure for a payment card."
     },
-    "cardDeleteCardResponse": {
+    "cardDeleteCardV1Response": {
       "type": "object",
       "properties": {
         "ok": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Status of the delete operation."
         }
-      }
+      },
+      "description": "Response after attempting to delete a card."
     },
-    "cardGetCardResponse": {
+    "cardGetCardV1Response": {
       "type": "object",
       "properties": {
         "card": {
-          "$ref": "#/definitions/cardCardData"
+          "$ref": "#/definitions/cardCardData",
+          "description": "Card data."
         },
         "lastUpdate": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Timestamp of the last update."
         }
-      }
+      },
+      "description": "Response containing a single card and its last update timestamp."
     },
-    "cardGetCardsResponse": {
+    "cardGetCardsV1Response": {
       "type": "object",
       "properties": {
         "cards": {
@@ -120,78 +136,97 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/cardCardData"
-          }
+          },
+          "description": "List of cards."
         }
-      }
+      },
+      "description": "Response containing all stored cards."
     },
-    "cardStoreCardResponse": {
+    "cardStoreCardV1Response": {
       "type": "object",
       "properties": {
         "cardId": {
-          "type": "string"
+          "type": "string",
+          "description": "ID of the newly stored card."
         }
-      }
+      },
+      "description": "Response after storing a card."
     },
-    "cardUpdateCardResponse": {
+    "cardUpdateCardV1Response": {
       "type": "object",
       "properties": {
         "cardId": {
-          "type": "string"
+          "type": "string",
+          "description": "ID of the updated card."
         }
-      }
+      },
+      "description": "Response after updating a card."
     },
-    "fileDeleteFileResponse": {
+    "fileDeleteFileV1Response": {
       "type": "object",
       "properties": {
         "ok": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Indicates whether the delete operation was successful."
         }
-      }
+      },
+      "description": "Response after deleting a file."
     },
-    "fileDownloadFileResponse": {
+    "fileDownloadFileV1Response": {
       "type": "object",
       "properties": {
         "data": {
           "type": "string",
-          "format": "byte"
+          "format": "byte",
+          "description": "Chunk of the file's binary data."
         },
         "lastUpdate": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Timestamp of the last update to the file."
         }
-      }
+      },
+      "description": "Response streaming file data during download."
     },
     "fileFileMeta": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique file identifier."
         },
         "fileName": {
-          "type": "string"
+          "type": "string",
+          "description": "Original file name."
         },
         "fileSize": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "Size of the file in bytes."
         },
         "fileUrl": {
-          "type": "string"
+          "type": "string",
+          "description": "Optional URL to access or download the file."
         }
-      }
+      },
+      "description": "Metadata structure for a stored file."
     },
-    "fileGetFileResponse": {
+    "fileGetFileV1Response": {
       "type": "object",
       "properties": {
         "file": {
-          "$ref": "#/definitions/fileFileMeta"
+          "$ref": "#/definitions/fileFileMeta",
+          "description": "File metadata."
         },
         "lastUpdate": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Timestamp of the last update to the file."
         }
-      }
+      },
+      "description": "Response with metadata of a specific file."
     },
-    "fileGetFilesResponse": {
+    "fileGetFilesV1Response": {
       "type": "object",
       "properties": {
         "notes": {
@@ -199,22 +234,27 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/fileFileMeta"
-          }
+          },
+          "description": "List of all file metadata entries."
         }
-      }
+      },
+      "description": "Response containing metadata of all stored files."
     },
-    "fileUploadFileResponse": {
+    "fileUploadFileV1Response": {
       "type": "object",
       "properties": {
         "fileId": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique ID of the uploaded file."
         },
         "message": {
-          "type": "string"
+          "type": "string",
+          "description": "Optional server message or status."
         }
-      }
+      },
+      "description": "Response after successfully uploading a file."
     },
-    "itemGetItemsResponse": {
+    "itemGetItemsV1Response": {
       "type": "object",
       "properties": {
         "items": {
@@ -223,39 +263,39 @@
             "type": "object",
             "$ref": "#/definitions/itemItemData"
           },
-          "title": "List of items"
+          "description": "List of retrieved items."
         },
         "totalCount": {
           "type": "integer",
           "format": "int32",
-          "title": "Total number of items (for pagination)"
+          "description": "Total number of items available."
         }
       },
-      "title": "Response containing paginated items"
+      "description": "Response containing a list of stored items with pagination metadata."
     },
     "itemItemData": {
       "type": "object",
       "properties": {
         "id": {
           "type": "string",
-          "title": "Unique item ID"
+          "description": "Unique identifier for the item (UUID format)."
         },
         "type": {
           "$ref": "#/definitions/itemItemType",
-          "title": "Type of the item"
+          "description": "Type of the stored item (password, note, etc.)."
         },
         "createdAt": {
           "type": "string",
           "format": "date-time",
-          "title": "Creation timestamp"
+          "description": "Timestamp when the item was created."
         },
         "updatedAt": {
           "type": "string",
           "format": "date-time",
-          "title": "Last update timestamp"
+          "description": "Timestamp of the most recent update to the item."
         }
       },
-      "title": "Unified structure for different item types"
+      "description": "Unified metadata structure for all supported item types."
     },
     "itemItemType": {
       "type": "string",
@@ -267,56 +307,67 @@
         "ITEM_TYPE_BINARY"
       ],
       "default": "ITEM_TYPE_UNSPECIFIED",
-      "title": "Enum for item types"
+      "description": "Enum representing the type of stored item.\n\n - ITEM_TYPE_UNSPECIFIED: Default unspecified type.\n - ITEM_TYPE_PASSWORD: Password record (e.g., login credentials).\n - ITEM_TYPE_NOTE: Secure note (e.g., free-form encrypted text).\n - ITEM_TYPE_CARD: Credit/debit card information.\n - ITEM_TYPE_BINARY: Binary file (e.g., documents, images)."
     },
-    "metadataAddMetaInfoResponse": {
+    "metadataAddMetaInfoV1Response": {
       "type": "object",
       "properties": {
         "success": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "True if the operation was successful."
         }
-      }
+      },
+      "description": "Response message confirming metadata addition or update."
     },
-    "metadataGetMetaInfoResponse": {
+    "metadataGetMetaInfoV1Response": {
       "type": "object",
       "properties": {
         "metadata": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          }
+          },
+          "description": "All key-value metadata pairs."
         }
-      }
+      },
+      "description": "Response containing all metadata for a given item."
     },
-    "metadataRemoveMetaInfoResponse": {
+    "metadataRemoveMetaInfoV1Response": {
       "type": "object",
       "properties": {
         "success": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "True if the metadata was successfully removed."
         }
-      }
+      },
+      "description": "Response message confirming metadata removal."
     },
-    "noteDeleteNoteResponse": {
+    "noteDeleteNoteV1Response": {
       "type": "object",
       "properties": {
         "ok": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "True if the note was successfully deleted."
         }
-      }
+      },
+      "description": "Response after deleting a note."
     },
-    "noteGetNoteResponse": {
+    "noteGetNoteV1Response": {
       "type": "object",
       "properties": {
         "note": {
-          "$ref": "#/definitions/noteNoteData"
+          "$ref": "#/definitions/noteNoteData",
+          "description": "Retrieved note data."
         },
         "lastUpdate": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Timestamp of the most recent update."
         }
-      }
+      },
+      "description": "Response containing the note and its last update timestamp."
     },
-    "noteGetNotesResponse": {
+    "noteGetNotesV1Response": {
       "type": "object",
       "properties": {
         "notes": {
@@ -324,47 +375,58 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/noteNoteData"
-          }
+          },
+          "description": "List of notes."
         }
-      }
+      },
+      "description": "Response containing a list of all stored notes."
     },
     "noteNoteData": {
       "type": "object",
       "properties": {
         "content": {
-          "type": "string"
+          "type": "string",
+          "description": "Content of the note (minimum 3 characters)."
         }
-      }
+      },
+      "description": "Data structure representing a secure note."
     },
-    "noteStoreNoteResponse": {
+    "noteStoreNoteV1Response": {
       "type": "object",
       "properties": {
         "noteId": {
-          "type": "string"
+          "type": "string",
+          "description": "ID of the newly created or updated note."
         }
-      }
+      },
+      "description": "Response after storing a note."
     },
-    "passwordDeletePasswordResponse": {
+    "passwordDeletePasswordV1Response": {
       "type": "object",
       "properties": {
         "ok": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "True if the password was successfully deleted."
         }
-      }
+      },
+      "description": "Response confirming the deletion status."
     },
-    "passwordGetPasswordResponse": {
+    "passwordGetPasswordV1Response": {
       "type": "object",
       "properties": {
         "password": {
-          "$ref": "#/definitions/passwordPasswordData"
+          "$ref": "#/definitions/passwordPasswordData",
+          "description": "Password data."
         },
         "lastUpdate": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Last time the password entry was updated."
         }
-      }
+      },
+      "description": "Response containing the password entry and its last update time."
     },
-    "passwordGetPasswordsResponse": {
+    "passwordGetPasswordsV1Response": {
       "type": "object",
       "properties": {
         "passwords": {
@@ -372,42 +434,52 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/passwordPasswordData"
-          }
+          },
+          "description": "List of password entries."
         }
-      }
+      },
+      "description": "Response containing a list of all stored passwords."
     },
     "passwordPasswordData": {
       "type": "object",
       "properties": {
         "login": {
-          "type": "string"
+          "type": "string",
+          "description": "Login or username (minimum 3 characters)."
         },
         "password": {
-          "type": "string"
+          "type": "string",
+          "description": "Password value (minimum 3 characters)."
         },
         "metadata": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          }
+          },
+          "description": "Optional metadata (e.g., website, category, custom tags)."
         }
-      }
+      },
+      "description": "PasswordData represents the structure of a stored credential."
     },
-    "passwordStorePasswordResponse": {
+    "passwordStorePasswordV1Response": {
       "type": "object",
       "properties": {
         "passwordId": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique ID of the stored password entry."
         }
-      }
+      },
+      "description": "Response containing the ID of the stored password."
     },
-    "passwordUpdatePasswordResponse": {
+    "passwordUpdatePasswordV1Response": {
       "type": "object",
       "properties": {
         "passwordId": {
-          "type": "string"
+          "type": "string",
+          "description": "UUID of the updated password entry."
         }
-      }
+      },
+      "description": "Response containing the ID of the updated password."
     },
     "protobufAny": {
       "type": "object",

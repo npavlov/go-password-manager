@@ -31,7 +31,7 @@ func NewAuthClient(conn *grpc.ClientConn, tokenManager auth.ITokenManager, log *
 
 // Register sends a register request to the server.
 func (as *Client) Register(username, password, email string) (string, error) {
-	resp, err := as.Client.Register(context.Background(), &pb.RegisterRequest{
+	resp, err := as.Client.RegisterV1(context.Background(), &pb.RegisterV1Request{
 		Username: username,
 		Password: password,
 		Email:    email,
@@ -52,7 +52,7 @@ func (as *Client) Register(username, password, email string) (string, error) {
 
 // Login sends a login request to the server.
 func (as *Client) Login(username, password string) error {
-	resp, err := as.Client.Login(context.Background(), &pb.LoginRequest{
+	resp, err := as.Client.LoginV1(context.Background(), &pb.LoginV1Request{
 		Username: username,
 		Password: password,
 	})

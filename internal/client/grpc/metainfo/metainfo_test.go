@@ -27,11 +27,11 @@ type MockTokenManager struct {
 	mock.Mock
 }
 
-func (m *MockMetadataServiceClient) GetMetaInfo(ctx context.Context, in *metadata.GetMetaInfoRequest, _ ...grpc.CallOption) (*metadata.GetMetaInfoResponse, error) {
+func (m *MockMetadataServiceClient) GetMetaInfoV1(ctx context.Context, in *metadata.GetMetaInfoV1Request, _ ...grpc.CallOption) (*metadata.GetMetaInfoV1Response, error) {
 	args := m.Called(ctx, in)
 
 	// Safely handle nil to avoid type assertion panic
-	arg, ok := args.Get(0).(*metadata.GetMetaInfoResponse)
+	arg, ok := args.Get(0).(*metadata.GetMetaInfoV1Response)
 	if !ok && args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -39,10 +39,10 @@ func (m *MockMetadataServiceClient) GetMetaInfo(ctx context.Context, in *metadat
 	return arg, args.Error(1)
 }
 
-func (m *MockMetadataServiceClient) AddMetaInfo(ctx context.Context, in *metadata.AddMetaInfoRequest, _ ...grpc.CallOption) (*metadata.AddMetaInfoResponse, error) {
+func (m *MockMetadataServiceClient) AddMetaInfoV1(ctx context.Context, in *metadata.AddMetaInfoV1Request, _ ...grpc.CallOption) (*metadata.AddMetaInfoV1Response, error) {
 	args := m.Called(ctx, in)
 
-	arg, ok := args.Get(0).(*metadata.AddMetaInfoResponse)
+	arg, ok := args.Get(0).(*metadata.AddMetaInfoV1Response)
 	if !ok && args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -50,10 +50,10 @@ func (m *MockMetadataServiceClient) AddMetaInfo(ctx context.Context, in *metadat
 	return arg, args.Error(1)
 }
 
-func (m *MockMetadataServiceClient) RemoveMetaInfo(ctx context.Context, in *metadata.RemoveMetaInfoRequest, _ ...grpc.CallOption) (*metadata.RemoveMetaInfoResponse, error) {
+func (m *MockMetadataServiceClient) RemoveMetaInfoV1(ctx context.Context, in *metadata.RemoveMetaInfoV1Request, _ ...grpc.CallOption) (*metadata.RemoveMetaInfoV1Response, error) {
 	args := m.Called(ctx, in)
 
-	arg, ok := args.Get(0).(*metadata.RemoveMetaInfoResponse)
+	arg, ok := args.Get(0).(*metadata.RemoveMetaInfoV1Response)
 	if !ok && args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -78,9 +78,9 @@ func TestGetMetainfo_Success(t *testing.T) {
 		"key2": "value2",
 	}
 
-	mockClient.On("GetMetaInfo", mock.Anything, &metadata.GetMetaInfoRequest{
+	mockClient.On("GetMetaInfoV1", mock.Anything, &metadata.GetMetaInfoV1Request{
 		ItemId: "item123",
-	}).Return(&metadata.GetMetaInfoResponse{
+	}).Return(&metadata.GetMetaInfoV1Response{
 		Metadata: expectedMeta,
 	}, nil)
 
@@ -101,7 +101,7 @@ func TestGetMetainfo_Error(t *testing.T) {
 	mockClient := new(MockMetadataServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("GetMetaInfo", mock.Anything, &metadata.GetMetaInfoRequest{
+	mockClient.On("GetMetaInfoV1", mock.Anything, &metadata.GetMetaInfoV1Request{
 		ItemId: "item123",
 	}).Return(nil, errors.New("get meta failed"))
 
@@ -127,10 +127,10 @@ func TestSetMetainfo_Success(t *testing.T) {
 		"key2": "value2",
 	}
 
-	mockClient.On("AddMetaInfo", mock.Anything, &metadata.AddMetaInfoRequest{
+	mockClient.On("AddMetaInfoV1", mock.Anything, &metadata.AddMetaInfoV1Request{
 		ItemId:   "item123",
 		Metadata: meta,
-	}).Return(&metadata.AddMetaInfoResponse{
+	}).Return(&metadata.AddMetaInfoV1Response{
 		Success: true,
 	}, nil)
 
@@ -155,7 +155,7 @@ func TestSetMetainfo_Error(t *testing.T) {
 		"key1": "value1",
 	}
 
-	mockClient.On("AddMetaInfo", mock.Anything, &metadata.AddMetaInfoRequest{
+	mockClient.On("AddMetaInfoV1", mock.Anything, &metadata.AddMetaInfoV1Request{
 		ItemId:   "item123",
 		Metadata: meta,
 	}).Return(nil, errors.New("set meta failed"))
@@ -181,10 +181,10 @@ func TestSetMetainfo_NotSuccessful(t *testing.T) {
 		"key1": "value1",
 	}
 
-	mockClient.On("AddMetaInfo", mock.Anything, &metadata.AddMetaInfoRequest{
+	mockClient.On("AddMetaInfoV1", mock.Anything, &metadata.AddMetaInfoV1Request{
 		ItemId:   "item123",
 		Metadata: meta,
-	}).Return(&metadata.AddMetaInfoResponse{
+	}).Return(&metadata.AddMetaInfoV1Response{
 		Success: false,
 	}, nil)
 
@@ -205,10 +205,10 @@ func TestDeleteMetainfo_Success(t *testing.T) {
 	mockClient := new(MockMetadataServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("RemoveMetaInfo", mock.Anything, &metadata.RemoveMetaInfoRequest{
+	mockClient.On("RemoveMetaInfoV1", mock.Anything, &metadata.RemoveMetaInfoV1Request{
 		ItemId: "item123",
 		Key:    "key1",
-	}).Return(&metadata.RemoveMetaInfoResponse{
+	}).Return(&metadata.RemoveMetaInfoV1Response{
 		Success: true,
 	}, nil)
 
@@ -229,7 +229,7 @@ func TestDeleteMetainfo_Error(t *testing.T) {
 	mockClient := new(MockMetadataServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("RemoveMetaInfo", mock.Anything, &metadata.RemoveMetaInfoRequest{
+	mockClient.On("RemoveMetaInfoV1", mock.Anything, &metadata.RemoveMetaInfoV1Request{
 		ItemId: "item123",
 		Key:    "key1",
 	}).Return(nil, errors.New("delete meta failed"))
@@ -251,10 +251,10 @@ func TestDeleteMetainfo_NotSuccessful(t *testing.T) {
 	mockClient := new(MockMetadataServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("RemoveMetaInfo", mock.Anything, &metadata.RemoveMetaInfoRequest{
+	mockClient.On("RemoveMetaInfoV1", mock.Anything, &metadata.RemoveMetaInfoV1Request{
 		ItemId: "item123",
 		Key:    "key1",
-	}).Return(&metadata.RemoveMetaInfoResponse{
+	}).Return(&metadata.RemoveMetaInfoV1Response{
 		Success: false,
 	}, nil)
 

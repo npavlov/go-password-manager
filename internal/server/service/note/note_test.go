@@ -57,13 +57,13 @@ func TestStoreNote_Success(t *testing.T) {
 
 	testContent := "This is a secret note"
 
-	req := &pb.StoreNoteRequest{
+	req := &pb.StoreNoteV1Request{
 		Note: &pb.NoteData{
 			Content: testContent,
 		},
 	}
 
-	resp, err := svc.StoreNote(ctx, req)
+	resp, err := svc.StoreNoteV1(ctx, req)
 	require.NoError(t, err)
 	require.NotEmpty(t, resp.GetNoteId())
 
@@ -72,7 +72,7 @@ func TestStoreNote_Success(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, notes, 1)
 
-	getNote, err := svc.GetNote(ctx, &pb.GetNoteRequest{NoteId: resp.GetNoteId()})
+	getNote, err := svc.GetNoteV1(ctx, &pb.GetNoteV1Request{NoteId: resp.GetNoteId()})
 	require.NoError(t, err)
 
 	require.Equal(t, getNote.GetNote().GetContent(), testContent)
@@ -83,11 +83,11 @@ func TestStoreNote_InvalidInput(t *testing.T) {
 
 	svc, _, ctx, _ := setupNoteService(t)
 
-	req := &pb.StoreNoteRequest{
+	req := &pb.StoreNoteV1Request{
 		Note: &pb.NoteData{}, // Missing content
 	}
 
-	_, err := svc.StoreNote(ctx, req)
+	_, err := svc.StoreNoteV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error validating input")
 }
@@ -106,11 +106,11 @@ func TestGetNote_Success(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	req := &pb.GetNoteRequest{
+	req := &pb.GetNoteV1Request{
 		NoteId: note.ID.String(),
 	}
 
-	resp, err := svc.GetNote(ctx, req)
+	resp, err := svc.GetNoteV1(ctx, req)
 	require.NoError(t, err)
 	require.Equal(t, testContent, resp.GetNote().GetContent())
 	require.True(t, timestamppb.New(note.UpdatedAt.Time).AsTime().Equal(resp.GetLastUpdate().AsTime()))
@@ -121,11 +121,11 @@ func TestGetNote_NotFound(t *testing.T) {
 
 	svc, _, ctx, _ := setupNoteService(t)
 
-	req := &pb.GetNoteRequest{
+	req := &pb.GetNoteV1Request{
 		NoteId: uuid.NewString(),
 	}
 
-	_, err := svc.GetNote(ctx, req)
+	_, err := svc.GetNoteV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "note not found")
 }
@@ -143,11 +143,11 @@ func TestGetNote_Unauthorized(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	req := &pb.GetNoteRequest{
+	req := &pb.GetNoteV1Request{
 		NoteId: otherNote.ID.String(),
 	}
 
-	_, err = svc.GetNote(ctx, req)
+	_, err = svc.GetNoteV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "unauthorized access to note")
 }
@@ -166,11 +166,11 @@ func TestDeleteNote_Success(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	req := &pb.DeleteNoteRequest{
+	req := &pb.DeleteNoteV1Request{
 		NoteId: note.ID.String(),
 	}
 
-	resp, err := svc.DeleteNote(ctx, req)
+	resp, err := svc.DeleteNoteV1(ctx, req)
 	require.NoError(t, err)
 	require.True(t, resp.GetOk())
 
@@ -184,8 +184,8 @@ func TestGetNotes_NotImplemented(t *testing.T) {
 
 	svc, _, ctx, _ := setupNoteService(t)
 
-	req := &pb.GetNotesRequest{}
-	resp, err := svc.GetNotes(ctx, req)
+	req := &pb.GetNotesV1Request{}
+	resp, err := svc.GetNotesV1(ctx, req)
 
 	require.NoError(t, err)
 	require.NotNil(t, resp)
@@ -205,13 +205,13 @@ func TestStoreNote_EncryptionFailure(t *testing.T) {
 	user.EncryptionKey = "invalid-key"
 	storage.UsersByID[userIDPG] = user
 
-	req := &pb.StoreNoteRequest{
+	req := &pb.StoreNoteV1Request{
 		Note: &pb.NoteData{
 			Content: "test content",
 		},
 	}
 
-	_, err := svc.StoreNote(ctx, req)
+	_, err := svc.StoreNoteV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "Error decrypting user id")
 }
@@ -224,13 +224,13 @@ func TestStoreNote_DatabaseFailure(t *testing.T) {
 	// Make storage return error
 	storage.CallError = errors.New("database failure")
 
-	req := &pb.StoreNoteRequest{
+	req := &pb.StoreNoteV1Request{
 		Note: &pb.NoteData{
 			Content: "test content",
 		},
 	}
 
-	_, err := svc.StoreNote(ctx, req)
+	_, err := svc.StoreNoteV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "failed to store password")
 }
@@ -247,11 +247,11 @@ func TestGetNote_DecryptionFailure(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	req := &pb.GetNoteRequest{
+	req := &pb.GetNoteV1Request{
 		NoteId: storeNote.ID.String(),
 	}
 
-	_, err = svc.GetNote(ctx, req)
+	_, err = svc.GetNoteV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error decrypting password")
 }
@@ -272,11 +272,11 @@ func TestDeleteNote_DatabaseFailure(t *testing.T) {
 	// Make storage return error
 	storage.CallError = errors.New("database failure")
 
-	req := &pb.DeleteNoteRequest{
+	req := &pb.DeleteNoteV1Request{
 		NoteId: note.ID.String(),
 	}
 
-	_, err = svc.DeleteNote(ctx, req)
+	_, err = svc.DeleteNoteV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error deleting note")
 }
@@ -286,13 +286,13 @@ func TestStoreNote_MissingUserContext(t *testing.T) {
 
 	svc, _, _, _ := setupNoteService(t)
 
-	req := &pb.StoreNoteRequest{
+	req := &pb.StoreNoteV1Request{
 		Note: &pb.NoteData{
 			Content: "test content",
 		},
 	}
 
-	_, err := svc.StoreNote(t.Context(), req)
+	_, err := svc.StoreNoteV1(t.Context(), req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error getting user id")
 }
@@ -312,11 +312,11 @@ func TestGetNote_MissingUserContext(t *testing.T) {
 	require.NoError(t, err)
 
 	// Try to get note without user context
-	req := &pb.GetNoteRequest{
+	req := &pb.GetNoteV1Request{
 		NoteId: note.ID.String(),
 	}
 
-	_, err = svc.GetNote(t.Context(), req)
+	_, err = svc.GetNoteV1(t.Context(), req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error getting user id")
 }

@@ -73,12 +73,12 @@ func TestGetItems_Success(t *testing.T) {
 	}
 
 	// Test request
-	req := &pb.GetItemsRequest{
+	req := &pb.GetItemsV1Request{
 		Page:     1,
 		PageSize: 10,
 	}
 
-	resp, err := svc.GetItems(ctx, req)
+	resp, err := svc.GetItemsV1(ctx, req)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	require.Equal(t, int32(2), resp.GetTotalCount())
@@ -102,21 +102,21 @@ func TestGetItems_Pagination(t *testing.T) {
 	}
 
 	// First page
-	req1 := &pb.GetItemsRequest{
+	req1 := &pb.GetItemsV1Request{
 		Page:     1,
 		PageSize: 10,
 	}
-	resp1, err := svc.GetItems(ctx, req1)
+	resp1, err := svc.GetItemsV1(ctx, req1)
 	require.NoError(t, err)
 	require.Equal(t, int32(10), resp1.GetTotalCount())
 	require.Len(t, resp1.GetItems(), 10)
 
 	// Second page
-	req2 := &pb.GetItemsRequest{
+	req2 := &pb.GetItemsV1Request{
 		Page:     2,
 		PageSize: 10,
 	}
-	resp2, err := svc.GetItems(ctx, req2)
+	resp2, err := svc.GetItemsV1(ctx, req2)
 	require.NoError(t, err)
 	require.Equal(t, int32(5), resp2.GetTotalCount())
 	require.Len(t, resp2.GetItems(), 5)
@@ -127,12 +127,12 @@ func TestGetItems_EmptyResult(t *testing.T) {
 
 	svc, _, ctx := setupItemService(t)
 
-	req := &pb.GetItemsRequest{
+	req := &pb.GetItemsV1Request{
 		Page:     1,
 		PageSize: 10,
 	}
 
-	resp, err := svc.GetItems(ctx, req)
+	resp, err := svc.GetItemsV1(ctx, req)
 	require.NoError(t, err)
 	require.Equal(t, int32(0), resp.GetTotalCount())
 	require.Empty(t, resp.GetItems())
@@ -144,12 +144,12 @@ func TestGetItems_InvalidRequest(t *testing.T) {
 	svc, _, ctx := setupItemService(t)
 
 	// Page = 0 is invalid
-	req := &pb.GetItemsRequest{
+	req := &pb.GetItemsV1Request{
 		Page:     0,
 		PageSize: 10,
 	}
 
-	_, err := svc.GetItems(ctx, req)
+	_, err := svc.GetItemsV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error validating input")
 }
@@ -159,12 +159,12 @@ func TestGetItems_NoUserContext(t *testing.T) {
 
 	svc, _, _ := setupItemService(t)
 
-	req := &pb.GetItemsRequest{
+	req := &pb.GetItemsV1Request{
 		Page:     1,
 		PageSize: 10,
 	}
 
-	_, err := svc.GetItems(t.Context(), req)
+	_, err := svc.GetItemsV1(t.Context(), req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error getting user id")
 }

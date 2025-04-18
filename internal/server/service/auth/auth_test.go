@@ -40,21 +40,21 @@ func TestRegisterLoginFlow(t *testing.T) {
 	ctx := t.Context()
 	service := newTestService(t)
 
-	req := &pb.RegisterRequest{
+	req := &pb.RegisterV1Request{
 		Username: "testuser",
 		Password: "securePass123!",
 		Email:    "test@example.com",
 	}
 
 	// Register
-	resp, err := service.Register(ctx, req)
+	resp, err := service.RegisterV1(ctx, req)
 	require.NoError(t, err)
 	require.NotEmpty(t, resp.GetToken())
 	require.NotEmpty(t, resp.GetRefreshToken())
 	require.NotEmpty(t, resp.GetUserKey())
 
 	// Login
-	loginResp, err := service.Login(ctx, &pb.LoginRequest{
+	loginResp, err := service.LoginV1(ctx, &pb.LoginV1Request{
 		Username: req.GetUsername(),
 		Password: req.GetPassword(),
 	})
@@ -69,16 +69,16 @@ func TestRegisterDuplicateUsername(t *testing.T) {
 	ctx := t.Context()
 	service := newTestService(t)
 
-	req := &pb.RegisterRequest{
+	req := &pb.RegisterV1Request{
 		Username: "duplicateuser",
 		Password: "pass1234",
 		Email:    "dup@example.com",
 	}
 
-	_, err := service.Register(ctx, req)
+	_, err := service.RegisterV1(ctx, req)
 	require.NoError(t, err)
 
-	_, err = service.Register(ctx, req)
+	_, err = service.RegisterV1(ctx, req)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "username already exists")
 }
@@ -89,16 +89,16 @@ func TestLoginInvalidPassword(t *testing.T) {
 	ctx := t.Context()
 	service := newTestService(t)
 
-	registerReq := &pb.RegisterRequest{
+	registerReq := &pb.RegisterV1Request{
 		Username: "wrongpass",
 		Password: "correctPass",
 		Email:    "wrong@example.com",
 	}
 
-	_, err := service.Register(ctx, registerReq)
+	_, err := service.RegisterV1(ctx, registerReq)
 	require.NoError(t, err)
 
-	_, err = service.Login(ctx, &pb.LoginRequest{
+	_, err = service.LoginV1(ctx, &pb.LoginV1Request{
 		Username: registerReq.GetUsername(),
 		Password: "wrongPass",
 	})
@@ -112,14 +112,14 @@ func TestRefreshTokenFlow(t *testing.T) {
 	ctx := t.Context()
 	service := newTestService(t)
 
-	registerResp, err := service.Register(ctx, &pb.RegisterRequest{
+	registerResp, err := service.RegisterV1(ctx, &pb.RegisterV1Request{
 		Username: "refreshuser",
 		Password: "refreshpass",
 		Email:    "refresh@example.com",
 	})
 	require.NoError(t, err)
 
-	refreshResp, err := service.RefreshToken(ctx, &pb.RefreshTokenRequest{
+	refreshResp, err := service.RefreshTokenV1(ctx, &pb.RefreshTokenV1Request{
 		RefreshToken: registerResp.GetRefreshToken(),
 	})
 	require.NoError(t, err)
@@ -141,7 +141,7 @@ func TestExpiredRefreshToken(t *testing.T) {
 	err := mockStorage.StoreToken(ctx, userID, token, expiredTime)
 	require.NoError(t, err)
 
-	_, err = service.RefreshToken(ctx, &pb.RefreshTokenRequest{
+	_, err = service.RefreshTokenV1(ctx, &pb.RefreshTokenV1Request{
 		RefreshToken: token,
 	})
 	require.Error(t, err)
@@ -155,7 +155,7 @@ func TestRegisterValidationError(t *testing.T) {
 	service := newTestService(t)
 
 	// Missing required fields
-	_, err := service.Register(ctx, &pb.RegisterRequest{})
+	_, err := service.RegisterV1(ctx, &pb.RegisterV1Request{})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error validating input")
 }
@@ -166,7 +166,7 @@ func TestLoginValidationError(t *testing.T) {
 	ctx := t.Context()
 	service := newTestService(t)
 
-	_, err := service.Login(ctx, &pb.LoginRequest{})
+	_, err := service.LoginV1(ctx, &pb.LoginV1Request{})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error validating input")
 }
@@ -177,7 +177,7 @@ func TestRefreshTokenValidationError(t *testing.T) {
 	ctx := t.Context()
 	service := newTestService(t)
 
-	_, err := service.RefreshToken(ctx, &pb.RefreshTokenRequest{})
+	_, err := service.RefreshTokenV1(ctx, &pb.RefreshTokenV1Request{})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error validating input")
 }
@@ -192,7 +192,7 @@ func TestTokenGenerationFailsToStoreToken(t *testing.T) {
 	// Simulate failure
 	mockStorage.CallError = errors.New("error storing token")
 
-	registerResp, err := service.Register(ctx, &pb.RegisterRequest{
+	registerResp, err := service.RegisterV1(ctx, &pb.RegisterV1Request{
 		Username: "failstore",
 		Password: "storepass",
 		Email:    "fail@example.com",
@@ -212,18 +212,18 @@ func TestRefreshTokenValidation(t *testing.T) {
 
 	testCases := []struct {
 		name        string
-		req         *pb.RefreshTokenRequest
+		req         *pb.RefreshTokenV1Request
 		expectedErr string
 	}{
 		{
 			name: "empty refresh token",
-			req: &pb.RefreshTokenRequest{
+			req: &pb.RefreshTokenV1Request{
 				RefreshToken: "",
 			},
 		},
 		{
 			name: "invalid refresh token format",
-			req: &pb.RefreshTokenRequest{
+			req: &pb.RefreshTokenV1Request{
 				RefreshToken: "invalid.token.format",
 			},
 		},
@@ -236,7 +236,7 @@ func TestRefreshTokenValidation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := service.RefreshToken(ctx, tc.req)
+			_, err := service.RefreshTokenV1(ctx, tc.req)
 			require.Error(t, err)
 		})
 	}
@@ -247,12 +247,12 @@ func TestRegisterValidation(t *testing.T) {
 
 	testCases := []struct {
 		name        string
-		req         *pb.RegisterRequest
+		req         *pb.RegisterV1Request
 		expectedErr string
 	}{
 		{
 			name: "valid request",
-			req: &pb.RegisterRequest{
+			req: &pb.RegisterV1Request{
 				Username: "validuser",
 				Password: "ValidPass123!",
 				Email:    "valid@example.com",
@@ -261,7 +261,7 @@ func TestRegisterValidation(t *testing.T) {
 		},
 		{
 			name: "empty username",
-			req: &pb.RegisterRequest{
+			req: &pb.RegisterV1Request{
 				Username: "",
 				Password: "ValidPass123!",
 				Email:    "valid@example.com",
@@ -270,7 +270,7 @@ func TestRegisterValidation(t *testing.T) {
 		},
 		{
 			name: "short username",
-			req: &pb.RegisterRequest{
+			req: &pb.RegisterV1Request{
 				Username: "ab",
 				Password: "ValidPass123!",
 				Email:    "valid@example.com",
@@ -279,7 +279,7 @@ func TestRegisterValidation(t *testing.T) {
 		},
 		{
 			name: "empty password",
-			req: &pb.RegisterRequest{
+			req: &pb.RegisterV1Request{
 				Username: "validuser",
 				Password: "",
 				Email:    "valid@example.com",
@@ -288,7 +288,7 @@ func TestRegisterValidation(t *testing.T) {
 		},
 		{
 			name: "weak password",
-			req: &pb.RegisterRequest{
+			req: &pb.RegisterV1Request{
 				Username: "validuser",
 				Password: "weak",
 				Email:    "valid@example.com",
@@ -297,7 +297,7 @@ func TestRegisterValidation(t *testing.T) {
 		},
 		{
 			name: "invalid email",
-			req: &pb.RegisterRequest{
+			req: &pb.RegisterV1Request{
 				Username: "validuser",
 				Password: "ValidPass123!",
 				Email:    "invalid-email",
@@ -313,7 +313,7 @@ func TestRegisterValidation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := service.Register(ctx, tc.req)
+			_, err := service.RegisterV1(ctx, tc.req)
 			if tc.expectedErr == "" {
 				require.NoError(t, err)
 			} else {
@@ -329,12 +329,12 @@ func TestLoginValidation(t *testing.T) {
 
 	testCases := []struct {
 		name        string
-		req         *pb.LoginRequest
+		req         *pb.LoginV1Request
 		expectedErr bool
 	}{
 		{
 			name: "valid request",
-			req: &pb.LoginRequest{
+			req: &pb.LoginV1Request{
 				Username: "validuser",
 				Password: "ValidPass123!",
 			},
@@ -342,7 +342,7 @@ func TestLoginValidation(t *testing.T) {
 		},
 		{
 			name: "empty username",
-			req: &pb.LoginRequest{
+			req: &pb.LoginV1Request{
 				Username: "",
 				Password: "ValidPass123!",
 			},
@@ -350,7 +350,7 @@ func TestLoginValidation(t *testing.T) {
 		},
 		{
 			name: "empty password",
-			req: &pb.LoginRequest{
+			req: &pb.LoginV1Request{
 				Username: "validuser",
 				Password: "",
 			},
@@ -362,7 +362,7 @@ func TestLoginValidation(t *testing.T) {
 	service := newTestService(t)
 
 	// First register a valid user for login tests
-	_, err := service.Register(ctx, &pb.RegisterRequest{
+	_, err := service.RegisterV1(ctx, &pb.RegisterV1Request{
 		Username: "validuser",
 		Password: "ValidPass123!",
 		Email:    "valid@example.com",
@@ -373,7 +373,7 @@ func TestLoginValidation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := service.Login(ctx, tc.req)
+			_, err := service.LoginV1(ctx, tc.req)
 			if tc.expectedErr {
 				require.Error(t, err)
 			} else {

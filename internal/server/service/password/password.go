@@ -52,7 +52,9 @@ func (ps *Service) RegisterService(grpcServer *grpc.Server) {
 	pb.RegisterPasswordServiceServer(grpcServer, ps)
 }
 
-func (ps *Service) StorePassword(ctx context.Context, req *pb.StorePasswordRequest) (*pb.StorePasswordResponse, error) {
+func (ps *Service) StorePasswordV1(ctx context.Context,
+	req *pb.StorePasswordV1Request,
+) (*pb.StorePasswordV1Response, error) {
 	if err := ps.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -80,12 +82,12 @@ func (ps *Service) StorePassword(ctx context.Context, req *pb.StorePasswordReque
 		return nil, errors.Wrap(err, "failed to store password")
 	}
 
-	return &pb.StorePasswordResponse{
+	return &pb.StorePasswordV1Response{
 		PasswordId: password.ID.String(),
 	}, nil
 }
 
-func (ps *Service) GetPassword(ctx context.Context, req *pb.GetPasswordRequest) (*pb.GetPasswordResponse, error) {
+func (ps *Service) GetPasswordV1(ctx context.Context, req *pb.GetPasswordV1Request) (*pb.GetPasswordV1Response, error) {
 	if err := ps.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -109,7 +111,7 @@ func (ps *Service) GetPassword(ctx context.Context, req *pb.GetPasswordRequest) 
 		return nil, errors.Wrap(err, "error decrypting password")
 	}
 
-	return &pb.GetPasswordResponse{
+	return &pb.GetPasswordV1Response{
 		Password: &pb.PasswordData{
 			Login:    password.Login,
 			Password: decryptedPassword,
@@ -118,20 +120,22 @@ func (ps *Service) GetPassword(ctx context.Context, req *pb.GetPasswordRequest) 
 	}, nil
 }
 
-func (ps *Service) GetPasswords(_ context.Context, req *pb.GetPasswordsRequest) (*pb.GetPasswordsResponse, error) {
+func (ps *Service) GetPasswordsV1(_ context.Context,
+	req *pb.GetPasswordsV1Request,
+) (*pb.GetPasswordsV1Response, error) {
 	if err := ps.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	return &pb.GetPasswordsResponse{
+	return &pb.GetPasswordsV1Response{
 		Passwords: []*pb.PasswordData{},
 	}, nil
 }
 
-func (ps *Service) UpdatePassword(
+func (ps *Service) UpdatePasswordV1(
 	ctx context.Context,
-	req *pb.UpdatePasswordRequest,
-) (*pb.UpdatePasswordResponse, error) {
+	req *pb.UpdatePasswordV1Request,
+) (*pb.UpdatePasswordV1Response, error) {
 	if err := ps.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -159,15 +163,15 @@ func (ps *Service) UpdatePassword(
 		return nil, errors.Wrap(err, "failed to store password")
 	}
 
-	return &pb.UpdatePasswordResponse{
+	return &pb.UpdatePasswordV1Response{
 		PasswordId: password.ID.String(),
 	}, nil
 }
 
-func (ps *Service) DeletePassword(
+func (ps *Service) DeletePasswordV1(
 	ctx context.Context,
-	req *pb.DeletePasswordRequest,
-) (*pb.DeletePasswordResponse, error) {
+	req *pb.DeletePasswordV1Request,
+) (*pb.DeletePasswordV1Response, error) {
 	if err := ps.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -186,7 +190,7 @@ func (ps *Service) DeletePassword(
 		return nil, errors.Wrap(err, "error deleting password")
 	}
 
-	return &pb.DeletePasswordResponse{
+	return &pb.DeletePasswordV1Response{
 		Ok: true,
 	}, nil
 }

@@ -20,31 +20,31 @@ type MockAuthServiceClient struct {
 	mock.Mock
 }
 
-func (m *MockAuthServiceClient) RefreshToken(ctx context.Context,
-	in *pb.RefreshTokenRequest,
+func (m *MockAuthServiceClient) RefreshTokenV1(ctx context.Context,
+	in *pb.RefreshTokenV1Request,
 	_ ...grpc.CallOption,
-) (*pb.RefreshTokenResponse, error) {
+) (*pb.RefreshTokenV1Response, error) {
 	args := m.Called(ctx, in)
 
-	return args.Get(0).(*pb.RefreshTokenResponse), args.Error(1)
+	return args.Get(0).(*pb.RefreshTokenV1Response), args.Error(1)
 }
 
-func (m *MockAuthServiceClient) Register(ctx context.Context,
-	in *pb.RegisterRequest,
+func (m *MockAuthServiceClient) RegisterV1(ctx context.Context,
+	in *pb.RegisterV1Request,
 	_ ...grpc.CallOption,
-) (*pb.RegisterResponse, error) {
+) (*pb.RegisterV1Response, error) {
 	args := m.Called(ctx, in)
 
-	return args.Get(0).(*pb.RegisterResponse), args.Error(1)
+	return args.Get(0).(*pb.RegisterV1Response), args.Error(1)
 }
 
-func (m *MockAuthServiceClient) Login(ctx context.Context,
-	in *pb.LoginRequest,
+func (m *MockAuthServiceClient) LoginV1(ctx context.Context,
+	in *pb.LoginV1Request,
 	_ ...grpc.CallOption,
-) (*pb.LoginResponse, error) {
+) (*pb.LoginV1Response, error) {
 	args := m.Called(ctx, in)
 
-	return args.Get(0).(*pb.LoginResponse), args.Error(1)
+	return args.Get(0).(*pb.LoginV1Response), args.Error(1)
 }
 
 func TestRegister_Success(t *testing.T) {
@@ -65,8 +65,8 @@ func TestRegister_Success(t *testing.T) {
 	accessToken := "access-token"
 	refreshToken := "refresh-token"
 
-	mockClient.On("Register", mock.Anything, mock.AnythingOfType("*auth.RegisterRequest")).
-		Return(&pb.RegisterResponse{
+	mockClient.On("RegisterV1", mock.Anything, mock.AnythingOfType("*auth.RegisterV1Request")).
+		Return(&pb.RegisterV1Response{
 			UserKey:      userKey,
 			Token:        accessToken,
 			RefreshToken: refreshToken,
@@ -100,8 +100,8 @@ func TestLogin_Success(t *testing.T) {
 	accessToken := "access-token"
 	refreshToken := "refresh-token"
 
-	mockClient.On("Login", mock.Anything, mock.AnythingOfType("*auth.LoginRequest")).
-		Return(&pb.LoginResponse{
+	mockClient.On("LoginV1", mock.Anything, mock.AnythingOfType("*auth.LoginV1Request")).
+		Return(&pb.LoginV1Response{
 			Token:        accessToken,
 			RefreshToken: refreshToken,
 		}, nil)
@@ -132,8 +132,8 @@ func TestRegister_TokenUpdateFails(t *testing.T) {
 	accessToken := "access-token"
 	refreshToken := "refresh-token"
 
-	mockClient.On("Register", mock.Anything, mock.AnythingOfType("*auth.RegisterRequest")).
-		Return(&pb.RegisterResponse{
+	mockClient.On("RegisterV1", mock.Anything, mock.AnythingOfType("*auth.RegisterV1Request")).
+		Return(&pb.RegisterV1Response{
 			UserKey:      "user-123",
 			Token:        accessToken,
 			RefreshToken: refreshToken,
@@ -164,8 +164,8 @@ func TestLogin_TokenUpdateFails(t *testing.T) {
 	accessToken := "access-token"
 	refreshToken := "refresh-token"
 
-	mockClient.On("Login", mock.Anything, mock.AnythingOfType("*auth.LoginRequest")).
-		Return(&pb.LoginResponse{
+	mockClient.On("LoginV1", mock.Anything, mock.AnythingOfType("*auth.LoginV1Request")).
+		Return(&pb.LoginV1Response{
 			Token:        accessToken,
 			RefreshToken: refreshToken,
 		}, nil)

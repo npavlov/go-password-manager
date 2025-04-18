@@ -2,42 +2,76 @@ syntax = "proto3";
 
 package proto.metadata;
 
-option go_package = "github.com/npavlov/go-password-manager/proto/metadata";
+// Go package option for generated code
+option go_package = "github.com/npavlov/go-password-manager/gen/metadata";
 
 import "buf/validate/validate.proto";
 
-// Service for managing metadata
+//
+// MetadataService provides operations for managing custom metadata
+// (key-value pairs) associated with items stored in the system.
+//
 service MetadataService {
-  rpc AddMetaInfo (AddMetaInfoRequest) returns (AddMetaInfoResponse);
-  rpc RemoveMetaInfo (RemoveMetaInfoRequest) returns (RemoveMetaInfoResponse);
-  rpc GetMetaInfo (GetMetaInfoRequest) returns (GetMetaInfoResponse);
+  // Add or update metadata for a given item.
+  rpc AddMetaInfoV1 (AddMetaInfoV1Request) returns (AddMetaInfoV1Response);
+
+  // Remove a specific metadata entry by key from an item.
+  rpc RemoveMetaInfoV1 (RemoveMetaInfoV1Request) returns (RemoveMetaInfoV1Response);
+
+  // Retrieve all metadata for a specific item.
+  rpc GetMetaInfoV1 (GetMetaInfoV1Request) returns (GetMetaInfoV1Response);
 }
 
-// Request to add or update metadata
-message AddMetaInfoRequest {
-  string item_id = 1 [(buf.validate.field).string.uuid = true];  // The item to add metadata to
-  map<string, string> metadata = 2;  // Key-value metadata pairs
+//
+// Request message for adding or updating metadata.
+//
+message AddMetaInfoV1Request {
+  // UUID of the item to attach metadata to.
+  string item_id = 1 [(buf.validate.field).string.uuid = true];
+
+  // Key-value pairs of metadata to store or update.
+  map<string, string> metadata = 2;
 }
 
-message AddMetaInfoResponse {
+//
+// Response message confirming metadata addition or update.
+//
+message AddMetaInfoV1Response {
+  // True if the operation was successful.
   bool success = 1;
 }
 
-// Request to remove metadata
-message RemoveMetaInfoRequest {
-  string item_id = 1 [(buf.validate.field).string.uuid = true];  // The item to remove metadata from
-  string key = 2 [(buf.validate.field).string.min_len = 1];  // The metadata key to delete
+//
+// Request message for removing a specific metadata key from an item.
+//
+message RemoveMetaInfoV1Request {
+  // UUID of the item whose metadata is being modified.
+  string item_id = 1 [(buf.validate.field).string.uuid = true];
+
+  // Metadata key to remove (must be non-empty).
+  string key = 2 [(buf.validate.field).string.min_len = 1];
 }
 
-message RemoveMetaInfoResponse {
+//
+// Response message confirming metadata removal.
+//
+message RemoveMetaInfoV1Response {
+  // True if the metadata was successfully removed.
   bool success = 1;
 }
 
-// Request to get metadata for an item
-message GetMetaInfoRequest {
+//
+// Request message for retrieving all metadata associated with an item.
+//
+message GetMetaInfoV1Request {
+  // UUID of the item to fetch metadata for.
   string item_id = 1 [(buf.validate.field).string.uuid = true];
 }
 
-message GetMetaInfoResponse {
+//
+// Response containing all metadata for a given item.
+//
+message GetMetaInfoV1Response {
+  // All key-value metadata pairs.
   map<string, string> metadata = 1;
 }

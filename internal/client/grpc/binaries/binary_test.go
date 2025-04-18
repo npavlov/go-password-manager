@@ -39,17 +39,17 @@ type MockTokenManager struct {
 	mock.Mock
 }
 
-func (m *MockFileServiceClient) GetFiles(ctx context.Context, _ *pb.GetFilesRequest, _ ...grpc.CallOption) (*pb.GetFilesResponse, error) {
+func (m *MockFileServiceClient) GetFilesV1(ctx context.Context, _ *pb.GetFilesV1Request, _ ...grpc.CallOption) (*pb.GetFilesV1Response, error) {
 	args := m.Called(ctx)
 
-	return args.Get(0).(*pb.GetFilesResponse), args.Error(1)
+	return args.Get(0).(*pb.GetFilesV1Response), args.Error(1)
 }
 
-func (m *MockFileServiceClient) UploadFile(ctx context.Context, _ ...grpc.CallOption) (pb.FileService_UploadFileClient, error) {
+func (m *MockFileServiceClient) UploadFileV1(ctx context.Context, _ ...grpc.CallOption) (pb.FileService_UploadFileV1Client, error) {
 	args := m.Called(ctx)
 
 	// Safely handle nil to avoid type assertion panic
-	stream, ok := args.Get(0).(pb.FileService_UploadFileClient)
+	stream, ok := args.Get(0).(pb.FileService_UploadFileV1Client)
 	if !ok && args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -57,41 +57,41 @@ func (m *MockFileServiceClient) UploadFile(ctx context.Context, _ ...grpc.CallOp
 	return stream, args.Error(1)
 }
 
-func (m *MockFileServiceClient) DownloadFile(ctx context.Context, req *pb.DownloadFileRequest, _ ...grpc.CallOption) (pb.FileService_DownloadFileClient, error) {
+func (m *MockFileServiceClient) DownloadFileV1(ctx context.Context, req *pb.DownloadFileV1Request, _ ...grpc.CallOption) (pb.FileService_DownloadFileV1Client, error) {
 	args := m.Called(ctx, req)
 
-	return args.Get(0).(pb.FileService_DownloadFileClient), args.Error(1)
+	return args.Get(0).(pb.FileService_DownloadFileV1Client), args.Error(1)
 }
 
-func (m *MockFileServiceClient) DeleteFile(ctx context.Context, req *pb.DeleteFileRequest, _ ...grpc.CallOption) (*pb.DeleteFileResponse, error) {
+func (m *MockFileServiceClient) DeleteFileV1(ctx context.Context, req *pb.DeleteFileV1Request, _ ...grpc.CallOption) (*pb.DeleteFileV1Response, error) {
 	args := m.Called(ctx, req)
 
-	return args.Get(0).(*pb.DeleteFileResponse), args.Error(1)
+	return args.Get(0).(*pb.DeleteFileV1Response), args.Error(1)
 }
 
-func (m *MockFileServiceClient) GetFile(ctx context.Context, req *pb.GetFileRequest, opts ...grpc.CallOption) (*pb.GetFileResponse, error) {
+func (m *MockFileServiceClient) GetFileV1(ctx context.Context, req *pb.GetFileV1Request, opts ...grpc.CallOption) (*pb.GetFileV1Response, error) {
 	args := m.Called(ctx, req)
 
-	return args.Get(0).(*pb.GetFileResponse), args.Error(1)
+	return args.Get(0).(*pb.GetFileV1Response), args.Error(1)
 }
 
-func (s *MockUploadStream) Send(req *pb.UploadFileRequest) error {
+func (s *MockUploadStream) Send(req *pb.UploadFileV1Request) error {
 	args := s.Called(req)
 
 	return args.Error(0)
 }
 
-func (s *MockUploadStream) CloseAndRecv() (*pb.UploadFileResponse, error) {
+func (s *MockUploadStream) CloseAndRecv() (*pb.UploadFileV1Response, error) {
 	args := s.Called()
 
-	return args.Get(0).(*pb.UploadFileResponse), args.Error(1)
+	return args.Get(0).(*pb.UploadFileV1Response), args.Error(1)
 }
 
-func (s *MockDownloadStream) Recv() (*pb.DownloadFileResponse, error) {
+func (s *MockDownloadStream) Recv() (*pb.DownloadFileV1Response, error) {
 	args := s.Called()
 
 	// Safely handle nil to avoid type assertion panic
-	stream, ok := args.Get(0).(*pb.DownloadFileResponse)
+	stream, ok := args.Get(0).(*pb.DownloadFileV1Response)
 	if !ok && args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -108,11 +108,11 @@ func TestUploadFile_Success(t *testing.T) {
 
 	reader := bytes.NewReader([]byte("hello world"))
 
-	mockClient.On("UploadFile", mock.Anything).Return(mockStream, nil)
-	mockStream.On("Send", mock.MatchedBy(func(_ *pb.UploadFileRequest) bool {
+	mockClient.On("UploadFileV1", mock.Anything).Return(mockStream, nil)
+	mockStream.On("Send", mock.MatchedBy(func(_ *pb.UploadFileV1Request) bool {
 		return true
 	})).Return(nil).Times(2)
-	mockStream.On("CloseAndRecv").Return(&pb.UploadFileResponse{FileId: "file123"}, nil)
+	mockStream.On("CloseAndRecv").Return(&pb.UploadFileV1Response{FileId: "file123"}, nil)
 
 	client := &binary.Client{
 		Client:       mockClient,
@@ -131,8 +131,8 @@ func TestUploadFile_StreamError(t *testing.T) {
 	mockClient := new(MockFileServiceClient)
 	logger := zerolog.Nop()
 
-	var nilUploadStream pb.FileService_UploadFileClient = nil
-	mockClient.On("UploadFile", mock.Anything).Return(nilUploadStream, errors.New("stream failed"))
+	var nilUploadStream pb.FileService_UploadFileV1Client = nil
+	mockClient.On("UploadFileV1", mock.Anything).Return(nilUploadStream, errors.New("stream failed"))
 
 	client := &binary.Client{
 		Client:       mockClient,
@@ -152,10 +152,10 @@ func TestDownloadFile_Success(t *testing.T) {
 	writer := new(bytes.Buffer)
 	logger := zerolog.Nop()
 
-	mockClient.On("DownloadFile", mock.Anything, &pb.DownloadFileRequest{FileId: "file123"}).Return(mockStream, nil)
-	mockStream.On("Recv").Return(&pb.DownloadFileResponse{Data: []byte("chunk1")}, nil).Once()
+	mockClient.On("DownloadFileV1", mock.Anything, &pb.DownloadFileV1Request{FileId: "file123"}).Return(mockStream, nil)
+	mockStream.On("Recv").Return(&pb.DownloadFileV1Response{Data: []byte("chunk1")}, nil).Once()
 
-	var nilResp *pb.DownloadFileResponse
+	var nilResp *pb.DownloadFileV1Response
 	mockStream.On("Recv").Return(nilResp, io.EOF).Once()
 
 	client := &binary.Client{
@@ -176,7 +176,7 @@ func TestDownloadFile_RecvError(t *testing.T) {
 	mockStream := new(MockDownloadStream)
 	logger := zerolog.Nop()
 
-	mockClient.On("DownloadFile", mock.Anything, &pb.DownloadFileRequest{FileId: "file123"}).Return(mockStream, nil)
+	mockClient.On("DownloadFileV1", mock.Anything, &pb.DownloadFileV1Request{FileId: "file123"}).Return(mockStream, nil)
 	mockStream.On("Recv").Return(nil, errors.New("recv failed"))
 
 	client := &binary.Client{
@@ -195,8 +195,8 @@ func TestDeleteFile_Success(t *testing.T) {
 	mockClient := new(MockFileServiceClient)
 	logger := zerolog.Nop()
 
-	mockClient.On("DeleteFile", mock.Anything, &pb.DeleteFileRequest{FileId: "file123"}).
-		Return(&pb.DeleteFileResponse{Ok: true}, nil)
+	mockClient.On("DeleteFileV1", mock.Anything, &pb.DeleteFileV1Request{FileId: "file123"}).
+		Return(&pb.DeleteFileV1Response{Ok: true}, nil)
 
 	client := &binary.Client{
 		Client:       mockClient,
@@ -217,8 +217,8 @@ func TestGetFile_Success(t *testing.T) {
 
 	meta := &pb.FileMeta{Id: "file123", FileName: "myfile.txt"}
 
-	mockClient.On("GetFile", mock.Anything, &pb.GetFileRequest{FileId: "file123"}).
-		Return(&pb.GetFileResponse{File: meta}, nil)
+	mockClient.On("GetFileV1", mock.Anything, &pb.GetFileV1Request{FileId: "file123"}).
+		Return(&pb.GetFileV1Response{File: meta}, nil)
 
 	client := &binary.Client{
 		Client:       mockClient,

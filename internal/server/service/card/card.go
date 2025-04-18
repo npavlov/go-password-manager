@@ -53,7 +53,7 @@ func (ns *Service) RegisterService(grpcServer *grpc.Server) {
 	pb.RegisterCardServiceServer(grpcServer, ns)
 }
 
-func (ns *Service) StoreCard(ctx context.Context, req *pb.StoreCardRequest) (*pb.StoreCardResponse, error) {
+func (ns *Service) StoreCardV1(ctx context.Context, req *pb.StoreCardV1Request) (*pb.StoreCardV1Response, error) {
 	if err := ns.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -94,12 +94,12 @@ func (ns *Service) StoreCard(ctx context.Context, req *pb.StoreCardRequest) (*pb
 		return nil, errors.Wrap(err, "failed to store card")
 	}
 
-	return &pb.StoreCardResponse{
+	return &pb.StoreCardV1Response{
 		CardId: Card.ID.String(),
 	}, nil
 }
 
-func (ns *Service) UpdateCard(ctx context.Context, req *pb.UpdateCardRequest) (*pb.UpdateCardResponse, error) {
+func (ns *Service) UpdateCardV1(ctx context.Context, req *pb.UpdateCardV1Request) (*pb.UpdateCardV1Response, error) {
 	if err := ns.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -140,7 +140,7 @@ func (ns *Service) UpdateCard(ctx context.Context, req *pb.UpdateCardRequest) (*
 		return nil, errors.Wrap(err, "failed to store password")
 	}
 
-	return &pb.UpdateCardResponse{
+	return &pb.UpdateCardV1Response{
 		CardId: card.ID.String(),
 	}, nil
 }
@@ -170,7 +170,7 @@ func (ns *Service) EncryptCard(decryptedUserKey, cardNum, cvv, expiryDate string
 	return encryptedCardNumber, encryptedCVV, encryptedExpiryDate, nil
 }
 
-func (ns *Service) GetCard(ctx context.Context, req *pb.GetCardRequest) (*pb.GetCardResponse, error) {
+func (ns *Service) GetCardV1(ctx context.Context, req *pb.GetCardV1Request) (*pb.GetCardV1Response, error) {
 	if err := ns.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -210,7 +210,7 @@ func (ns *Service) GetCard(ctx context.Context, req *pb.GetCardRequest) (*pb.Get
 		return nil, errors.Wrap(err, "error decrypting Expiry Date")
 	}
 
-	return &pb.GetCardResponse{
+	return &pb.GetCardV1Response{
 		Card: &pb.CardData{
 			CardNumber:     cardNumber,
 			Cvv:            cardCvv,
@@ -221,17 +221,17 @@ func (ns *Service) GetCard(ctx context.Context, req *pb.GetCardRequest) (*pb.Get
 	}, nil
 }
 
-func (ns *Service) GetCards(_ context.Context, req *pb.GetCardsRequest) (*pb.GetCardsResponse, error) {
+func (ns *Service) GetCardsV1(_ context.Context, req *pb.GetCardsV1Request) (*pb.GetCardsV1Response, error) {
 	if err := ns.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
 
-	return &pb.GetCardsResponse{
+	return &pb.GetCardsV1Response{
 		Cards: make([]*pb.CardData, 0),
 	}, nil
 }
 
-func (ns *Service) DeleteCard(ctx context.Context, req *pb.DeleteCardRequest) (*pb.DeleteCardResponse, error) {
+func (ns *Service) DeleteCardV1(ctx context.Context, req *pb.DeleteCardV1Request) (*pb.DeleteCardV1Response, error) {
 	if err := ns.validator.Validate(req); err != nil {
 		return nil, errors.Wrap(err, "error validating input")
 	}
@@ -250,7 +250,7 @@ func (ns *Service) DeleteCard(ctx context.Context, req *pb.DeleteCardRequest) (*
 		return nil, errors.Wrap(err, "error deleting Card")
 	}
 
-	return &pb.DeleteCardResponse{
+	return &pb.DeleteCardV1Response{
 		Ok: true,
 	}, nil
 }
