@@ -368,3 +368,210 @@ func TestDeletePassword_Unauthorized(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "unauthorized access to password")
 }
+
+func TestStorePassword_Validation(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name        string
+		req         *pb.StorePasswordV1Request
+		expectedErr string
+	}{
+		{
+			name: "nil password data",
+			req: &pb.StorePasswordV1Request{
+				Password: nil,
+			},
+			expectedErr: "error validating input",
+		},
+		{
+			name: "empty login",
+			req: &pb.StorePasswordV1Request{
+				Password: &pb.PasswordData{
+					Login:    "",
+					Password: "validpassword",
+				},
+			},
+			expectedErr: "error validating input",
+		},
+		{
+			name: "empty password",
+			req: &pb.StorePasswordV1Request{
+				Password: &pb.PasswordData{
+					Login:    "valid@example.com",
+					Password: "",
+				},
+			},
+			expectedErr: "error validating input",
+		},
+	}
+
+	svc, _, ctx, _ := setupPasswordService(t)
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := svc.StorePasswordV1(ctx, tc.req)
+			require.Error(t, err)
+			require.Contains(t, err.Error(), tc.expectedErr)
+		})
+	}
+}
+
+func TestGetPassword_Validation(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name        string
+		req         *pb.GetPasswordV1Request
+		expectedErr string
+	}{
+		{
+			name: "empty password id",
+			req: &pb.GetPasswordV1Request{
+				PasswordId: "",
+			},
+			expectedErr: "error validating input",
+		},
+		{
+			name: "invalid password id format",
+			req: &pb.GetPasswordV1Request{
+				PasswordId: "not-a-uuid",
+			},
+			expectedErr: "error validating input",
+		},
+	}
+
+	svc, _, ctx, _ := setupPasswordService(t)
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := svc.GetPasswordV1(ctx, tc.req)
+			require.Error(t, err)
+			require.Contains(t, err.Error(), tc.expectedErr)
+		})
+	}
+}
+
+func TestUpdatePassword_Validation(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name        string
+		req         *pb.UpdatePasswordV1Request
+		expectedErr string
+	}{
+		{
+			name: "empty password id",
+			req: &pb.UpdatePasswordV1Request{
+				PasswordId: "",
+				Data: &pb.PasswordData{
+					Login:    "valid@example.com",
+					Password: "validpassword",
+				},
+			},
+			expectedErr: "error validating input",
+		},
+		{
+			name: "invalid password id format",
+			req: &pb.UpdatePasswordV1Request{
+				PasswordId: "not-a-uuid",
+				Data: &pb.PasswordData{
+					Login:    "valid@example.com",
+					Password: "validpassword",
+				},
+			},
+			expectedErr: "error validating input",
+		},
+		{
+			name: "nil password data",
+			req: &pb.UpdatePasswordV1Request{
+				PasswordId: uuid.NewString(),
+				Data:       nil,
+			},
+			expectedErr: "error validating input",
+		},
+		{
+			name: "empty login in data",
+			req: &pb.UpdatePasswordV1Request{
+				PasswordId: uuid.NewString(),
+				Data: &pb.PasswordData{
+					Login:    "",
+					Password: "validpassword",
+				},
+			},
+			expectedErr: "error validating input",
+		},
+		{
+			name: "empty password in data",
+			req: &pb.UpdatePasswordV1Request{
+				PasswordId: uuid.NewString(),
+				Data: &pb.PasswordData{
+					Login:    "valid@example.com",
+					Password: "",
+				},
+			},
+			expectedErr: "error validating input",
+		},
+	}
+
+	svc, _, ctx, _ := setupPasswordService(t)
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := svc.UpdatePasswordV1(ctx, tc.req)
+			require.Error(t, err)
+			require.Contains(t, err.Error(), tc.expectedErr)
+		})
+	}
+}
+
+func TestDeletePassword_Validation(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name        string
+		req         *pb.DeletePasswordV1Request
+		expectedErr string
+	}{
+		{
+			name: "empty password id",
+			req: &pb.DeletePasswordV1Request{
+				PasswordId: "",
+			},
+			expectedErr: "error validating input",
+		},
+		{
+			name: "invalid password id format",
+			req: &pb.DeletePasswordV1Request{
+				PasswordId: "not-a-uuid",
+			},
+			expectedErr: "error validating input",
+		},
+	}
+
+	svc, _, ctx, _ := setupPasswordService(t)
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := svc.DeletePasswordV1(ctx, tc.req)
+			require.Error(t, err)
+			require.Contains(t, err.Error(), tc.expectedErr)
+		})
+	}
+}
+
+func TestGetPasswords_Validation(t *testing.T) {
+	t.Parallel()
+
+	// Currently empty since GetPasswordsV1Request has no fields to validate
+	// This test is included for completeness and future-proofing
+	svc, _, ctx, _ := setupPasswordService(t)
+
+	req := &pb.GetPasswordsV1Request{}
+	_, err := svc.GetPasswordsV1(ctx, req)
+	require.NoError(t, err)
+}
