@@ -72,3 +72,13 @@ func TestRandomizeKey_ChangesKey(t *testing.T) {
 	assert.NotEqual(t, oldKey, str.GetSelf().Key)
 	assert.Equal(t, "rotate-key", str.Get()) // Ensure value is still correct
 }
+
+func TestNonInitialized(t *testing.T) {
+	t.Parallel()
+
+	str := &utils.SecureString{}
+
+	result := str.Get()
+
+	assert.Empty(t, result)
+}

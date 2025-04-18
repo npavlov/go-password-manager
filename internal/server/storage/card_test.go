@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
 	"github.com/npavlov/go-password-manager/internal/server/db"
@@ -279,4 +280,76 @@ func TestDeleteCard_NotFound(t *testing.T) {
 
 	err := storage.DeleteCard(t.Context(), cardID.String(), userID)
 	require.NoError(t, err) // Note: This depends on your business logic - you might want to return an error if no rows were deleted
+}
+
+func TestGetCards_DBError(t *testing.T) {
+	t.Parallel()
+
+	storage, mock := testutils.SetupDBStorage(t)
+
+	userID := uuid.New().String()
+
+	mock.ExpectQuery("SELECT (.+) FROM cards").
+		WithArgs(pgtype.UUID{Bytes: uuid.MustParse(userID), Valid: true}).
+		WillReturnError(errors.New("query failed"))
+
+	result, err := storage.GetCards(t.Context(), userID)
+	require.Error(t, err)
+	require.Nil(t, result)
+	require.Contains(t, err.Error(), "failed to find cards")
+}
+
+func TestDeleteCard_DBError(t *testing.T) {
+	t.Parallel()
+
+	storage, mock := testutils.SetupDBStorage(t)
+
+	userID := pgtype.UUID{Bytes: uuid.New(), Valid: true}
+	cardID := pgtype.UUID{Bytes: uuid.New(), Valid: true}
+
+	mock.ExpectExec("DELETE FROM cards").
+		WithArgs(cardID, userID).
+		WillReturnError(errors.New("delete failed"))
+
+	err := storage.DeleteCard(t.Context(), cardID.String(), userID)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to delete card")
+}
+
+func TestUpdateCard_NotFound(t *testing.T) {
+	t.Parallel()
+
+	storage, mock := testutils.SetupDBStorage(t)
+
+	updateParams := db.UpdateCardParams{
+		ID: pgtype.UUID{Bytes: uuid.New(), Valid: true},
+		// ... other fields
+	}
+
+	mock.ExpectQuery("UPDATE cards").
+		WillReturnError(pgx.ErrNoRows)
+
+	result, err := storage.UpdateCard(t.Context(), updateParams)
+	require.Error(t, err)
+	require.Nil(t, result)
+	require.Contains(t, err.Error(), "failed to update card")
+}
+
+func TestUpdateCard_DBError(t *testing.T) {
+	t.Parallel()
+
+	storage, mock := testutils.SetupDBStorage(t)
+
+	updateParams := db.UpdateCardParams{
+		ID: pgtype.UUID{Bytes: uuid.New(), Valid: true},
+		// ... other fields
+	}
+
+	mock.ExpectQuery("UPDATE cards").
+		WillReturnError(errors.New("update failed"))
+
+	result, err := storage.UpdateCard(t.Context(), updateParams)
+	require.Error(t, err)
+	require.Nil(t, result)
+	require.Contains(t, err.Error(), "failed to update card")
 }
