@@ -76,6 +76,7 @@ func TestRandomizeKey_ChangesKey(t *testing.T) {
 func TestNonInitialized(t *testing.T) {
 	t.Parallel()
 
+	//nolint:exhaustruct
 	str := &utils.SecureString{}
 
 	result := str.Get()

@@ -30,7 +30,7 @@ message AddMetaInfoV1Request {
   string item_id = 1 [(buf.validate.field).string.uuid = true];
 
   // Key-value pairs of metadata to store or update.
-  map<string, string> metadata = 2;
+  map<string, string> metadata = 2 [(buf.validate.field).required = true];
 }
 
 //

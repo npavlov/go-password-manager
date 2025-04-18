@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 
@@ -175,4 +176,156 @@ func TestGetMetaInfo_Empty(t *testing.T) {
 	resp, err := svc.GetMetaInfoV1(ctx, req)
 	require.NoError(t, err)
 	require.Empty(t, resp.GetMetadata())
+}
+
+func TestAddMetaInfo_ValidationError(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name        string
+		req         *pb.AddMetaInfoV1Request
+		expectedErr string
+	}{
+		{
+			name: "empty item id",
+			req: &pb.AddMetaInfoV1Request{
+				ItemId:   "",
+				Metadata: map[string]string{"key": "value"},
+			},
+			expectedErr: "error validating input",
+		},
+		{
+			name: "empty metadata",
+			req: &pb.AddMetaInfoV1Request{
+				ItemId:   uuid.NewString(),
+				Metadata: map[string]string{},
+			},
+			expectedErr: "error validating input",
+		},
+		{
+			name: "invalid key",
+			req: &pb.AddMetaInfoV1Request{
+				ItemId:   uuid.NewString(),
+				Metadata: map[string]string{"": "value"},
+			},
+			expectedErr: "error validating input",
+		},
+	}
+
+	svc, _, ctx := setupMetadataService(t)
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := svc.AddMetaInfoV1(ctx, tc.req)
+			require.Error(t, err)
+			require.Contains(t, err.Error(), tc.expectedErr)
+		})
+	}
+}
+
+func TestAddMetaInfo_StorageError(t *testing.T) {
+	t.Parallel()
+
+	svc, mockStorage, ctx := setupMetadataService(t)
+
+	// Simulate storage failure
+	mockStorage.CallError = errors.New("storage error")
+
+	req := &pb.AddMetaInfoV1Request{
+		ItemId:   uuid.NewString(),
+		Metadata: map[string]string{"key": "value"},
+	}
+
+	_, err := svc.AddMetaInfoV1(ctx, req)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to add meta info")
+}
+
+func TestRemoveMetaInfo_ValidationError(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name        string
+		req         *pb.RemoveMetaInfoV1Request
+		expectedErr string
+	}{
+		{
+			name: "empty item id",
+			req: &pb.RemoveMetaInfoV1Request{
+				ItemId: "",
+				Key:    "key",
+			},
+			expectedErr: "error validating input",
+		},
+		{
+			name: "empty key",
+			req: &pb.RemoveMetaInfoV1Request{
+				ItemId: uuid.NewString(),
+				Key:    "",
+			},
+			expectedErr: "error validating input",
+		},
+	}
+
+	svc, _, ctx := setupMetadataService(t)
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := svc.RemoveMetaInfoV1(ctx, tc.req)
+			require.Error(t, err)
+			require.Contains(t, err.Error(), tc.expectedErr)
+		})
+	}
+}
+
+func TestRemoveMetaInfo_StorageError(t *testing.T) {
+	t.Parallel()
+
+	svc, mockStorage, ctx := setupMetadataService(t)
+
+	// Simulate storage failure
+	mockStorage.CallError = errors.New("database error")
+
+	req := &pb.RemoveMetaInfoV1Request{
+		ItemId: uuid.NewString(),
+		Key:    "key",
+	}
+
+	_, err := svc.RemoveMetaInfoV1(ctx, req)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to remove meta info")
+}
+
+func TestGetMetaInfo_ValidationError(t *testing.T) {
+	t.Parallel()
+
+	svc, _, ctx := setupMetadataService(t)
+
+	req := &pb.GetMetaInfoV1Request{
+		ItemId: "",
+	}
+
+	_, err := svc.GetMetaInfoV1(ctx, req)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "error validating input")
+}
+
+func TestGetMetaInfo_StorageError(t *testing.T) {
+	t.Parallel()
+
+	svc, mockStorage, ctx := setupMetadataService(t)
+
+	mockStorage.CallError = errors.New("database error")
+
+	req := &pb.GetMetaInfoV1Request{
+		ItemId: uuid.NewString(),
+	}
+
+	_, err := svc.GetMetaInfoV1(ctx, req)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to fetch metadata")
 }

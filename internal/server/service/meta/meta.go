@@ -54,6 +54,9 @@ func (ms *Service) AddMetaInfoV1(ctx context.Context, req *pb.AddMetaInfoV1Reque
 	}
 
 	for key, value := range req.GetMetadata() {
+		if key == "" {
+			return nil, errors.New("error validating input")
+		}
 		_, err := ms.storage.AddMeta(ctx, req.GetItemId(), key, value)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to add meta info")

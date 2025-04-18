@@ -449,6 +449,10 @@ func (m *MockDBStorage) AddMeta(_ context.Context, itemID string, key string, va
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	if m.CallError != nil {
+		return nil, m.CallError
+	}
+
 	if _, exists := m.metaInfo[itemID]; !exists {
 		m.metaInfo[itemID] = make(map[string]string)
 	}
@@ -467,6 +471,10 @@ func (m *MockDBStorage) DeleteMetaInfo(_ context.Context, key string, itemID str
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	if m.CallError != nil {
+		return m.CallError
+	}
+
 	if _, exists := m.metaInfo[itemID]; !exists {
 		return errors.New("item not found")
 	}
@@ -483,6 +491,10 @@ func (m *MockDBStorage) DeleteMetaInfo(_ context.Context, key string, itemID str
 func (m *MockDBStorage) GetMetaInfo(_ context.Context, itemID string) ([]db.GetMetaInfoByItemIDRow, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+
+	if m.CallError != nil {
+		return nil, m.CallError
+	}
 
 	itemMeta, exists := m.metaInfo[itemID]
 	if !exists {
