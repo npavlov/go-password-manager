@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package proto.auth;
+
+// Go package option for generated code
+option go_package = "github.com/npavlov/go-password-manager/gen/auth";
+
+import "buf/validate/validate.proto";
+
+//
+// AuthService provides methods for user registration, authentication,
+// and token refreshing.
+//
+service AuthService {
+  // Register a new user and return tokens and a user key.
+  rpc RegisterV1 (RegisterV1Request) returns (RegisterV1Response);
+
+  // Authenticate a user with username and password, returning tokens.
+  rpc LoginV1 (LoginV1Request) returns (LoginV1Response);
+
+  // Refresh authentication tokens using a valid refresh token.
+  rpc RefreshTokenV1 (RefreshTokenV1Request) returns (RefreshTokenV1Response);
+}
+
+//
+// Request message for user registration.
+//
+message RegisterV1Request {
+  // Unique username for the user (minimum 3 characters).
+  string username = 1 [(buf.validate.field).string.min_len = 3];
+
+  // Valid email address of the user.
+  string email = 2 [(buf.validate.field).string.email = true];
+
+  // Password for the account (minimum 8 characters).
+  string password = 3 [(buf.validate.field).string.min_len = 8];
+}
+
+//
+// Response message after successful user registration.
+//
+message RegisterV1Response {
+  // Access token for authenticated API access.
+  string token = 1;
+
+  // Refresh token for obtaining new access tokens.
+  string refresh_token = 2;
+
+  // Encrypted key or identifier for the user (application-specific).
+  string user_key = 3;
+}
+
+//
+// Request message for user login.
+//
+message LoginV1Request {
+  // Username of the user.
+  string username = 1 [(buf.validate.field).string.min_len = 3];
+
+  // Password for the account.
+  string password = 2 [(buf.validate.field).string.min_len = 8];
+}
+
+//
+// Response message after successful login.
+//
+message LoginV1Response {
+  // Access token for authenticated API access.
+  string token = 1;
+
+  // Refresh token for obtaining new access tokens.
+  string refresh_token = 2;
+}
+
+//
+// Request message for refreshing authentication tokens.
+//
+message RefreshTokenV1Request {
+  // Valid refresh token.
+  string refresh_token = 1 [(buf.validate.field).required = true];
+}
+
+//
+// Response message after successful token refresh.
+//
+message RefreshTokenV1Response {
+  // New access token.
+  string token = 1;
+
+  // New refresh token.
+  string refresh_token = 2;
+}

@@ -1,0 +1,36 @@
+# See https://golangci-lint.run/usage/linters/
+
+linters:
+  enable-all: true
+  disable:
+    # Note: deprecated linters
+    - gomnd
+    - execinquery
+    - exportloopref
+    # Disable wsl
+    - wsl
+issues:
+  exclude-rules:
+    - path: '(.+)_test\.go'
+      linters:
+        - funlen
+linters-settings:
+  varnamelen:
+    min-name-length: 2  # Adjust the minimum length as needed
+  goimports:
+    local-prefixes: github.com/npavlov/go-password-manager
+  gci:
+    skip-generated: true
+    sections:
+      - Standard
+      - Default
+      - Prefix(github.com/npavlov/go-password-manager)
+  depguard:
+    rules:
+      prevent_unmaintained_packages:
+        list-mode: lax # allow unless explicitely denied
+        files:
+          - $all
+          - "!$test"
+        allow:
+          - $gostd

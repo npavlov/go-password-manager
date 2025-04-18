@@ -1,0 +1,137 @@
+syntax = "proto3";
+
+package proto.file;
+
+// Go package option for generated code
+option go_package = "github.com/npavlov/go-password-manager/gen/file";
+
+import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
+
+//
+// FileService provides functionality to upload, download, manage metadata,
+// and delete user files securely.
+//
+service FileService {
+  // Upload a file using a client-streaming RPC.
+  rpc UploadFileV1 (stream UploadFileV1Request) returns (UploadFileV1Response);
+
+  // Retrieve metadata for a specific file by its ID.
+  rpc GetFileV1 (GetFileV1Request) returns (GetFileV1Response);
+
+  // Retrieve metadata for all stored files.
+  rpc GetFilesV1 (GetFilesV1Request) returns (GetFilesV1Response);
+
+  // Download a file using a server-streaming RPC.
+  rpc DownloadFileV1 (DownloadFileV1Request) returns (stream DownloadFileV1Response);
+
+  // Delete a file by its ID.
+  rpc DeleteFileV1 (DeleteFileV1Request) returns (DeleteFileV1Response);
+}
+
+//
+// Chunked file upload request.
+//
+message UploadFileV1Request {
+  // Name of the file being uploaded (1–255 characters).
+  string filename = 1 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+
+  // Chunk of file data (can be empty for signaling).
+  bytes data = 2;
+}
+
+//
+// Response after successfully uploading a file.
+//
+message UploadFileV1Response {
+  // Unique ID of the uploaded file.
+  string file_id = 1;
+
+  // Optional server message or status.
+  string message = 2;
+}
+
+//
+// Request to download a file.
+//
+message DownloadFileV1Request {
+  // ID of the file to download (UUID format).
+  string file_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+//
+// Response streaming file data during download.
+//
+message DownloadFileV1Response {
+  // Chunk of the file's binary data.
+  bytes data = 1;
+
+  // Timestamp of the last update to the file.
+  google.protobuf.Timestamp last_update = 2;
+}
+
+//
+// Request to retrieve a specific file's metadata.
+//
+message GetFileV1Request {
+  // ID of the file (UUID format).
+  string file_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+//
+// Response with metadata of a specific file.
+//
+message GetFileV1Response {
+  // File metadata.
+  FileMeta file = 1;
+
+  // Timestamp of the last update to the file.
+  google.protobuf.Timestamp last_update = 2;
+}
+
+//
+// Request to retrieve metadata for all files.
+//
+message GetFilesV1Request {
+}
+
+//
+// Response containing metadata of all stored files.
+//
+message GetFilesV1Response {
+  // List of all file metadata entries.
+  repeated FileMeta notes = 1;
+}
+
+//
+// Request to delete a file.
+//
+message DeleteFileV1Request {
+  // ID of the file to be deleted (UUID format).
+  string file_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+//
+// Response after deleting a file.
+//
+message DeleteFileV1Response {
+  // Indicates whether the delete operation was successful.
+  bool ok = 1;
+}
+
+//
+// Metadata structure for a stored file.
+//
+message FileMeta {
+  // Unique file identifier.
+  string id = 1;
+
+  // Original file name.
+  string file_name = 2;
+
+  // Size of the file in bytes.
+  int64 file_size = 3;
+
+  // Optional URL to access or download the file.
+  string file_url = 4;
+}

@@ -1,0 +1,10 @@
+swagger: "2.0"
+info:
+  title: Password Manager
+  description: GRPC API to store data in encrypted format
+  version: 1.0.0
+schemes:
+  - http
+  - https
+produces:
+  - application/json
