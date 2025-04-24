@@ -21,7 +21,7 @@ require (
 	github.com/pressly/goose v2.7.0+incompatible
 	github.com/redis/go-redis/v9 v9.7.1
 	github.com/rivo/tview v0.0.0-20250322200051-73a5bd7d6839
-	github.com/rs/zerolog v1.33.0
+	github.com/rs/zerolog v1.34.0
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/crypto v0.33.0
 	google.golang.org/grpc v1.70.0
