@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/npavlov/go-metrics-service/internal/logger"
+	"github.com/npavlov/go-password-manager/internal/pkg/logger"
 )
 
 func TestNewLogger(t *testing.T) {

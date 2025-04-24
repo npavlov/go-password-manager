@@ -1,0 +1,87 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=yourpassword  # Replace with a strong password
+      - POSTGRES_DB=yourdb
+    ports:
+      - "5432:5432"  # Expose PostgreSQL for host machine access (optional)
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"  # Expose Redis for host machine access (optional)
+    networks:
+      - app-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=adminpassword
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://minio:9000/minio/health/live" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  create-bucket:
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      /usr/bin/mc alias set local http://minio:9000 admin adminpassword;
+      /usr/bin/mc mb local/encrypted-bucket;
+      exit 0;
+      "
+    networks:
+      - app-network
+
+  server:
+    build:
+      context: ..
+      dockerfile: ./deployment/dockerfile.debug
+      args:
+        VERSION: "1.0.0"
+        DATE: "${BUILD_DATE:-$(date -u +%Y-%m-%d)}"
+        COMMIT: "${GIT_COMMIT:-$(git rev-parse HEAD)}"
+    networks:
+      - app-network
+    ports:
+      - "9090:9090"    # Server application port
+      - "40001:40001"  # Delve debugging port
+    environment:
+      - ADDRESS=:9090  # Replace with the address your server listens on
+      - DATABASE_DSN=postgres://postgres:yourpassword@postgres:5432/yourdb?sslmode=disable
+      - JWT_SECRET=random
+      - REDIS=redis:6379  # Redis hostname and port
+      - MINIO=minio:9000
+      - MINIO_ACCESS_KEY=admin
+      - MINIO_SECRET_KEY=adminpassword
+    volumes:
+      - ../certs:/app/certs:ro
+    command: dlv exec /app/server --headless --listen=:40001 --api-version=2 --log --accept-multiclient
+
+volumes:
+  minio_data:
+
+networks:
+  app-network:
+    driver: bridge
