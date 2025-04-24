@@ -3,7 +3,7 @@ module github.com/npavlov/go-password-manager
 go 1.24.0
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.5-20250307204501-0409229c3780.1
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.6-20250423154025-ec0af4932e5e.1
 	github.com/Dentrax/obscure-go v0.0.0
 	github.com/alicebob/miniredis/v2 v2.34.0
 	github.com/bufbuild/protovalidate-go v0.9.2
@@ -25,7 +25,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/crypto v0.33.0
 	google.golang.org/grpc v1.70.0
-	google.golang.org/protobuf v1.36.5
+	google.golang.org/protobuf v1.36.6
 )
 
 require (
