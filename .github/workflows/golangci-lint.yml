@@ -27,4 +27,4 @@ jobs:
       - name: Clean Go Cache
         run: go clean -modcache
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@v8
